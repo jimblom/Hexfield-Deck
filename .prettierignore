@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+out
+coverage
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Minified files
+*.min.js
+*.min.css
+
+# VS Code extension package
+*.vsix
+
+# Logs
+*.log
+
+# Markdown files (preserve formatting)
+# Remove this if you want Prettier to format markdown
+# *.md

@@ -1,0 +1,40 @@
+{
+    "compilerOptions": {
+        // Language and Environment
+        "target": "ES2022",
+        "lib": ["ES2022"],
+        "module": "Node16",
+        "moduleResolution": "Node16",
+
+        // Type Checking
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "forceConsistentCasingInFileNames": true,
+
+        // Interop Constraints
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+
+        // Emit
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "skipLibCheck": true,
+
+        // Project References (Monorepo)
+        "composite": true,
+        "incremental": true
+    },
+    "files": [],
+    "references": [
+        // Will be populated as we create packages
+        // { "path": "./packages/core" },
+        // { "path": "./packages/vscode-extension" }
+    ],
+    "exclude": ["node_modules", "dist", "build", "out", "coverage"]
+}

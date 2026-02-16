@@ -1,0 +1,40 @@
+# Auto-detect text files and normalize to LF
+* text=auto eol=lf
+
+# Explicitly declare text files
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.svg text eol=lf
+*.xml text eol=lf
+*.sh text eol=lf
+
+# Declare files that should always have CRLF (Windows scripts)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# PowerShell scripts use LF (PowerShell Core supports LF)
+*.ps1 text eol=lf
+
+# Denote binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.vsix binary
