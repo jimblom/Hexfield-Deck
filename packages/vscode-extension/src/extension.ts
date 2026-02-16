@@ -1,16 +1,13 @@
 import * as vscode from "vscode";
+import { openBoard } from "./commands/openBoard.js";
 
 export function activate(context: vscode.ExtensionContext) {
-  const openBoard = vscode.commands.registerCommand(
+  const openBoardCommand = vscode.commands.registerCommand(
     "hexfield-deck.openBoard",
-    () => {
-      vscode.window.showInformationMessage(
-        "Hexfield Deck: Board coming soon!",
-      );
-    },
+    () => openBoard(context),
   );
 
-  context.subscriptions.push(openBoard);
+  context.subscriptions.push(openBoardCommand);
 }
 
 export function deactivate() {}

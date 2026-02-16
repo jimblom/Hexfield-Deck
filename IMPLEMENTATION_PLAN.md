@@ -213,7 +213,7 @@ tags: [planner, weekly]
 
 ## Implementation Phases
 
-### Phase 1: Core Foundation (Week 1-2)
+### Phase 1: Core Foundation (Week 1-2) ✅
 **Goal:** Basic board viewing works
 
 **Tasks:**
@@ -224,11 +224,11 @@ tags: [planner, weekly]
 - [x] Core package: Task parser (checkboxes, inline project tags)
 - [x] Core package: Metadata extractor (due dates, priority, time estimates)
 - [x] Core package: Data models (Card, BoardData, SubTask interfaces)
-- [ ] VS Code extension: Basic activation (detect markdown files with frontmatter)
-- [ ] VS Code extension: Register "Hexfield Deck: Open Board" command
-- [ ] VS Code extension: Create webview panel
-- [ ] VS Code extension: Simple hardcoded HTML rendering
-- [ ] VS Code extension: Parse markdown → display cards in 3 columns (Todo/In Progress/Done)
+- [x] VS Code extension: Basic activation (detect markdown files with frontmatter)
+- [x] VS Code extension: Register "Hexfield Deck: Open Board" command
+- [x] VS Code extension: Create webview panel
+- [x] VS Code extension: Simple hardcoded HTML rendering
+- [x] VS Code extension: Parse markdown → display cards in 3 columns (Todo/In Progress/Done)
 
 **Deliverable:** Open a planner markdown file, run command, see cards displayed in a basic 3-column board.
 
@@ -237,7 +237,9 @@ tags: [planner, weekly]
 - ✅ Opening a planner file displays webview with 3 columns
 - ✅ Tasks are parsed and appear in correct columns based on checkbox state
 - ✅ Inline project tags (`#project-name`) are recognized
-- ✅ Metadata (due dates, priority, time) is extracted but not yet displayed
+- ✅ Metadata (due dates, priority, time) is displayed with color-coded badges
+- ✅ Sub-task progress bars render correctly
+- ✅ Board updates live when markdown file is edited
 
 ---
 
@@ -573,4 +575,4 @@ Delete Task...
 ---
 
 **Last Updated:** 2026-02-16
-**Status:** 🔧 Phase 1 in progress — core parser complete, VS Code webview remaining
+**Status:** ✅ Phase 1 complete — v0.1.0-rc.1 released | 🚀 Phase 2 next
