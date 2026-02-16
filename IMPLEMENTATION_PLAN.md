@@ -61,7 +61,7 @@ hexfield-deck/
 | **Package Manager** | pnpm | Fast, efficient, industry standard for monorepos |
 | **Language** | TypeScript | Type safety, required for VS Code and Obsidian |
 | **Build Tool** | esbuild | Fast, modern, used by VS Code itself |
-| **Markdown Parser** | unified/remark | Industry standard, extensible, handles frontmatter |
+| **Markdown Parser** | Custom line-by-line | Zero-dep state machine; format is controlled (see ADR-0006) |
 | **Webview UI** | React + TypeScript | Community familiarity, reusable for Obsidian |
 | **Drag & Drop** | @dnd-kit | Modern, accessible, actively maintained |
 | **Date Utils** | date-fns | Industry standard, robust ISO week calculations |
@@ -217,13 +217,13 @@ tags: [planner, weekly]
 **Goal:** Basic board viewing works
 
 **Tasks:**
-- [ ] Initialize monorepo with pnpm workspaces
-- [ ] Set up TypeScript configuration (shared + per-package)
-- [ ] Set up ESLint + Prettier
-- [ ] Core package: Frontmatter parser (YAML)
-- [ ] Core package: Task parser (checkboxes, inline project tags)
-- [ ] Core package: Metadata extractor (due dates, priority, time estimates)
-- [ ] Core package: Data models (Card, BoardData, SubTask interfaces)
+- [x] Initialize monorepo with pnpm workspaces
+- [x] Set up TypeScript configuration (shared + per-package)
+- [x] Set up ESLint + Prettier
+- [x] Core package: Frontmatter parser (YAML)
+- [x] Core package: Task parser (checkboxes, inline project tags)
+- [x] Core package: Metadata extractor (due dates, priority, time estimates)
+- [x] Core package: Data models (Card, BoardData, SubTask interfaces)
 - [ ] VS Code extension: Basic activation (detect markdown files with frontmatter)
 - [ ] VS Code extension: Register "Hexfield Deck: Open Board" command
 - [ ] VS Code extension: Create webview panel
@@ -554,10 +554,10 @@ Delete Task...
 
 ## Next Steps
 
-1. **Review this plan** - User feedback and approval
-2. **Set up development environment** - pnpm, TypeScript, ESLint, Prettier
-3. **Initialize monorepo** - Create package structure, configure workspaces
-4. **Begin Phase 1** - Core parsing and basic board viewing
+1. ~~**Review this plan** - User feedback and approval~~ ✅
+2. ~~**Set up development environment** - pnpm, TypeScript, ESLint, Prettier~~ ✅
+3. ~~**Initialize monorepo** - Create package structure, configure workspaces~~ ✅
+4. **Finish Phase 1** - VS Code webview: activation, webview panel, basic 3-column board
 
 ---
 
@@ -568,8 +568,9 @@ Delete Task...
 3. ✅ **In-progress marker:** Use `- [/] Task` checkbox variant ONLY (no `#wip` tag to avoid conflicts)
 4. ✅ **Date library:** Use `date-fns` (industry standard, 14M+ weekly downloads, robust ISO week calculations)
 5. ✅ **Drag-and-drop library:** Use `@dnd-kit` (modern, actively maintained, better a11y and performance than react-beautiful-dnd)
+6. ✅ **Parser approach:** Line-by-line state machine, zero deps (see ADR-0006)
 
 ---
 
-**Last Updated:** 2026-02-13
-**Status:** ✅ Ready for Phase 1 implementation
+**Last Updated:** 2026-02-16
+**Status:** 🔧 Phase 1 in progress — core parser complete, VS Code webview remaining
