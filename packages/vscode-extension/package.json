@@ -1,0 +1,35 @@
+{
+  "name": "hexfield-deck",
+  "displayName": "Hexfield Deck",
+  "description": "Markdown-powered kanban task board for VS Code",
+  "version": "0.0.1",
+  "publisher": "jimblom",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "hexfield-deck.openBoard",
+        "title": "Hexfield Deck: Open Board"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "pnpm build --watch",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@hexfield-deck/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.85.0",
+    "esbuild": "0.24.2",
+    "typescript": "5.7.3"
+  }
+}

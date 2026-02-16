@@ -32,9 +32,8 @@
     },
     "files": [],
     "references": [
-        // Will be populated as we create packages
-        // { "path": "./packages/core" },
-        // { "path": "./packages/vscode-extension" }
+        { "path": "./packages/core" },
+        { "path": "./packages/vscode-extension" }
     ],
     "exclude": ["node_modules", "dist", "build", "out", "coverage"]
 }

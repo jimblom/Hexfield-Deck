@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "build",
+      "path": "packages/vscode-extension",
+      "group": "build",
+      "label": "npm: build - packages/vscode-extension",
+      "problemMatcher": ["$esbuild"]
+    }
+  ]
+}
