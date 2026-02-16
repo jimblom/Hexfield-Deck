@@ -1,0 +1,219 @@
+# Hexfield Deck
+
+> **Markdown-powered kanban task board for VS Code and Obsidian**
+
+Hexfield Deck transforms your markdown weekly planner files into interactive kanban boards. Write tasks in plain text with inline metadata, then visualize and manage them on a drag-and-drop board — all without ever leaving your editor.
+
+![Hexfield Deck in action](docs/phase-1-example.png)
+
+---
+
+## ✨ Features
+
+### Current (v0.1.0-rc.1)
+
+- ✅ **3-column kanban board** (To Do / In Progress / Done)
+- ✅ **Live markdown sync** — Edit the file, board updates automatically
+- ✅ **Rich metadata badges** — Project tags, due dates, priorities, time estimates
+- ✅ **Color-coded due dates** — Overdue (red), today (orange), upcoming (yellow), future (gray)
+- ✅ **Sub-task progress tracking** — Progress bars and checklist visualization
+- ✅ **Native VS Code theming** — Matches your editor's color scheme
+
+### Coming Soon
+
+- 🔄 **Drag-and-drop editing** — Move cards between columns to update checkbox states
+- 📊 **Multiple views** — Standard, Swimlane (by day), Backlog (by priority)
+- 🗓️ **Week navigation** — Browse weeks with auto-file creation
+- 🎯 **Context menu CRUD** — Right-click to edit, move, and delete tasks
+- 🎨 **Project customization** — Configure colors and links for project tags
+- 🔌 **Obsidian plugin** — Full feature parity for Obsidian users
+
+---
+
+## 🚀 Quick Start
+
+### Installation
+
+**Option 1: From Release (Recommended for Testing)**
+
+1. Download `hexfield-deck-0.1.0-rc.1.vsix` from the [Releases](../../releases) page
+2. In VS Code: `Extensions → ⋯ → Install from VSIX...`
+3. Select the downloaded `.vsix` file
+
+**Option 2: From Source**
+
+```bash
+git clone git@github.com:jimblom/Hexfield-Deck.git
+cd Hexfield-Deck
+pnpm install
+pnpm build
+cd packages/vscode-extension
+pnpm package
+# Install the generated .vsix file
+```
+
+### Usage
+
+1. Open a weekly planner markdown file (see [example format](#markdown-format))
+2. Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+3. Run **"Hexfield Deck: Open Board"**
+4. The board opens beside your editor with live updates
+
+---
+
+## 📝 Markdown Format
+
+Hexfield Deck parses structured markdown files with a specific format:
+
+```markdown
+---
+week: 7
+year: 2026
+tags: [planner, weekly]
+---
+
+## Monday, February 9, 2026
+
+- [ ] Fix rendering glitch #hexfield [2026-02-09] !!
+  - [x] Reproduce on the bridge
+  - [ ] Check viewport calculations
+- [/] Rewire nacelle couplings #deep13 est:3h
+- [ ] Review submission !!!
+
+## Tuesday, February 10, 2026
+
+- [ ] Ship parser v1 #hexfield [2026-02-10] !!! est:4h
+
+## Backlog
+
+### Now
+- [ ] Urgent item #project
+
+### Next 2 Weeks
+- [ ] Coming soon #project
+```
+
+**Checkbox States:**
+- `[ ]` → To Do
+- `[/]` → In Progress
+- `[x]` → Done
+
+**Metadata Syntax:**
+- `#project-name` → Project tag (blue badge)
+- `[2026-02-15]` → Due date (color-coded by proximity)
+- `!!!` / `!!` / `!` → Priority (high/medium/low)
+- `est:2h` → Time estimate
+
+See [examples/weekly-planner.md](examples/weekly-planner.md) for a complete example.
+
+---
+
+## 📚 Documentation
+
+- **[User Guide](USER_GUIDE.md)** — Complete usage documentation *(coming soon)*
+- **[Setup Guide](SETUP.md)** — Development environment setup
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** — Roadmap and phases
+- **[Architecture Decisions](docs/decisions/)** — Technical ADRs
+
+---
+
+## 🛠️ Development
+
+### Prerequisites
+
+- [Volta](https://volta.sh/) for Node.js version management
+- [pnpm](https://pnpm.io/) for package management
+
+### Setup
+
+```bash
+git clone git@github.com:jimblom/Hexfield-Deck.git
+cd Hexfield-Deck
+pnpm install
+pnpm build
+```
+
+### Testing the Extension
+
+1. Open the project in VS Code
+2. Press `F5` to launch the Extension Development Host
+3. Open `examples/weekly-planner.md` in the new window
+4. Run **"Hexfield Deck: Open Board"**
+
+### Architecture
+
+This is a monorepo with three packages:
+
+```
+packages/
+├── core/              # Shared TypeScript library (parser, models)
+├── vscode-extension/  # VS Code extension
+└── obsidian-plugin/   # Obsidian plugin (Phase 8)
+```
+
+See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full technical plan.
+
+---
+
+## 🎯 Roadmap
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| **Phase 1** | ✅ Complete | Core parser + basic webview board |
+| **Phase 2** | 📋 Planned | Drag-and-drop + real-time sync |
+| **Phase 3** | 📋 Planned | Metadata & sub-tasks (interactive) |
+| **Phase 4** | 📋 Planned | Multiple views & filtering |
+| **Phase 5** | 📋 Planned | Context menu CRUD operations |
+| **Phase 6** | 📋 Planned | Week navigation |
+| **Phase 7** | 📋 Planned | Settings & production polish |
+| **Phase 8** | 🔮 Future | Obsidian plugin |
+
+**Target:** v1.0.0 release in ~8 weeks from start
+
+See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for detailed phase breakdowns.
+
+---
+
+## 🎬 About the Name
+
+**Hexfield Deck** is named after the **Hexfield Viewscreen** on the Satellite of Love from *Mystery Science Theater 3000* — the ship's main visual display and communication screen. The name is a triple reference:
+
+- **Hexfield** — The iconic hexagonal viewscreen
+- **Deck** — The command deck where the viewscreen lives, a deck of cards (kanban), and the connotation of command/oversight
+
+This project is part of a broader MST3K-themed productivity toolset. Other planned tools include:
+
+- **Time Chasers** — Activity/fitness tracker (Ep #821)
+- **Deep 13** — Home lab container projects
+- **Code Name: Diamond Head** — Secrets manager (Ep #608)
+
+---
+
+## 📜 License
+
+MIT License — Copyright (c) 2026 Jim Lindblom (jimblom)
+
+See [LICENSE](LICENSE) for details.
+
+---
+
+## 🤝 Contributing
+
+This is a personal project in early development. Contributions are welcome once v1.0.0 is released. For now, feel free to:
+
+- 🐛 [Report bugs](../../issues)
+- 💡 [Suggest features](../../issues)
+- 📖 [Improve documentation](../../pulls)
+
+---
+
+## 🔗 Links
+
+- **Repository:** [github.com/jimblom/Hexfield-Deck](https://github.com/jimblom/Hexfield-Deck)
+- **Issues:** [github.com/jimblom/Hexfield-Deck/issues](https://github.com/jimblom/Hexfield-Deck/issues)
+- **Author:** Jim Lindblom ([@jimblom](https://github.com/jimblom))
+- **License:** MIT
+
+---
+
+**Keep the Satellite running. Keep your tasks in order. Welcome to Hexfield Deck.** 🚀
