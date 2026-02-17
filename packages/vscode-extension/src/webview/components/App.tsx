@@ -14,6 +14,7 @@ const vscode = acquireVsCodeApi();
 export function App() {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
+  const [isDirty, setIsDirty] = useState<boolean>(false);
 
   useEffect(() => {
     // Listen for messages from extension
@@ -23,6 +24,7 @@ export function App() {
         case "update":
           setBoardData(message.boardData);
           setCards(message.cards);
+          setIsDirty(message.isDirty ?? false);
           break;
       }
     };
@@ -55,7 +57,14 @@ export function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>Hexfield Deck</h1>
+        <div className="header-main">
+          <h1>Hexfield Deck</h1>
+          {isDirty && (
+            <span className="unsaved-indicator" title="File has unsaved changes">
+              ● Unsaved changes
+            </span>
+          )}
+        </div>
         <div className="subtitle">
           Week {boardData.frontmatter.week}, {boardData.frontmatter.year}
         </div>

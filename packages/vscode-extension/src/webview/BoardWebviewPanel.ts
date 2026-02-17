@@ -146,6 +146,7 @@ export class BoardWebviewPanel {
       type: "update",
       boardData: board,
       cards: cards,
+      isDirty: this._document.isDirty,
     });
   }
 

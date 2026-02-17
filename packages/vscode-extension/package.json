@@ -23,7 +23,23 @@
         "command": "hexfield-deck.openBoard",
         "title": "Hexfield Deck: Open Board"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "hexfield-deck.openBoard",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@10"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "hexfield-deck.openBoard",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@10"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "pnpm build:extension && pnpm build:webview",
