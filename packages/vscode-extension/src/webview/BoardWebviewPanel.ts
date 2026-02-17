@@ -22,9 +22,6 @@ export class BoardWebviewPanel {
     // Set initial HTML
     this._panel.webview.html = this._getHtmlForWebview();
 
-    // Initial data send
-    this._update();
-
     // Listen to document changes
     vscode.workspace.onDidChangeTextDocument(
       (e) => {
@@ -40,6 +37,10 @@ export class BoardWebviewPanel {
     this._panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message.type) {
+          case "ready":
+            // Webview is ready, send initial data
+            this._update();
+            break;
           case "moveCard":
             this._handleMoveCard(message.cardId, message.newStatus);
             break;
