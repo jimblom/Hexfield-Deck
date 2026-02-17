@@ -243,20 +243,19 @@ tags: [planner, weekly]
 
 ---
 
-### Phase 2: Drag & Drop + Real-Time Sync (Week 2-3)
+### Phase 2: Drag & Drop + Real-Time Sync (Week 2-3) ✅
 **Goal:** Interactive board with markdown sync
 
 **Tasks:**
-- [ ] Webview UI: Set up React + TypeScript build with esbuild
-- [ ] Webview UI: Install and configure @dnd-kit/core and @dnd-kit/sortable
-- [ ] Webview UI: Implement drag-and-drop between columns using @dnd-kit
-- [ ] Webview UI: Send `moveCard` messages to extension
-- [ ] Extension: Handle `moveCard` messages
-- [ ] Extension: Update markdown file (toggle checkbox `[ ]` ↔ `[x]` ↔ `[/]`)
-- [ ] Extension: Set up file watcher on current markdown document
-- [ ] Extension: Debounced refresh (500ms after typing stops)
-- [ ] Core: Checkbox state manipulation utilities (handle 3 states: `[ ]`, `[/]`, `[x]`)
-- [ ] Core: Parse `[/]` checkbox variant as in-progress status
+- [x] Webview UI: Set up React + TypeScript build with esbuild
+- [x] Webview UI: Install and configure @dnd-kit/core and @dnd-kit/sortable
+- [x] Webview UI: Implement drag-and-drop between columns using @dnd-kit
+- [x] Webview UI: Send `moveCard` messages to extension
+- [x] Extension: Handle `moveCard` messages
+- [x] Extension: Update markdown file (toggle checkbox `[ ]` ↔ `[x]` ↔ `[/]`)
+- [x] Extension: Set up file watcher on current markdown document
+- [x] Extension: Live refresh on document changes (VS Code handles debouncing)
+- [x] Core: Parse `[/]` checkbox variant as in-progress status (done in Phase 1)
 
 **Deliverable:** Drag cards between columns and see markdown file update in real-time. Edit markdown file and see board update automatically.
 
@@ -266,7 +265,7 @@ tags: [planner, weekly]
 - ✅ Drag card from Done → Todo changes `- [x]` to `- [ ]`
 - ✅ Drag card from In Progress → Todo changes `- [/]` to `- [ ]`
 - ✅ Drag card from Done → In Progress changes `- [x]` to `- [/]`
-- ✅ Typing in markdown editor refreshes board after 500ms delay
+- ✅ Editing markdown file refreshes board automatically
 - ✅ No excessive refreshes during rapid typing
 
 ---
@@ -575,4 +574,4 @@ Delete Task...
 ---
 
 **Last Updated:** 2026-02-16
-**Status:** ✅ Phase 1 complete — v0.1.0-rc.1 released | 🚀 Phase 2 next
+**Status:** ✅ Phase 2 complete — Drag-and-drop functional | 🚀 Phase 3 next

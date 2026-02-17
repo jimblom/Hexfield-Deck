@@ -23,17 +23,42 @@
         "command": "hexfield-deck.openBoard",
         "title": "Hexfield Deck: Open Board"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "hexfield-deck.openBoard",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@10"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "hexfield-deck.openBoard",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@10"
+        }
+      ]
+    }
   },
   "scripts": {
-    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build": "pnpm build:extension && pnpm build:webview",
+    "build:extension": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build:webview": "esbuild src/webview/index.tsx --bundle --outfile=dist/webview.js --format=iife --platform=browser --loader:.css=text",
     "watch": "pnpm build --watch",
     "package": "vsce package --no-dependencies"
   },
   "dependencies": {
-    "@hexfield-deck/core": "workspace:*"
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
+    "@hexfield-deck/core": "workspace:*",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
     "@types/vscode": "1.85.0",
     "@vscode/vsce": "3.7.1",
     "esbuild": "0.24.2",
