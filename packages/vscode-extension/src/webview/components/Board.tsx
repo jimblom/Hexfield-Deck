@@ -12,9 +12,10 @@ import type { Card, TaskStatus } from "@hexfield-deck/core";
 interface BoardProps {
   cards: Card[];
   onCardMove: (cardId: string, newStatus: string) => void;
+  onToggleSubTask: (lineNumber: number) => void;
 }
 
-export function Board({ cards, onCardMove }: BoardProps) {
+export function Board({ cards, onCardMove, onToggleSubTask }: BoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -62,9 +63,9 @@ export function Board({ cards, onCardMove }: BoardProps) {
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="board">
-        <Column id="todo" title="To Do" cards={todoCards} />
-        <Column id="in-progress" title="In Progress" cards={inProgressCards} />
-        <Column id="done" title="Done" cards={doneCards} />
+        <Column id="todo" title="To Do" cards={todoCards} onToggleSubTask={onToggleSubTask} />
+        <Column id="in-progress" title="In Progress" cards={inProgressCards} onToggleSubTask={onToggleSubTask} />
+        <Column id="done" title="Done" cards={doneCards} onToggleSubTask={onToggleSubTask} />
       </div>
     </DndContext>
   );

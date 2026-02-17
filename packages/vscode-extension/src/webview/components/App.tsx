@@ -38,11 +38,17 @@ export function App() {
   }, []);
 
   const handleCardMove = (cardId: string, newStatus: string) => {
-    // Send message to extension to update markdown
     vscode.postMessage({
       type: "moveCard",
       cardId,
       newStatus,
+    });
+  };
+
+  const handleToggleSubTask = (lineNumber: number) => {
+    vscode.postMessage({
+      type: "toggleSubTask",
+      lineNumber,
     });
   };
 
@@ -69,7 +75,7 @@ export function App() {
           Week {boardData.frontmatter.week}, {boardData.frontmatter.year}
         </div>
       </div>
-      <Board cards={cards} onCardMove={handleCardMove} />
+      <Board cards={cards} onCardMove={handleCardMove} onToggleSubTask={handleToggleSubTask} />
     </div>
   );
 }

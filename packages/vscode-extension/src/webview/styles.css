@@ -168,6 +168,16 @@ body {
   font-family: var(--vscode-editor-font-family);
 }
 
+.subtask-clickable {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+
+.subtask-clickable:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
 .empty-placeholder {
   color: var(--vscode-descriptionForeground);
   font-style: italic;

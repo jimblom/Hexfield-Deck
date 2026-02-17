@@ -1,16 +1,21 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(pnpm:*)",
-      "Bash(node --version:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(npx tsx:*)",
-      "WebSearch",
-      "Bash(git tag:*)",
-      "Bash(ls:*)",
-      "Bash(git checkout:*)",
-      "Bash(git restore:*)"
-    ]
-  }
+    "permissions": {
+        "allow": [
+            "Bash(pnpm:*)",
+            "Bash(node --version:*)",
+            "Bash(git add:*)",
+            "Bash(git commit:*)",
+            "Bash(npx tsx:*)",
+            "WebSearch",
+            "Bash(git tag:*)",
+            "Bash(ls:*)",
+            "Bash(git checkout:*)",
+            "Bash(git restore:*)",
+            "Bash(git log:*)",
+            "Bash(git push:*)",
+            "WebFetch(domain:github.com)",
+            "Bash(gh pr view:*)",
+            "Bash(gh pr edit:*)"
+        ]
+    }
 }

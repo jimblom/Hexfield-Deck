@@ -5,6 +5,7 @@ import type { Card, SubTask } from "@hexfield-deck/core";
 
 interface CardProps {
   card: Card;
+  onToggleSubTask: (lineNumber: number) => void;
 }
 
 function getDueDateColor(dueDate: string): string {
@@ -50,7 +51,13 @@ function Badge({
   );
 }
 
-function SubTaskProgress({ subTasks }: { subTasks: SubTask[] }) {
+function SubTaskProgress({
+  subTasks,
+  onToggle,
+}: {
+  subTasks: SubTask[];
+  onToggle: (lineNumber: number) => void;
+}) {
   if (subTasks.length === 0) return null;
 
   const completed = subTasks.filter((st) => st.status === "done").length;
@@ -70,7 +77,12 @@ function SubTaskProgress({ subTasks }: { subTasks: SubTask[] }) {
           const icon =
             st.status === "done" ? "✓" : st.status === "in-progress" ? "◐" : "○";
           return (
-            <div key={idx} className="subtask-item">
+            <div
+              key={idx}
+              className="subtask-item subtask-clickable"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onToggle(st.lineNumber)}
+            >
               {icon} {st.text}
             </div>
           );
@@ -80,7 +92,7 @@ function SubTaskProgress({ subTasks }: { subTasks: SubTask[] }) {
   );
 }
 
-export function CardComponent({ card }: CardProps) {
+export function CardComponent({ card, onToggleSubTask }: CardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
@@ -117,7 +129,7 @@ export function CardComponent({ card }: CardProps) {
           {card.day && <Badge label={card.day} />}
         </div>
       )}
-      <SubTaskProgress subTasks={card.subTasks} />
+      <SubTaskProgress subTasks={card.subTasks} onToggle={onToggleSubTask} />
     </div>
   );
 }
