@@ -51,3 +51,15 @@ jobs:
       - name: Test
         run: pnpm test || echo "No tests yet - skipping"
         continue-on-error: true
+
+      - name: Package extension
+        run: |
+          cd packages/vscode-extension
+          pnpm package
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hexfield-deck-vsix
+          path: packages/vscode-extension/*.vsix
+          retention-days: 30
