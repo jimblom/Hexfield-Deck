@@ -2,7 +2,7 @@
   "name": "hexfield-deck",
   "displayName": "Hexfield Deck",
   "description": "Markdown-powered kanban task board for VS Code",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "jimblom",
   "license": "MIT",
   "repository": {
@@ -43,7 +43,7 @@
   },
   "scripts": {
     "build": "pnpm build:extension && pnpm build:webview",
-    "build:extension": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build:extension": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --loader:.css=text",
     "build:webview": "esbuild src/webview/index.tsx --bundle --outfile=dist/webview.js --format=iife --platform=browser --loader:.css=text",
     "watch": "pnpm build --watch",
     "package": "vsce package --no-dependencies"
