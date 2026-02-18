@@ -4,7 +4,11 @@
 
 Hexfield Deck transforms your markdown weekly planner files into interactive kanban boards. Write tasks in plain text with inline metadata, then visualize and manage them on a drag-and-drop board — all without ever leaving your editor.
 
-![Hexfield Deck in action](docs/phase-3-example.png)
+![Hexfield Deck — Standard View](docs/phase-3-example.png)
+
+| Swimlane View | Backlog View |
+|:---:|:---:|
+| ![Swimlane View](docs/phase-4-swimlane-view.png) | ![Backlog View](docs/phase-4-backlog-view.png) |
 
 ---
 
@@ -23,9 +27,13 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 - ✅ **Unsaved changes indicator** — Visual feedback when the board has pending changes
 - ✅ **Native VS Code theming** — Matches your editor's color scheme
 
+- ✅ **Swimlane view** — Day-of-week rows × status columns with cross-day drag-and-drop
+- ✅ **Backlog view** — Priority buckets (Now, Next 2 Weeks, This Month, etc.) with drag between sections
+- ✅ **Card sorting** — Sort by file order, priority, status, project, or estimate across all views
+- ✅ **View persistence** — Selected view remembered across panel show/hide
+
 ### Coming Soon
 
-- 📊 **Multiple views** — Standard, Swimlane (by day), Backlog (by priority)
 - 🗓️ **Week navigation** — Browse weeks with auto-file creation
 - 🎯 **Context menu CRUD** — Right-click to edit, move, and delete tasks
 - 🎨 **Project customization** — Configure colors and links for project tags
@@ -78,8 +86,8 @@ tags: [planner, weekly]
 ## Monday, February 9, 2026
 
 - [ ] Fix rendering glitch #hexfield [2026-02-09] !!
-  - [x] Reproduce on the bridge
-  - [ ] Check viewport calculations
+    - [x] Reproduce on the bridge
+    - [ ] Check viewport calculations
 - [/] Rewire nacelle couplings #deep13 est:3h
 - [ ] Review submission !!!
 
@@ -90,18 +98,22 @@ tags: [planner, weekly]
 ## Backlog
 
 ### Now
+
 - [ ] Urgent item #project
 
 ### Next 2 Weeks
+
 - [ ] Coming soon #project
 ```
 
 **Checkbox States:**
+
 - `[ ]` → To Do
 - `[/]` → In Progress
 - `[x]` → Done
 
 **Metadata Syntax:**
+
 - `#project-name` → Project tag (blue badge)
 - `[2026-02-15]` → Due date (color-coded by proximity)
 - `!!!` / `!!` / `!` → Priority (high/medium/low)
@@ -113,7 +125,7 @@ See [examples/weekly-planner.md](examples/weekly-planner.md) for a complete exam
 
 ## 📚 Documentation
 
-- **[User Guide](USER_GUIDE.md)** — Complete usage documentation *(coming soon)*
+- **[User Guide](USER_GUIDE.md)** — Complete usage documentation _(coming soon)_
 - **[Setup Guide](SETUP.md)** — Development environment setup
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** — Roadmap and phases
 - **[Architecture Decisions](docs/decisions/)** — Technical ADRs
@@ -160,16 +172,16 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full technical plan
 
 ## 🎯 Roadmap
 
-| Phase | Status | Description |
-|-------|--------|-------------|
+| Phase       | Status      | Description                       |
+| ----------- | ----------- | --------------------------------- |
 | **Phase 1** | ✅ Complete | Core parser + basic webview board |
-| **Phase 2** | ✅ Complete | Drag-and-drop + real-time sync |
-| **Phase 3** | ✅ Complete | Interactive sub-task checkboxes |
-| **Phase 4** | 📋 Planned | Multiple views & filtering |
-| **Phase 5** | 📋 Planned | Context menu CRUD operations |
-| **Phase 6** | 📋 Planned | Week navigation |
-| **Phase 7** | 📋 Planned | Settings & production polish |
-| **Phase 8** | 🔮 Future | Obsidian plugin |
+| **Phase 2** | ✅ Complete | Drag-and-drop + real-time sync    |
+| **Phase 3** | ✅ Complete | Interactive sub-task checkboxes   |
+| **Phase 4** | ✅ Complete | Multiple views & sorting           |
+| **Phase 5** | 📋 Planned  | Context menu CRUD operations      |
+| **Phase 6** | 📋 Planned  | Week navigation                   |
+| **Phase 7** | 📋 Planned  | Settings & production polish      |
+| **Phase 8** | 🔮 Future   | Obsidian plugin                   |
 
 **Target:** v1.0.0 release in ~8 weeks from start
 
@@ -179,16 +191,10 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for detailed phase breakdow
 
 ## 🎬 About the Name
 
-**Hexfield Deck** is named after the **Hexfield Viewscreen** on the Satellite of Love from *Mystery Science Theater 3000* — the ship's main visual display and communication screen. The name is a triple reference:
+**Hexfield Deck** is named after the **Hexfield Viewscreen** on the Satellite of Love from _Mystery Science Theater 3000_ — the ship's main visual display and communication screen. The name is a triple reference:
 
 - **Hexfield** — The iconic hexagonal viewscreen
 - **Deck** — The command deck where the viewscreen lives, a deck of cards (kanban), and the connotation of command/oversight
-
-This project is part of a broader MST3K-themed productivity toolset. Other planned tools include:
-
-- **Time Chasers** — Activity/fitness tracker (Ep #821)
-- **Deep 13** — Home lab container projects
-- **Code Name: Diamond Head** — Secrets manager (Ep #608)
 
 ---
 
