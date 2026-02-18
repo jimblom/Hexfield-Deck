@@ -47,9 +47,55 @@ body {
   font-weight: 500;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .header .subtitle {
   font-size: 14px;
   color: var(--vscode-descriptionForeground);
+}
+
+.view-switcher {
+  display: flex;
+  gap: 2px;
+  background-color: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.view-btn {
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.view-btn:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.view-btn.active {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  font-weight: 600;
+}
+
+.placeholder-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
 }
 
 .loading {
@@ -183,4 +229,258 @@ body {
   font-style: italic;
   text-align: center;
   padding: 20px;
+}
+
+/* Sort Bar */
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.sort-label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-right: 4px;
+}
+
+.sort-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.sort-btn:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.sort-btn.active {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  border-color: var(--vscode-panel-border);
+  font-weight: 600;
+}
+
+/* Backlog View */
+
+.backlog-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.backlog-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.backlog-bucket {
+  background-color: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.backlog-bucket-over {
+  border-color: var(--vscode-focusBorder);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.backlog-card {
+  cursor: grab;
+  user-select: none;
+}
+
+.backlog-card:active {
+  cursor: grabbing;
+}
+
+.bucket-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--vscode-foreground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bucket-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+}
+
+.bucket-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.backlog-card {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.backlog-card:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.backlog-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.backlog-card-content .card-title {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.backlog-card-content .card-badges {
+  margin-bottom: 0;
+}
+
+.status-icon {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--vscode-descriptionForeground);
+  border-radius: 3px;
+}
+
+.status-icon:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.backlog-subtask-summary {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 4px;
+}
+
+/* Swimlane View */
+
+.swimlane-view {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1fr;
+  grid-auto-rows: min-content;
+  gap: 1px;
+  overflow-y: auto;
+  background-color: var(--vscode-panel-border);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+}
+
+.swimlane-header {
+  display: contents;
+}
+
+.swimlane-col-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  background-color: var(--vscode-sideBar-background);
+}
+
+.swimlane-row {
+  display: contents;
+}
+
+.swimlane-label-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  background-color: var(--vscode-sideBar-background);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.swimlane-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px;
+  line-height: 1;
+}
+
+.swimlane-collapse-btn:hover {
+  color: var(--vscode-foreground);
+}
+
+.swimlane-label {
+  flex: 1;
+}
+
+.swimlane-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+}
+
+.swimlane-cell {
+  background-color: var(--vscode-editor-background);
+  padding: 6px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.swimlane-cell-over {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.swimlane-cell .card {
+  padding: 8px;
+}
+
+.swimlane-cell .card-title {
+  font-size: 12px;
+}
+
+.swimlane-cell .card-badges {
+  margin-bottom: 4px;
+}
+
+.swimlane-cell .badge {
+  font-size: 10px;
+  padding: 1px 4px;
+}
+
+.swimlane-collapsed-summary {
+  grid-column: 2 / -1;
+  padding: 8px 10px;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  font-style: italic;
 }

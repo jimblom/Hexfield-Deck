@@ -301,32 +301,32 @@ tags: [planner, weekly]
 
 ---
 
-### Phase 4: Views & Filtering (Week 4-5)
-**Goal:** Multiple board views (Standard, Swimlane, Backlog) with filtering
+### Phase 4: Views & Sorting (Week 4-5) ✅
+**Goal:** Multiple board views (Standard, Swimlane, Backlog) with sorting
 
 **Tasks:**
-- [ ] Webview UI: Create view switcher toolbar (Standard / Swimlane / Backlog buttons)
-- [ ] Webview UI: Implement Standard view (current 3-column layout, all tasks)
-- [ ] Webview UI: Implement Swimlane view (group by day, each day has 3 columns, collapsible)
-- [ ] Webview UI: Implement Backlog view (6 priority buckets: Now, Next 2 Weeks, This Month, This Quarter, This Year, Parking Lot)
-- [ ] Core: Extract available days from day sections
-- [ ] Core: Extract available projects from inline tags
-- [ ] Webview UI: Add filter controls (filter by day dropdown)
-- [ ] Webview UI: Add filter controls (filter by project dropdown)
-- [ ] Webview UI: Add sort controls (by day, by project, by priority, by due date, by time estimate)
-- [ ] Extension: Persist view preference to workspace state
+- [x] Webview UI: Create view switcher toolbar (Standard / Swimlane / Backlog buttons)
+- [x] Webview UI: Implement Standard view (current 3-column layout, all tasks)
+- [x] Webview UI: Implement Swimlane view (group by day, each day has 3 columns, collapsible)
+- [x] Webview UI: Implement Backlog view (6 priority buckets: Now, Next 2 Weeks, This Month, This Quarter, This Year, Parking Lot)
+- [x] Webview UI: Add sort controls (by file order, priority, status, project, estimate) on all views
+- [x] Webview UI: Drag-and-drop between backlog priority buckets
+- [x] Webview UI: Cross-day drag-and-drop in Swimlane view
+- [x] Extension: Handle `moveCardToDay` messages (cut/paste card lines between day sections)
+- [x] Extension: Handle `moveCardToSection` messages (move cards between backlog buckets)
+- [x] Extension: Persist view preference via webview setState/getState
 
-**Deliverable:** Three distinct board views. Users can filter by day/project and sort by various criteria.
+**Deliverable:** Three distinct board views with sorting and cross-view drag-and-drop.
 
 **Acceptance Criteria:**
 - ✅ View switcher toggles between Standard/Swimlane/Backlog
 - ✅ Standard view shows all tasks in 3 columns
 - ✅ Swimlane view groups tasks by day, each with 3 columns
 - ✅ Swimlane days are collapsible/expandable
-- ✅ Backlog view shows 6 priority buckets
-- ✅ Filter by day works in Standard and Swimlane views
-- ✅ Filter by project works in all views
-- ✅ Sort options reorder cards correctly
+- ✅ Backlog row in Swimlane, collapsed by default
+- ✅ Backlog view shows 6 priority buckets with drag between them
+- ✅ Cross-day drag-and-drop in Swimlane view moves card lines between sections
+- ✅ Sort options (5 keys) reorder cards correctly on all views
 - ✅ View preference persists when closing/reopening board
 
 ---
@@ -573,5 +573,5 @@ Delete Task...
 
 ---
 
-**Last Updated:** 2026-02-16
-**Status:** ✅ Phase 3 complete — Interactive sub-tasks | 🚀 Phase 4 next
+**Last Updated:** 2026-02-18
+**Status:** ✅ Phase 4 complete — Views & Sorting | 🚀 Phase 5 next
