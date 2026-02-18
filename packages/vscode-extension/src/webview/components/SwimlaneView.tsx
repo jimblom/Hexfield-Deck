@@ -135,6 +135,12 @@ export function SwimlaneView({
     setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  /** Check if a card belongs to the backlog (no day property). */
+  const isBacklogCard = (c: Card) => !c.day;
+
+  /** Get the effective row key for a card. */
+  const getCardRow = (c: Card) => c.day || "Backlog";
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
@@ -148,16 +154,17 @@ export function SwimlaneView({
     // Try parsing as a composite drop zone ID (day:status)
     const dropTarget = parseDropId(overId);
     if (dropTarget) {
-      const sameDay = card.day === dropTarget.day || card.section === dropTarget.day;
-      const sameStatus = card.status === dropTarget.status;
+      const sourceRow = getCardRow(card);
+      const targetRow = dropTarget.day;
+      const sameRow = sourceRow === targetRow;
 
-      if (sameDay && sameStatus) return; // No change
+      if (sameRow && card.status === dropTarget.status) return;
 
-      if (sameDay) {
-        // Same day, just change status
+      if (sameRow || isBacklogCard(card) || targetRow === "Backlog") {
+        // Same row, or involves backlog — just change status
         onCardMove(cardId, dropTarget.status);
       } else {
-        // Cross-day move
+        // Cross-day move (between actual day sections)
         onCardMoveToDay(cardId, dropTarget.day, dropTarget.status);
       }
       return;
@@ -167,16 +174,18 @@ export function SwimlaneView({
     const targetCard = allCards.find((c) => c.id === overId);
     if (!targetCard) return;
 
-    const targetDay = targetCard.day || targetCard.section || "";
-    const sourceDay = card.day || card.section || "";
-    const sameDay = sourceDay === targetDay;
+    const sourceRow = getCardRow(card);
+    const targetRow = getCardRow(targetCard);
+    const sameRow = sourceRow === targetRow;
 
-    if (sameDay && card.status === targetCard.status) return;
+    if (sameRow && card.status === targetCard.status) return;
 
-    if (sameDay) {
+    if (sameRow || isBacklogCard(card) || isBacklogCard(targetCard)) {
+      // Same row, or involves backlog — just change status
       onCardMove(cardId, targetCard.status);
     } else {
-      onCardMoveToDay(cardId, targetDay, targetCard.status);
+      // Cross-day move
+      onCardMoveToDay(cardId, targetRow, targetCard.status);
     }
   };
 
