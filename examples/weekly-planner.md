@@ -19,10 +19,10 @@ endDate: 2026-02-15
 
 ## Tuesday, February 10, 2026
 
-- [/] Ship parser v1 #hexfield [2026-02-10] !!! est:4h
+- [ ] Ship parser v1 #hexfield [2026-02-10] !!! est:4h
   - [/] Write frontmatter tests
-  - [ ] Wire up barrel exports
-  - [ ] Delete placeholder test
+  - [x] Wire up barrel exports
+  - [x] Delete placeholder test
 - [ ] Calibrate Cambot's focus module #sol
 - [x] File expense report for RAM chips due:2026-02-10
 
@@ -34,7 +34,7 @@ endDate: 2026-02-15
 - [/] Update Time Chasers pace algorithm #time-chasers
 
 ## Thursday, February 12, 2026
- 
+
 - [ ] Run full regression on Hexfield parser #hexfield est:1h
 - [ ] Movie sign prep — queue up *Space Mutiny* ⏱️ 2h
   - [ ] Cue Big McLargehuge name list
@@ -46,7 +46,7 @@ endDate: 2026-02-15
 
 - [ ] Sprint retro #hexfield
 - [ ] Deploy Hexfield Deck beta to the SOL bridge #hexfield [2026-02-13] !!! est:2h
-- [x] Write quarterly OKR draft
+- [/] Write quarterly OKR draft
   - [/] Key Result 1: Launch Hexfield Deck
   - [ ] Key Result 2: Survive another movie
 
