@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Board } from "./Board.js";
 import { BacklogView } from "./BacklogView.js";
+import { SwimlaneView } from "./SwimlaneView.js";
 import type { BoardData, Card } from "@hexfield-deck/core";
 
 type ViewMode = "standard" | "swimlane" | "backlog";
@@ -62,6 +63,15 @@ export function App() {
     });
   };
 
+  const handleCardMoveToDay = (cardId: string, targetDay: string, newStatus: string) => {
+    vscode.postMessage({
+      type: "moveCardToDay",
+      cardId,
+      targetDay,
+      newStatus,
+    });
+  };
+
   const handleToggleSubTask = (lineNumber: number) => {
     vscode.postMessage({
       type: "toggleSubTask",
@@ -82,7 +92,14 @@ export function App() {
       case "standard":
         return <Board cards={cards} onCardMove={handleCardMove} onToggleSubTask={handleToggleSubTask} />;
       case "swimlane":
-        return <div className="placeholder-view">Swimlane view coming soon</div>;
+        return (
+          <SwimlaneView
+            boardData={boardData}
+            onCardMove={handleCardMove}
+            onCardMoveToDay={handleCardMoveToDay}
+            onToggleSubTask={handleToggleSubTask}
+          />
+        );
       case "backlog":
         return <BacklogView boardData={boardData} onCardMove={handleCardMove} />;
     }
