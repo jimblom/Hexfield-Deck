@@ -12,6 +12,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CardComponent } from "./Card.js";
+import { SortBar, sortCards } from "./SortBar.js";
+import type { SortKey } from "./SortBar.js";
 import type { BoardData, Card, TaskStatus } from "@hexfield-deck/core";
 
 interface SwimlaneViewProps {
@@ -113,6 +115,8 @@ export function SwimlaneView({
   onCardMoveToDay,
   onToggleSubTask,
 }: SwimlaneViewProps) {
+  const [sortKey, setSortKey] = useState<SortKey>("default");
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -190,6 +194,8 @@ export function SwimlaneView({
   };
 
   return (
+    <>
+    <SortBar sortKey={sortKey} onSortChange={setSortKey} />
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="swimlane-view">
         {/* Column headers */}
@@ -203,9 +209,9 @@ export function SwimlaneView({
         {/* Rows */}
         {rows.map((row) => {
           const isCollapsed = collapsed[row.key] ?? false;
-          const todoCards = row.cards.filter((c) => c.status === "todo");
-          const inProgressCards = row.cards.filter((c) => c.status === "in-progress");
-          const doneCards = row.cards.filter((c) => c.status === "done");
+          const todoCards = sortCards(row.cards.filter((c) => c.status === "todo"), sortKey);
+          const inProgressCards = sortCards(row.cards.filter((c) => c.status === "in-progress"), sortKey);
+          const doneCards = sortCards(row.cards.filter((c) => c.status === "done"), sortKey);
           const totalCards = row.cards.length;
 
           return (
@@ -250,5 +256,6 @@ export function SwimlaneView({
         })}
       </div>
     </DndContext>
+    </>
   );
 }

@@ -231,7 +231,52 @@ body {
   padding: 20px;
 }
 
+/* Sort Bar */
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.sort-label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-right: 4px;
+}
+
+.sort-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.sort-btn:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.sort-btn.active {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  border-color: var(--vscode-panel-border);
+  font-weight: 600;
+}
+
 /* Backlog View */
+
+.backlog-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
 
 .backlog-view {
   display: grid;
@@ -246,6 +291,20 @@ body {
   border: 1px solid var(--vscode-panel-border);
   border-radius: 4px;
   padding: 12px;
+}
+
+.backlog-bucket-over {
+  border-color: var(--vscode-focusBorder);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.backlog-card {
+  cursor: grab;
+  user-select: none;
+}
+
+.backlog-card:active {
+  cursor: grabbing;
 }
 
 .bucket-title {

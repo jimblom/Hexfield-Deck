@@ -47,6 +47,9 @@ export class BoardWebviewPanel {
           case "moveCardToDay":
             this._handleMoveCardToDay(message.cardId, message.targetDay, message.newStatus);
             break;
+          case "moveCardToSection":
+            this._handleMoveCardToSection(message.cardId, message.targetSection);
+            break;
           case "toggleSubTask":
             this._handleToggleSubTask(message.lineNumber);
             break;
@@ -330,6 +333,93 @@ export class BoardWebviewPanel {
     newLines.splice(adjustedInsertAt, 0, ...cardLines);
 
     // Apply as a full document replacement
+    const edit = new vscode.WorkspaceEdit();
+    const fullRange = new vscode.Range(
+      0, 0,
+      lines.length - 1, lines[lines.length - 1].length,
+    );
+    edit.replace(this._document.uri, fullRange, newLines.join("\n"));
+
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  /** Map section keys to their markdown heading patterns. */
+  private _findSectionInsertionPoint(lines: string[], sectionKey: string): number | null {
+    // Map section keys to heading text
+    const sectionHeadings: Record<string, { level: number; text: string }> = {
+      "now": { level: 3, text: "Now" },
+      "next-2-weeks": { level: 3, text: "Next 2 Weeks" },
+      "this-month": { level: 3, text: "This Month" },
+      "this-quarter": { level: 2, text: "This Quarter" },
+      "this-year": { level: 2, text: "This Year" },
+      "parking-lot": { level: 2, text: "Parking Lot" },
+    };
+
+    const target = sectionHeadings[sectionKey];
+    if (!target) return null;
+
+    const prefix = "#".repeat(target.level);
+    const headingPattern = new RegExp(`^${prefix}\\s+${target.text}`, "i");
+    // The boundary is any heading at the same level or higher
+    const boundaryPattern = new RegExp(`^#{1,${target.level}}\\s`);
+
+    for (let i = 0; i < lines.length; i++) {
+      if (headingPattern.test(lines[i])) {
+        let insertAt = i + 1;
+
+        for (let j = i + 1; j < lines.length; j++) {
+          if (boundaryPattern.test(lines[j])) break;
+          insertAt = j + 1;
+        }
+
+        while (insertAt > i + 1 && lines[insertAt - 1].trim() === "") {
+          insertAt--;
+        }
+
+        return insertAt;
+      }
+    }
+
+    return null;
+  }
+
+  private async _handleMoveCardToSection(
+    cardId: string,
+    targetSection: string,
+  ): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const cards = allCards(board);
+
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) {
+      vscode.window.showErrorMessage(`Card not found: ${cardId}`);
+      return;
+    }
+
+    const lines = text.split("\n");
+    const cardLineIndex = card.lineNumber - 1;
+    const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
+
+    // Extract the card lines (keep checkbox as-is for section moves)
+    const cardLines = lines.slice(rangeStart, rangeEnd);
+
+    const insertAt = this._findSectionInsertionPoint(lines, targetSection);
+    if (insertAt === null) {
+      vscode.window.showErrorMessage(`Section not found: ${targetSection}`);
+      return;
+    }
+
+    const newLines = [...lines];
+    newLines.splice(rangeStart, rangeEnd - rangeStart);
+
+    let adjustedInsertAt = insertAt;
+    if (rangeStart < insertAt) {
+      adjustedInsertAt -= (rangeEnd - rangeStart);
+    }
+
+    newLines.splice(adjustedInsertAt, 0, ...cardLines);
+
     const edit = new vscode.WorkspaceEdit();
     const fullRange = new vscode.Range(
       0, 0,

@@ -72,6 +72,14 @@ export function App() {
     });
   };
 
+  const handleCardMoveToSection = (cardId: string, targetSection: string) => {
+    vscode.postMessage({
+      type: "moveCardToSection",
+      cardId,
+      targetSection,
+    });
+  };
+
   const handleToggleSubTask = (lineNumber: number) => {
     vscode.postMessage({
       type: "toggleSubTask",
@@ -101,7 +109,7 @@ export function App() {
           />
         );
       case "backlog":
-        return <BacklogView boardData={boardData} onCardMove={handleCardMove} />;
+        return <BacklogView boardData={boardData} onCardMove={handleCardMove} onCardMoveToSection={handleCardMoveToSection} />;
     }
   };
 
