@@ -14,7 +14,7 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 ## ✨ Features
 
-### Current (v0.1.0-rc.2)
+### Current (v0.2.0)
 
 - ✅ **3-column kanban board** (To Do / In Progress / Done)
 - ✅ **Drag-and-drop editing** — Move cards between columns to update checkbox states
@@ -47,7 +47,7 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 **Option 1: From Release (Recommended for Testing)**
 
-1. Download `hexfield-deck-0.1.0-rc.2.vsix` from the [Releases](../../releases) page
+1. Download `hexfield-deck-0.2.0.vsix` from the [Releases](../../releases) page
 2. In VS Code: `Extensions → ⋯ → Install from VSIX...`
 3. Select the downloaded `.vsix` file
 
