@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Card, SubTask } from "@hexfield-deck/core";
+import { ContextMenuContext } from "./App.js";
 
 interface CardProps {
   card: Card;
@@ -93,6 +94,7 @@ function SubTaskProgress({
 }
 
 export function CardComponent({ card, onToggleSubTask }: CardProps) {
+  const openContextMenu = useContext(ContextMenuContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
@@ -109,6 +111,10 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
       {...attributes}
       {...listeners}
       className="card"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        openContextMenu(card, { x: e.clientX, y: e.clientY });
+      }}
     >
       <div className="card-title">{card.title}</div>
       {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
