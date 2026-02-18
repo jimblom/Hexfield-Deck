@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { parseBoard, allCards } from "@hexfield-deck/core";
-import * as fs from "fs";
+// @ts-expect-error — esbuild bundles CSS as a text string via --loader:.css=text
+import stylesContent from "./styles.css";
 
 export class BoardWebviewPanel {
   public static currentPanel: BoardWebviewPanel | undefined;
@@ -129,14 +130,6 @@ export class BoardWebviewPanel {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "dist", "webview.js"),
     );
-
-    const stylesPath = vscode.Uri.joinPath(
-      this._extensionUri,
-      "src",
-      "webview",
-      "styles.css",
-    );
-    const stylesContent = fs.readFileSync(stylesPath.fsPath, "utf8");
 
     const nonce = this._getNonce();
 
