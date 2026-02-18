@@ -230,3 +230,93 @@ body {
   text-align: center;
   padding: 20px;
 }
+
+/* Backlog View */
+
+.backlog-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.backlog-bucket {
+  background-color: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.bucket-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--vscode-foreground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bucket-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+}
+
+.bucket-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.backlog-card {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.backlog-card:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.backlog-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.backlog-card-content .card-title {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.backlog-card-content .card-badges {
+  margin-bottom: 0;
+}
+
+.status-icon {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--vscode-descriptionForeground);
+  border-radius: 3px;
+}
+
+.status-icon:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.backlog-subtask-summary {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 4px;
+}

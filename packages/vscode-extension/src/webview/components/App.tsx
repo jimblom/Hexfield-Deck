@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Board } from "./Board.js";
+import { BacklogView } from "./BacklogView.js";
 import type { BoardData, Card } from "@hexfield-deck/core";
 
 type ViewMode = "standard" | "swimlane" | "backlog";
@@ -83,7 +84,7 @@ export function App() {
       case "swimlane":
         return <div className="placeholder-view">Swimlane view coming soon</div>;
       case "backlog":
-        return <div className="placeholder-view">Backlog view coming soon</div>;
+        return <BacklogView boardData={boardData} onCardMove={handleCardMove} />;
     }
   };
 
