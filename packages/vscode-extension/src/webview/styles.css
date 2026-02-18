@@ -47,9 +47,55 @@ body {
   font-weight: 500;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .header .subtitle {
   font-size: 14px;
   color: var(--vscode-descriptionForeground);
+}
+
+.view-switcher {
+  display: flex;
+  gap: 2px;
+  background-color: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.view-btn {
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.view-btn:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.view-btn.active {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  font-weight: 600;
+}
+
+.placeholder-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
 }
 
 .loading {
