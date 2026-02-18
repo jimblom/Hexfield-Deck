@@ -44,6 +44,9 @@ export class BoardWebviewPanel {
           case "moveCard":
             this._handleMoveCard(message.cardId, message.newStatus);
             break;
+          case "toggleSubTask":
+            this._handleToggleSubTask(message.lineNumber);
+            break;
         }
       },
       null,
@@ -191,6 +194,31 @@ export class BoardWebviewPanel {
       lineIndex,
       oldLine.length,
     );
+    edit.replace(this._document.uri, range, newLine);
+
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private async _handleToggleSubTask(lineNumber: number): Promise<void> {
+    const text = this._document.getText();
+    const lines = text.split("\n");
+    const lineIndex = lineNumber - 1; // Convert to 0-based
+    const oldLine = lines[lineIndex];
+
+    if (!oldLine) return;
+
+    // Cycle: [ ] → [/] → [x] → [ ]
+    let newLine: string;
+    if (/\[x\]/.test(oldLine)) {
+      newLine = oldLine.replace("[x]", "[ ]");
+    } else if (/\[\/\]/.test(oldLine)) {
+      newLine = oldLine.replace("[/]", "[x]");
+    } else {
+      newLine = oldLine.replace("[ ]", "[/]");
+    }
+
+    const edit = new vscode.WorkspaceEdit();
+    const range = new vscode.Range(lineIndex, 0, lineIndex, oldLine.length);
     edit.replace(this._document.uri, range, newLine);
 
     await vscode.workspace.applyEdit(edit);

@@ -4,24 +4,27 @@
 
 Hexfield Deck transforms your markdown weekly planner files into interactive kanban boards. Write tasks in plain text with inline metadata, then visualize and manage them on a drag-and-drop board — all without ever leaving your editor.
 
-![Hexfield Deck in action](docs/phase-1-example.png)
+![Hexfield Deck in action](docs/phase-3-example.png)
 
 ---
 
 ## ✨ Features
 
-### Current (v0.1.0-rc.1)
+### Current (v0.1.0-rc.2)
 
 - ✅ **3-column kanban board** (To Do / In Progress / Done)
+- ✅ **Drag-and-drop editing** — Move cards between columns to update checkbox states
+- ✅ **Interactive sub-task checkboxes** — Click to cycle through To Do → In Progress → Done
 - ✅ **Live markdown sync** — Edit the file, board updates automatically
 - ✅ **Rich metadata badges** — Project tags, due dates, priorities, time estimates
 - ✅ **Color-coded due dates** — Overdue (red), today (orange), upcoming (yellow), future (gray)
 - ✅ **Sub-task progress tracking** — Progress bars and checklist visualization
+- ✅ **Context menu integration** — Right-click any `.md` file to open as a board
+- ✅ **Unsaved changes indicator** — Visual feedback when the board has pending changes
 - ✅ **Native VS Code theming** — Matches your editor's color scheme
 
 ### Coming Soon
 
-- 🔄 **Drag-and-drop editing** — Move cards between columns to update checkbox states
 - 📊 **Multiple views** — Standard, Swimlane (by day), Backlog (by priority)
 - 🗓️ **Week navigation** — Browse weeks with auto-file creation
 - 🎯 **Context menu CRUD** — Right-click to edit, move, and delete tasks
@@ -36,7 +39,7 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 **Option 1: From Release (Recommended for Testing)**
 
-1. Download `hexfield-deck-0.1.0-rc.1.vsix` from the [Releases](../../releases) page
+1. Download `hexfield-deck-0.1.0-rc.2.vsix` from the [Releases](../../releases) page
 2. In VS Code: `Extensions → ⋯ → Install from VSIX...`
 3. Select the downloaded `.vsix` file
 
@@ -160,8 +163,8 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full technical plan
 | Phase | Status | Description |
 |-------|--------|-------------|
 | **Phase 1** | ✅ Complete | Core parser + basic webview board |
-| **Phase 2** | 📋 Planned | Drag-and-drop + real-time sync |
-| **Phase 3** | 📋 Planned | Metadata & sub-tasks (interactive) |
+| **Phase 2** | ✅ Complete | Drag-and-drop + real-time sync |
+| **Phase 3** | ✅ Complete | Interactive sub-task checkboxes |
 | **Phase 4** | 📋 Planned | Multiple views & filtering |
 | **Phase 5** | 📋 Planned | Context menu CRUD operations |
 | **Phase 6** | 📋 Planned | Week navigation |

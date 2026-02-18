@@ -11,9 +11,10 @@ interface ColumnProps {
   id: string;
   title: string;
   cards: Card[];
+  onToggleSubTask: (lineNumber: number) => void;
 }
 
-export function Column({ id, title, cards }: ColumnProps) {
+export function Column({ id, title, cards, onToggleSubTask }: ColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
@@ -25,7 +26,7 @@ export function Column({ id, title, cards }: ColumnProps) {
           strategy={verticalListSortingStrategy}
         >
           {cards.length > 0 ? (
-            cards.map((card) => <CardComponent key={card.id} card={card} />)
+            cards.map((card) => <CardComponent key={card.id} card={card} onToggleSubTask={onToggleSubTask} />)
           ) : (
             <div className="empty-placeholder">No tasks</div>
           )}

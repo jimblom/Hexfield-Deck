@@ -270,24 +270,24 @@ tags: [planner, weekly]
 
 ---
 
-### Phase 3: Metadata & Sub-tasks (Week 3-4)
+### Phase 3: Metadata & Sub-tasks (Week 3-4) ✅
 **Goal:** Full task feature parity with metadata and sub-task support
 
 **Tasks:**
-- [ ] Core: Parse due dates (multiple formats: `[2026-02-15]`, `due:2026-02-15`)
-- [ ] Core: Parse priority (`!!!` = high, `!!` = medium, `!` = low)
-- [ ] Core: Parse time estimates (`est:2h`, `⏱️ 30m`)
-- [ ] Core: Parse sub-task checkboxes (indented `- [ ]` or `- [x]`)
-- [ ] Core: Calculate sub-task progress (completed/total, percentage)
-- [ ] Webview UI: Display metadata badges on cards
-- [ ] Webview UI: Color-code due dates (overdue=red, today=orange, upcoming=yellow, future=gray)
-- [ ] Webview UI: Display priority badges (HIGH=red, MED=yellow, LOW=green)
-- [ ] Webview UI: Display time estimate badges (⏱️ 2h)
-- [ ] Webview UI: Render sub-tasks with checkboxes
-- [ ] Webview UI: Show progress bar for sub-tasks (e.g., "2/5 - 40%")
-- [ ] Webview UI: Make sub-task checkboxes interactive
-- [ ] Extension: Handle `toggleSubTask` messages
-- [ ] Extension: Update markdown sub-task line (toggle `[ ]` ↔ `[x]`)
+- [x] Core: Parse due dates (multiple formats: `[2026-02-15]`, `due:2026-02-15`)
+- [x] Core: Parse priority (`!!!` = high, `!!` = medium, `!` = low)
+- [x] Core: Parse time estimates (`est:2h`, `⏱️ 30m`)
+- [x] Core: Parse sub-task checkboxes (indented `- [ ]` or `- [x]`)
+- [x] Core: Calculate sub-task progress (completed/total, percentage)
+- [x] Webview UI: Display metadata badges on cards
+- [x] Webview UI: Color-code due dates (overdue=red, today=orange, upcoming=yellow, future=gray)
+- [x] Webview UI: Display priority badges (HIGH=red, MED=yellow, LOW=green)
+- [x] Webview UI: Display time estimate badges (⏱️ 2h)
+- [x] Webview UI: Render sub-tasks with checkboxes
+- [x] Webview UI: Show progress bar for sub-tasks (e.g., "2/5 - 40%")
+- [x] Webview UI: Make sub-task checkboxes interactive
+- [x] Extension: Handle `toggleSubTask` messages
+- [x] Extension: Update markdown sub-task line (toggle `[ ]` ↔ `[x]`)
 
 **Deliverable:** Cards display all metadata (due dates, priority, time estimates). Sub-tasks are interactive with progress tracking.
 
@@ -574,4 +574,4 @@ Delete Task...
 ---
 
 **Last Updated:** 2026-02-16
-**Status:** ✅ Phase 2 complete — Drag-and-drop functional | 🚀 Phase 3 next
+**Status:** ✅ Phase 3 complete — Interactive sub-tasks | 🚀 Phase 4 next
