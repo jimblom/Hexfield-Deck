@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Card, SubTask } from "@hexfield-deck/core";
 import { ContextMenuContext } from "./App.js";
+import { MarkdownTitle } from "./MarkdownTitle.js";
 
 interface CardProps {
   card: Card;
@@ -116,7 +117,7 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
         openContextMenu(card, { x: e.clientX, y: e.clientY });
       }}
     >
-      <div className="card-title">{card.title}</div>
+      <MarkdownTitle title={card.title} />
       {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
         <div className="card-badges">
           {card.project && (

@@ -75,6 +75,11 @@ export class BoardWebviewPanel {
           case "addTask":
             this._handleAddTask(message.targetDay, message.targetSection);
             break;
+          case "openLink":
+            if (message.url && typeof message.url === "string") {
+              vscode.env.openExternal(vscode.Uri.parse(message.url));
+            }
+            break;
         }
       },
       null,

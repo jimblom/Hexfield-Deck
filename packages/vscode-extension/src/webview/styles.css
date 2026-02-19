@@ -163,6 +163,26 @@ body {
   color: var(--vscode-foreground);
 }
 
+.card-title strong { font-weight: 700; }
+.card-title em { font-style: italic; }
+.card-title del { text-decoration: line-through; opacity: 0.7; }
+.card-title code {
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.9em;
+  background-color: var(--vscode-textCodeBlock-background);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.card-title a {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+  cursor: pointer;
+}
+.card-title a:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
 .card-badges {
   display: flex;
   flex-wrap: wrap;
