@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MarkdownTitle } from "./MarkdownTitle.js";
 import {
   DndContext,
   DragEndEvent,
@@ -134,7 +135,7 @@ function DraggableBacklogCard({
         {card.status === "done" ? "✓" : card.status === "in-progress" ? "◐" : "○"}
       </button>
       <div className="backlog-card-content">
-        <div className="card-title">{card.title}</div>
+        <MarkdownTitle title={card.title} />
         <div className="card-badges">
           {card.project && (
             <span className="badge" style={{ color: "var(--vscode-charts-blue)" }}>

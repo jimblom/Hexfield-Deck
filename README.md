@@ -4,17 +4,17 @@
 
 Hexfield Deck transforms your markdown weekly planner files into interactive kanban boards. Write tasks in plain text with inline metadata, then visualize and manage them on a drag-and-drop board — all without ever leaving your editor.
 
-![Hexfield Deck — Standard View](docs/phase-3-example.png)
+![Hexfield Deck — Standard View](docs/screenshots/phase-6-standard.png)
 
 | Swimlane View | Backlog View |
 |:---:|:---:|
-| ![Swimlane View](docs/phase-4-swimlane-view.png) | ![Backlog View](docs/phase-4-backlog-view.png) |
+| ![Swimlane View](docs/screenshots/phase-6-swimlane.png) | ![Backlog View](docs/screenshots/phase-6-backlog.png) |
 
 ---
 
 ## ✨ Features
 
-### Current (v0.3.0)
+### Current (v0.4.0)
 
 - ✅ **3-column kanban board** (To Do / In Progress / Done)
 - ✅ **Drag-and-drop editing** — Move cards between columns to update checkbox states
@@ -33,10 +33,10 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 - ✅ **Right-click context menu** — Edit title, due date, time estimate, priority, state, or delete any task
 - ✅ **Quick Add** — `+` button in toolbar inserts a new task into today's section
 - ✅ **Open in Markdown** — Jump directly to any task's source line from the board
+- ✅ **Inline markdown rendering** — Bold, italic, strikethrough, code spans, and links render in card and sub-task titles; links open in the browser
 
 ### Coming Soon
 
-- 🖊️ **Inline markdown rendering** — Bold, italic, links, and code in card titles
 - 🗓️ **Week navigation** — Browse weeks with auto-file creation
 - 🎨 **Project customization** — Configure colors and links for project tags
 - 🔌 **Obsidian plugin** — Full feature parity for Obsidian users
@@ -49,7 +49,7 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 **Option 1: From Release (Recommended for Testing)**
 
-1. Download `hexfield-deck-0.2.0.vsix` from the [Releases](../../releases) page
+1. Download the latest `.vsix` from the [Releases](../../releases) page
 2. In VS Code: `Extensions → ⋯ → Install from VSIX...`
 3. Select the downloaded `.vsix` file
 
@@ -116,10 +116,24 @@ tags: [planner, weekly]
 
 **Metadata Syntax:**
 
-- `#project-name` → Project tag (blue badge)
+- `#project-name` → Project tag (blue badge) — must have a space before `#`
 - `[2026-02-15]` → Due date (color-coded by proximity)
 - `!!!` / `!!` / `!` → Priority (high/medium/low)
 - `est:2h` → Time estimate
+
+**Inline Markdown in Titles:**
+
+Card and sub-task titles support inline markdown formatting:
+
+| Syntax | Renders as |
+|--------|-----------|
+| `**bold**` | **bold** |
+| `*italic*` | *italic* |
+| `~~strikethrough~~` | ~~strikethrough~~ |
+| `` `code` `` | `code` |
+| `[link text](https://example.com)` | clickable link (opens in browser) |
+
+> **Note:** URL fragments like `https://example.com#section` are handled correctly — the `#section` part is not treated as a project tag.
 
 See [examples/weekly-planner.md](examples/weekly-planner.md) for a complete example.
 
@@ -181,8 +195,8 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full technical plan
 | **Phase 3** | ✅ Complete | Interactive sub-task checkboxes   |
 | **Phase 4** | ✅ Complete | Multiple views & sorting          |
 | **Phase 5** | ✅ Complete | Context menu CRUD operations      |
-| **Phase 6** | 🔜 Next     | Inline markdown rendering         |
-| **Phase 7** | 📋 Planned  | Week navigation                   |
+| **Phase 6** | ✅ Complete | Inline markdown rendering         |
+| **Phase 7** | 🔜 Next     | Week navigation                   |
 | **Phase 8** | 📋 Planned  | Settings & production polish      |
 | **Phase 9** | 🔮 Future   | Obsidian plugin                   |
 

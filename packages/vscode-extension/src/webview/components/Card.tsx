@@ -1,8 +1,10 @@
 import React, { useContext } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { marked } from "marked";
 import type { Card, SubTask } from "@hexfield-deck/core";
 import { ContextMenuContext } from "./App.js";
+import { MarkdownTitle } from "./MarkdownTitle.js";
 
 interface CardProps {
   card: Card;
@@ -82,10 +84,12 @@ function SubTaskProgress({
               key={idx}
               className="subtask-item subtask-clickable"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => onToggle(st.lineNumber)}
-            >
-              {icon} {st.text}
-            </div>
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a")) return;
+                onToggle(st.lineNumber);
+              }}
+              dangerouslySetInnerHTML={{ __html: `${icon} ${marked.parseInline(st.text) as string}` }}
+            />
           );
         })}
       </div>
@@ -116,7 +120,7 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
         openContextMenu(card, { x: e.clientX, y: e.clientY });
       }}
     >
-      <div className="card-title">{card.title}</div>
+      <MarkdownTitle title={card.title} />
       {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
         <div className="card-badges">
           {card.project && (

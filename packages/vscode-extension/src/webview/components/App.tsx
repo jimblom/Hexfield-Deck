@@ -51,10 +51,25 @@ export function App() {
 
     window.addEventListener("message", messageHandler);
 
+    // Intercept link clicks from rendered markdown — event delegation avoids
+    // per-card handlers and works with dangerouslySetInnerHTML content.
+    const linkClickHandler = (event: MouseEvent) => {
+      const target = (event.target as HTMLElement).closest("a");
+      if (!target) return;
+      const href = target.getAttribute("href");
+      if (!href) return;
+      event.preventDefault();
+      vscode.postMessage({ type: "openLink", url: href });
+    };
+    document.addEventListener("click", linkClickHandler);
+
     // Signal to extension that webview is ready
     vscode.postMessage({ type: "ready" });
 
-    return () => window.removeEventListener("message", messageHandler);
+    return () => {
+      window.removeEventListener("message", messageHandler);
+      document.removeEventListener("click", linkClickHandler);
+    };
   }, []);
 
   const handleViewChange = (mode: ViewMode) => {

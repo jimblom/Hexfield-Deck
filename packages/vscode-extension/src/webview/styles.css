@@ -108,7 +108,7 @@ body {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   flex: 1;
   overflow: hidden;
@@ -161,6 +161,27 @@ body {
   font-weight: 500;
   margin-bottom: 6px;
   color: var(--vscode-foreground);
+  overflow-wrap: break-word;
+}
+
+.card-title strong { font-weight: 700; }
+.card-title em { font-style: italic; }
+.card-title del { text-decoration: line-through; opacity: 0.7; }
+.card-title code {
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.9em;
+  background-color: var(--vscode-textCodeBlock-background);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.card-title a {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+  cursor: pointer;
+}
+.card-title a:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
 }
 
 .card-badges {

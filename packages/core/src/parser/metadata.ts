@@ -13,7 +13,7 @@ export function extractProject(text: string): {
   project: string | undefined;
   cleanText: string;
 } {
-  const match = text.match(/#([a-zA-Z0-9_-]+)/);
+  const match = text.match(/(?:^|\s)#([a-zA-Z0-9_-]+)/);
   if (!match) return { project: undefined, cleanText: text };
   const cleanText = text.replace(match[0], "").replace(/\s{2,}/g, " ").trim();
   return { project: match[1], cleanText };

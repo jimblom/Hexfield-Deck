@@ -29,6 +29,18 @@ describe("extractProject", () => {
     const { project } = extractProject("Work on #my-project_v2");
     expect(project).toBe("my-project_v2");
   });
+
+  it("does not extract #fragment from a URL as a project", () => {
+    const { project, cleanText } = extractProject("See https://example.com#anchor");
+    expect(project).toBeUndefined();
+    expect(cleanText).toBe("See https://example.com#anchor");
+  });
+
+  it("does not extract #anchor from a markdown link", () => {
+    const { project, cleanText } = extractProject("[Jump to section](#overview)");
+    expect(project).toBeUndefined();
+    expect(cleanText).toBe("[Jump to section](#overview)");
+  });
 });
 
 describe("extractDueDate", () => {
