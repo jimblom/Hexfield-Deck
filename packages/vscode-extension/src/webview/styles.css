@@ -108,7 +108,7 @@ body {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   flex: 1;
   overflow: hidden;
@@ -161,6 +161,7 @@ body {
   font-weight: 500;
   margin-bottom: 6px;
   color: var(--vscode-foreground);
+  overflow-wrap: break-word;
 }
 
 .card-title strong { font-weight: 700; }
