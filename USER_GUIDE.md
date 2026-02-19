@@ -70,6 +70,8 @@ Use a hashtag (#)-prefaced tag to group tasks by project:
 - [ ] Task belongs to Deep 13 home lab #deep-13
 ```
 
+**Important:** The `#` must be preceded by a space (or be at the start of the title). A `#` inside a URL — such as `https://example.com/page#section` — is treated as a URL fragment, not a project tag.
+
 Projects are used for:
 - Color coding cards
 - Visual grouping
@@ -212,6 +214,30 @@ You can combine all features in one task:
 - Priority: High (red badge)
 - Time estimate: 2 hours
 - Sub-tasks: 3 items with progress tracking (1/3 = 33%)
+
+### Inline Markdown Formatting
+
+Card titles and sub-task titles support inline markdown. Formatting renders directly on the board — no need to open the file to see the result.
+
+| Syntax | Renders as | Example |
+|--------|-----------|---------|
+| `**text**` or `__text__` | **Bold** | `**Fix this today**` |
+| `*text*` or `_text_` | *Italic* | `*nice to have*` |
+| `~~text~~` | ~~Strikethrough~~ | `~~cancelled task~~` |
+| `` `text` `` | `Code span` | `` Review `npm test` output `` |
+| `[label](url)` | Clickable link | `[Design doc](https://notion.so/...)` |
+
+**Links:** Clicking a link on the board opens it in your default browser. Clicking anywhere else on the card still works normally for drag-and-drop.
+
+**Sub-tasks:** Inline markdown works in sub-task lines too. Clicking a link in a sub-task opens the browser without toggling the checkbox.
+
+```markdown
+- [ ] Ship **v0.4.0** release #hexfield [2026-02-15] !!!
+  - [ ] Update [CHANGELOG](https://github.com/jimblom/Hexfield-Deck)
+  - [ ] Run `pnpm test` and confirm green
+  - [x] ~~Write placeholder copy~~ (done)
+  - [ ] Deploy to *production*
+```
 
 ---
 
@@ -620,6 +646,12 @@ Displays as: **"Review docs"** (metadata shows as badges)
 
 ## Version History
 
+| Version | Highlights |
+|---------|-----------|
+| **v0.4.0** | Inline markdown rendering in card and sub-task titles (bold, italic, strikethrough, code, links) |
+| **v0.3.0** | Right-click context menu, CRUD editing, Quick Add button |
+| **v0.2.x** | Multiple views (Swimlane, Backlog), card sorting, view persistence |
+| **v0.1.x** | Core parser, 3-column board, drag-and-drop, sub-task checkboxes |
 
 ---
 
