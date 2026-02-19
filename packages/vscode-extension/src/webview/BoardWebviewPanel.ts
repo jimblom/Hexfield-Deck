@@ -54,6 +54,27 @@ export class BoardWebviewPanel {
           case "toggleSubTask":
             this._handleToggleSubTask(message.lineNumber);
             break;
+          case "openInMarkdown":
+            this._handleOpenInMarkdown(message.cardId);
+            break;
+          case "editTitle":
+            this._handleEditTitle(message.cardId);
+            break;
+          case "editDueDate":
+            this._handleEditDueDate(message.cardId);
+            break;
+          case "editTimeEstimate":
+            this._handleEditTimeEstimate(message.cardId);
+            break;
+          case "setPriority":
+            this._handleSetPriority(message.cardId, message.priority);
+            break;
+          case "deleteTask":
+            this._handleDeleteTask(message.cardId);
+            break;
+          case "addTask":
+            this._handleAddTask(message.targetDay, message.targetSection);
+            break;
         }
       },
       null,
@@ -445,6 +466,213 @@ export class BoardWebviewPanel {
     const range = new vscode.Range(lineIndex, 0, lineIndex, oldLine.length);
     edit.replace(this._document.uri, range, newLine);
 
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  /**
+   * Reconstruct a task line from card fields + optional overrides.
+   * Normalizes metadata order: title #project [date] !!! est:Xh
+   */
+  private _rebuildTaskLine(card: { rawLine: string; title: string; project?: string; dueDate?: string; priority?: string; timeEstimate?: string }, overrides: { title?: string; project?: string; dueDate?: string | null; priority?: string | null; timeEstimate?: string | null }): string {
+    // Extract leading whitespace + checkbox prefix from rawLine
+    const prefixMatch = card.rawLine.match(/^(\s*-\s*\[[x /]\]\s*)/);
+    const prefix = prefixMatch ? prefixMatch[1] : "- [ ] ";
+
+    const title = overrides.title !== undefined ? overrides.title : card.title;
+    const project = overrides.project !== undefined ? overrides.project : card.project;
+    const dueDate = overrides.dueDate !== undefined ? overrides.dueDate : card.dueDate;
+    const priority = overrides.priority !== undefined ? overrides.priority : card.priority;
+    const timeEstimate = overrides.timeEstimate !== undefined ? overrides.timeEstimate : card.timeEstimate;
+
+    const priorityMap: Record<string, string> = { high: "!!!", medium: "!!", low: "!" };
+
+    let line = prefix + title;
+    if (project) line += ` #${project}`;
+    if (dueDate) line += ` [${dueDate}]`;
+    if (priority && priorityMap[priority]) line += ` ${priorityMap[priority]}`;
+    if (timeEstimate) line += ` est:${timeEstimate}`;
+
+    return line;
+  }
+
+  private async _handleOpenInMarkdown(cardId: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const cards = allCards(board);
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const lineIndex = card.lineNumber - 1;
+    const editor = await vscode.window.showTextDocument(this._document, {
+      viewColumn: vscode.ViewColumn.One,
+      preserveFocus: false,
+    });
+    const pos = new vscode.Position(lineIndex, 0);
+    editor.selection = new vscode.Selection(pos, pos);
+    editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+  }
+
+  private async _handleEditTitle(cardId: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const cards = allCards(board);
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const newTitle = await vscode.window.showInputBox({
+      value: card.title,
+      prompt: "Edit task title",
+      placeHolder: "Task title",
+    });
+    if (newTitle === undefined || newTitle === card.title) return;
+
+    const lines = text.split("\n");
+    const lineIndex = card.lineNumber - 1;
+    const newLine = this._rebuildTaskLine(card, { title: newTitle });
+
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private async _handleEditDueDate(cardId: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const cards = allCards(board);
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const newDate = await vscode.window.showInputBox({
+      value: card.dueDate ?? "",
+      prompt: "Due date (YYYY-MM-DD), or leave empty to clear",
+      placeHolder: "YYYY-MM-DD",
+      validateInput: (val) => {
+        if (val === "") return undefined;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return undefined;
+        return "Enter a date as YYYY-MM-DD, or leave empty to clear";
+      },
+    });
+    if (newDate === undefined) return;
+
+    const lines = text.split("\n");
+    const lineIndex = card.lineNumber - 1;
+    const newLine = this._rebuildTaskLine(card, { dueDate: newDate || null });
+
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private async _handleEditTimeEstimate(cardId: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const cards = allCards(board);
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const newEst = await vscode.window.showInputBox({
+      value: card.timeEstimate ?? "",
+      prompt: "Time estimate (e.g. 2h, 30m), or leave empty to clear",
+      placeHolder: "2h",
+    });
+    if (newEst === undefined) return;
+
+    const lines = text.split("\n");
+    const lineIndex = card.lineNumber - 1;
+    const newLine = this._rebuildTaskLine(card, { timeEstimate: newEst || null });
+
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private async _handleSetPriority(cardId: string, priority: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const cards = allCards(board);
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const lines = text.split("\n");
+    const lineIndex = card.lineNumber - 1;
+    const newPriority = priority === "none" ? null : priority;
+    const newLine = this._rebuildTaskLine(card, { priority: newPriority });
+
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private async _handleDeleteTask(cardId: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const cards = allCards(board);
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const confirmed = await vscode.window.showWarningMessage(
+      `Delete "${card.title}"?`,
+      { modal: true },
+      "Delete",
+    );
+    if (confirmed !== "Delete") return;
+
+    const lines = text.split("\n");
+    const cardLineIndex = card.lineNumber - 1;
+    const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
+
+    const edit = new vscode.WorkspaceEdit();
+    // Delete the lines — include trailing newline if not last line
+    const startPos = new vscode.Position(rangeStart, 0);
+    let endPos: vscode.Position;
+    if (rangeEnd < lines.length) {
+      endPos = new vscode.Position(rangeEnd, 0);
+    } else {
+      // Last line(s) — delete from end of previous line
+      endPos = new vscode.Position(rangeEnd - 1, lines[rangeEnd - 1].length);
+      const adjustedStart = rangeStart > 0
+        ? new vscode.Position(rangeStart - 1, lines[rangeStart - 1].length)
+        : startPos;
+      edit.delete(this._document.uri, new vscode.Range(adjustedStart, endPos));
+      await vscode.workspace.applyEdit(edit);
+      return;
+    }
+    edit.delete(this._document.uri, new vscode.Range(startPos, endPos));
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private async _handleAddTask(targetDay?: string, targetSection?: string): Promise<void> {
+    const title = await vscode.window.showInputBox({
+      prompt: "New task title",
+      placeHolder: "What needs doing?",
+    });
+    if (!title) return;
+
+    const text = this._document.getText();
+    const lines = text.split("\n");
+    const newTaskLine = `- [ ] ${title}`;
+
+    let insertAt: number | null = null;
+
+    if (targetDay) {
+      insertAt = this._findDaySectionInsertionPoint(lines, targetDay);
+      if (insertAt === null) {
+        vscode.window.showErrorMessage(`Day section not found: ${targetDay}`);
+        return;
+      }
+    } else if (targetSection) {
+      insertAt = this._findSectionInsertionPoint(lines, targetSection);
+      if (insertAt === null) {
+        vscode.window.showErrorMessage(`Section not found: ${targetSection}`);
+        return;
+      }
+    } else {
+      return;
+    }
+
+    const edit = new vscode.WorkspaceEdit();
+    const insertPos = new vscode.Position(insertAt, 0);
+    edit.insert(this._document.uri, insertPos, `${newTaskLine}\n`);
     await vscode.workspace.applyEdit(edit);
   }
 

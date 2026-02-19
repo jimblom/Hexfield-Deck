@@ -12,10 +12,10 @@ endDate: 2026-02-15
 - [x] Morning standup — discuss experiment results #deep13
 - [ ] Fix Hexfield Viewscreen rendering glitch #hexfield [2026-02-09] !!
   - [x] Reproduce on the bridge
-  - [ ] Check viewport calculations
+  - [x] Check viewport calculations
   - The viewscreen keeps showing reruns of *Manos: The Hands of Fate*
 - [/] Rewire the Satellite of Love's nacelle couplings #deep13 est:3h
-- [ ] Review Joel's Invention Exchange submission !!!
+- [x] Review Joel's Invention Exchange submission !!!
 
 ## Tuesday, February 10, 2026
 
@@ -40,7 +40,7 @@ endDate: 2026-02-15
   - [ ] Cue Big McLargehuge name list
   - [ ] Prep riff notes
   - [ ] Test theater seat actuators
-- [x] Restock Deep Ape supplies
+- [ ] Restock Deep Ape supplies
 
 ## Friday, February 13, 2026
 
@@ -51,27 +51,27 @@ endDate: 2026-02-15
   - [ ] Key Result 2: Survive another movie
 
 ## Saturday, February 14, 2026
-
 - [ ] Date night on the Satellite of Love 💕
   Dinner reservations at the Tubular Boobular Joy cafe
 
+
 ## Sunday, February 15, 2026
 
+- [ ] Implement drag-and-drop card reordering #hexfield !!!
 - [ ] Weekly review and planning
 
 ## Backlog
 
 ### Now
 
-- [ ] Implement drag-and-drop card reordering #hexfield !!!
 - [ ] Fix Joel's escape pod hatch — keeps jamming #sol !! est:1h
-- [/] Catalog all MST3K movie inventory #sol
+- [ ] Add Obsidian plugin scaffold #hexfield
 
 ### Next 2 Weeks
 
-- [ ] Add Obsidian plugin scaffold #hexfield
 - [ ] Investigate Tom Servo's hoverskirt power drain #sol est:4h
 - [ ] Set up CI pipeline for Hexfield Deck #hexfield !!
+- [ ] Catalog all MST3K movie inventory #sol
 
 ### This Month
 
