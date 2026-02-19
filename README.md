@@ -14,7 +14,7 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 ## ✨ Features
 
-### Current (v0.2.0)
+### Current (v0.3.0)
 
 - ✅ **3-column kanban board** (To Do / In Progress / Done)
 - ✅ **Drag-and-drop editing** — Move cards between columns to update checkbox states
@@ -26,16 +26,18 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 - ✅ **Context menu integration** — Right-click any `.md` file to open as a board
 - ✅ **Unsaved changes indicator** — Visual feedback when the board has pending changes
 - ✅ **Native VS Code theming** — Matches your editor's color scheme
-
 - ✅ **Swimlane view** — Day-of-week rows × status columns with cross-day drag-and-drop
 - ✅ **Backlog view** — Priority buckets (Now, Next 2 Weeks, This Month, etc.) with drag between sections
 - ✅ **Card sorting** — Sort by file order, priority, status, project, or estimate across all views
 - ✅ **View persistence** — Selected view remembered across panel show/hide
+- ✅ **Right-click context menu** — Edit title, due date, time estimate, priority, state, or delete any task
+- ✅ **Quick Add** — `+` button in toolbar inserts a new task into today's section
+- ✅ **Open in Markdown** — Jump directly to any task's source line from the board
 
 ### Coming Soon
 
+- 🖊️ **Inline markdown rendering** — Bold, italic, links, and code in card titles
 - 🗓️ **Week navigation** — Browse weeks with auto-file creation
-- 🎯 **Context menu CRUD** — Right-click to edit, move, and delete tasks
 - 🎨 **Project customization** — Configure colors and links for project tags
 - 🔌 **Obsidian plugin** — Full feature parity for Obsidian users
 
@@ -177,11 +179,12 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full technical plan
 | **Phase 1** | ✅ Complete | Core parser + basic webview board |
 | **Phase 2** | ✅ Complete | Drag-and-drop + real-time sync    |
 | **Phase 3** | ✅ Complete | Interactive sub-task checkboxes   |
-| **Phase 4** | ✅ Complete | Multiple views & sorting           |
-| **Phase 5** | 📋 Planned  | Context menu CRUD operations      |
-| **Phase 6** | 📋 Planned  | Week navigation                   |
-| **Phase 7** | 📋 Planned  | Settings & production polish      |
-| **Phase 8** | 🔮 Future   | Obsidian plugin                   |
+| **Phase 4** | ✅ Complete | Multiple views & sorting          |
+| **Phase 5** | ✅ Complete | Context menu CRUD operations      |
+| **Phase 6** | 🔜 Next     | Inline markdown rendering         |
+| **Phase 7** | 📋 Planned  | Week navigation                   |
+| **Phase 8** | 📋 Planned  | Settings & production polish      |
+| **Phase 9** | 🔮 Future   | Obsidian plugin                   |
 
 **Target:** v1.0.0 release in ~8 weeks from start
 

@@ -331,66 +331,27 @@ tags: [planner, weekly]
 
 ---
 
-### Phase 5: Context Menu & CRUD Operations (Week 5-6)
+### Phase 5: Context Menu & CRUD Operations (Week 5-6) ✅
 **Goal:** Full task management via right-click context menu
 
 **Tasks:**
-- [ ] Webview UI: Implement right-click context menu on cards
-- [ ] Webview UI: Context menu items (see below)
-- [ ] Extension: `openInMarkdown` - Jump to task line in markdown editor
-- [ ] Extension: `editTitle` - Prompt for new title, update markdown
-- [ ] Extension: `editDueDate` - Prompt for date (YYYY-MM-DD), validate, update markdown
-- [ ] Extension: `editTimeEstimate` - Prompt for estimate (2h, 30m), validate, update markdown
-- [ ] Extension: `editDescription` - Open temp editor for multi-line body, update markdown
-- [ ] Extension: `setPriority` - Submenu (High/Medium/Low/None), update markdown
-- [ ] Extension: `changeState` - Submenu (Todo/In Progress/Done), update markdown
-- [ ] Extension: `moveToDay` - Submenu (list all days), move task to day section in markdown
-- [ ] Extension: `moveToBacklogSection` - Submenu (Now/Next 2 Weeks/This Month/etc.), move task
-- [ ] Extension: `moveToNextWeek` - Move task to Monday of next week
-- [ ] Extension: `moveToWeek` - Prompt for week number, move task
-- [ ] Extension: `deleteTask` - Show confirmation dialog, delete from markdown
-- [ ] Extension: Quick add button (+ icon in toolbar)
+- [x] Webview UI: Implement right-click context menu on cards (`ContextMenu.tsx`, `ContextMenuContext`)
+- [x] Webview UI: Context menu items with flyout submenus, Escape/outside-click to close
+- [x] Extension: `openInMarkdown` - Jump to task line in markdown editor
+- [x] Extension: `editTitle` - Prompt for new title, update markdown
+- [x] Extension: `editDueDate` - Prompt for date (YYYY-MM-DD), validate, update markdown
+- [x] Extension: `editTimeEstimate` - Prompt for estimate (2h, 30m), validate, update markdown
+- [x] Extension: `setPriority` - Submenu (High/Medium/Low/None), update markdown
+- [x] Extension: `changeState` - Submenu (Todo/In Progress/Done), update markdown
+- [x] Extension: `moveToDay` - Submenu (list all days), move task to day section in markdown
+- [x] Extension: `moveToBacklogSection` - Submenu (Now/Next 2 Weeks/This Month/etc.), move task
+- [x] Extension: `deleteTask` - Show confirmation dialog, delete from markdown
+- [x] Extension: Quick add button (+ icon in toolbar)
+- [x] Extension: `_rebuildTaskLine()` normalizes metadata order on all edits
 
-**Context Menu Structure:**
-```
-Open in Markdown
----
-Edit Title...
-Edit Due Date...
-Edit Time Estimate...
-Edit Description...
----
-Set Priority >
-  High
-  Medium
-  Low
-  None
----
-Change State >
-  Todo
-  In Progress
-  Done
----
-Move to Day >
-  Monday
-  Tuesday
-  Wednesday
-  Thursday
-  Friday
----
-Move to Backlog >
-  Now
-  Next 2 Weeks
-  This Month
-  This Quarter
-  This Year
-  Parking Lot
----
-Move to Next Week
-Move to Week...
----
-Delete Task...
-```
+**Deferred to Phase 7:**
+- [ ] Extension: `moveToNextWeek` - Move task to Monday of next week (grayed out in menu)
+- [ ] Extension: `moveToWeek` - Prompt for week number, move task (grayed out in menu)
 
 **Deliverable:** Complete CRUD operations from the board via context menu. Quick add button for new tasks.
 
@@ -406,7 +367,30 @@ Delete Task...
 
 ---
 
-### Phase 6: Week Navigation (Week 6-7)
+### Phase 6: Inline Markdown Rendering (Week 6)
+**Goal:** Render bold, italic, links, and code in card titles across all views
+
+**Tasks:**
+- [ ] Webview UI: Install `marked` library (inline parse mode only)
+- [ ] Webview UI: Create `MarkdownTitle.tsx` shared component using `marked.parseInline()`
+- [ ] Webview UI: Replace plain text title rendering in `Card.tsx` and `BacklogView.tsx`
+- [ ] Webview UI: Global link click interceptor in `App.tsx` (event delegation via `.closest("a")`)
+- [ ] Extension: Handle `openLink` message → `vscode.env.openExternal()`
+- [ ] CSS: Add styles for `strong`, `em`, `a`, `code`, `del` scoped to `.card-title`
+
+**Deliverable:** Card titles render inline markdown in all three views. Links open in the browser.
+
+**Acceptance Criteria:**
+- ✅ `**bold**` and `*italic*` render correctly in Standard, Swimlane, and Backlog views
+- ✅ `` `code` `` renders in monospace with background
+- ✅ `[link text](url)` renders as a styled link; clicking opens the browser
+- ✅ Clicking a link does not trigger a card drag
+- ✅ Plain titles with no markdown are unaffected
+- ✅ Brackets without URL syntax (e.g. `[not a link]`) do not render as links
+
+---
+
+### Phase 7: Week Navigation (Week 7-8)
 **Goal:** Navigate between weeks, auto-create week files
 
 **Tasks:**
@@ -440,7 +424,7 @@ Delete Task...
 
 ---
 
-### Phase 7: Polish & Production Ready (Week 7-8)
+### Phase 8: Polish & Production Ready (Week 8-9)
 **Goal:** Settings, testing, documentation for v1.0.0 release
 
 **Tasks:**
@@ -477,7 +461,7 @@ Delete Task...
 
 ---
 
-### Phase 8: Obsidian Plugin (Future)
+### Phase 9: Obsidian Plugin (Future)
 **Goal:** Dual-platform support (VS Code + Obsidian)
 
 **Tasks:**
@@ -545,11 +529,12 @@ Delete Task...
 | Phase 3 | 1 week | 4 weeks | Metadata & sub-tasks |
 | Phase 4 | 1 week | 5 weeks | Multiple views & filtering |
 | Phase 5 | 1 week | 6 weeks | Context menu CRUD |
-| Phase 6 | 1 week | 7 weeks | Week navigation |
-| Phase 7 | 1 week | 8 weeks | **v1.0.0 Release** |
-| Phase 8 | TBD | Future | Obsidian plugin |
+| Phase 6 | 1 week | 7 weeks | Inline markdown rendering |
+| Phase 7 | 1 week | 8 weeks | Week navigation |
+| Phase 8 | 1 week | 9 weeks | **v1.0.0 Release** |
+| Phase 9 | TBD | Future | Obsidian plugin |
 
-**Total Time to v1.0.0:** ~8 weeks
+**Total Time to v1.0.0:** ~9 weeks
 
 ---
 
@@ -574,4 +559,4 @@ Delete Task...
 ---
 
 **Last Updated:** 2026-02-18
-**Status:** ✅ Phase 4 complete — Views & Sorting | 🚀 Phase 5 next
+**Status:** ✅ Phase 5 complete — Context Menu & CRUD | 🚀 Phase 6 next (Inline Markdown Rendering)
