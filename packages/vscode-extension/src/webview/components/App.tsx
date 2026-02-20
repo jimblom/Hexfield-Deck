@@ -5,9 +5,9 @@ import { SwimlaneView } from "./SwimlaneView.js";
 import { ContextMenu } from "./ContextMenu.js";
 import type { ContextMenuAction } from "./ContextMenu.js";
 import { FilterDropdown } from "./FilterDropdown.js";
-import type { FilterState, DueDateBucket } from "./FilterDropdown.js";
+import type { FilterState, DueDateBucket, EstimateBucket } from "./FilterDropdown.js";
 import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
-import type { BoardData, Card, Priority } from "@hexfield-deck/core";
+import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
 
 type ViewMode = "standard" | "swimlane" | "backlog";
 
@@ -48,14 +48,39 @@ function matchesDueDateBucket(dueDate: string | undefined, buckets: DueDateBucke
   return false;
 }
 
+function parseEstimateMinutes(est?: string): number | null {
+  if (!est) return null;
+  let total = 0;
+  const hours = est.match(/(\d+)h/);
+  const mins = est.match(/(\d+)m/);
+  if (hours) total += parseInt(hours[1]) * 60;
+  if (mins) total += parseInt(mins[1]);
+  return total || null;
+}
+
+function matchesEstimateBucket(timeEstimate: string | undefined, buckets: EstimateBucket[]): boolean {
+  if (buckets.includes("none") && !timeEstimate) return true;
+  if (!timeEstimate) return false;
+  const mins = parseEstimateMinutes(timeEstimate);
+  if (mins === null) return false;
+  if (buckets.includes("short") && mins <= 30) return true;
+  if (buckets.includes("medium") && mins > 30 && mins <= 120) return true;
+  if (buckets.includes("long") && mins > 120) return true;
+  return false;
+}
+
 function filterCards(cards: Card[], f: FilterState): Card[] {
   if (!isFilterActive(f)) return cards;
   return cards.filter((card) => {
     if (f.projects.length > 0 && (!card.project || !f.projects.includes(card.project)))
       return false;
+    if (f.statuses.length > 0 && !f.statuses.includes(card.status as TaskStatus))
+      return false;
     if (f.priorities.length > 0 && (!card.priority || !f.priorities.includes(card.priority as Priority)))
       return false;
     if (f.dueDates.length > 0 && !matchesDueDateBucket(card.dueDate, f.dueDates))
+      return false;
+    if (f.estimates.length > 0 && !matchesEstimateBucket(card.timeEstimate, f.estimates))
       return false;
     return true;
   });

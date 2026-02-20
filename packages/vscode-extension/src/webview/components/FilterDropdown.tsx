@@ -1,22 +1,33 @@
 import React, { useState, useEffect, useRef } from "react";
-import type { Card, Priority } from "@hexfield-deck/core";
+import type { Card, Priority, TaskStatus } from "@hexfield-deck/core";
 
 export type DueDateBucket = "overdue" | "today" | "this-week" | "none";
+export type EstimateBucket = "none" | "short" | "medium" | "long";
 
 export interface FilterState {
   projects: string[];
   priorities: Priority[];
   dueDates: DueDateBucket[];
+  statuses: TaskStatus[];
+  estimates: EstimateBucket[];
 }
 
 export const EMPTY_FILTER: FilterState = {
   projects: [],
   priorities: [],
   dueDates: [],
+  statuses: [],
+  estimates: [],
 };
 
 export function isFilterActive(f: FilterState): boolean {
-  return f.projects.length > 0 || f.priorities.length > 0 || f.dueDates.length > 0;
+  return (
+    f.projects.length > 0 ||
+    f.priorities.length > 0 ||
+    f.dueDates.length > 0 ||
+    f.statuses.length > 0 ||
+    f.estimates.length > 0
+  );
 }
 
 const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
@@ -30,6 +41,19 @@ const DUE_DATE_OPTIONS: { value: DueDateBucket; label: string }[] = [
   { value: "today", label: "Due Today" },
   { value: "this-week", label: "Due This Week" },
   { value: "none", label: "No Due Date" },
+];
+
+const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
+  { value: "todo", label: "To Do" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "done", label: "Done" },
+];
+
+const ESTIMATE_OPTIONS: { value: EstimateBucket; label: string }[] = [
+  { value: "short", label: "Short (≤30m)" },
+  { value: "medium", label: "Medium (30m–2h)" },
+  { value: "long", label: "Long (2h+)" },
+  { value: "none", label: "No Estimate" },
 ];
 
 interface FilterDropdownProps {
@@ -48,7 +72,11 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
   ].sort();
 
   const activeCount =
-    filter.projects.length + filter.priorities.length + filter.dueDates.length;
+    filter.projects.length +
+    filter.priorities.length +
+    filter.dueDates.length +
+    filter.statuses.length +
+    filter.estimates.length;
 
   // Close panel on click outside
   useEffect(() => {
@@ -83,6 +111,20 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
     onChange({ ...filter, dueDates: next });
   }
 
+  function toggleStatus(s: TaskStatus) {
+    const next = filter.statuses.includes(s)
+      ? filter.statuses.filter((x) => x !== s)
+      : [...filter.statuses, s];
+    onChange({ ...filter, statuses: next });
+  }
+
+  function toggleEstimate(e: EstimateBucket) {
+    const next = filter.estimates.includes(e)
+      ? filter.estimates.filter((x) => x !== e)
+      : [...filter.estimates, e];
+    onChange({ ...filter, estimates: next });
+  }
+
   return (
     <div className="filter-wrapper" ref={ref}>
       <button
@@ -115,6 +157,20 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
           )}
 
           <div className="filter-section">
+            <div className="filter-section-label">Status</div>
+            {STATUS_OPTIONS.map(({ value, label }) => (
+              <label key={value} className="filter-option">
+                <input
+                  type="checkbox"
+                  checked={filter.statuses.includes(value)}
+                  onChange={() => toggleStatus(value)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+
+          <div className="filter-section">
             <div className="filter-section-label">Priority</div>
             {PRIORITY_OPTIONS.map(({ value, label }) => (
               <label key={value} className="filter-option">
@@ -136,6 +192,20 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
                   type="checkbox"
                   checked={filter.dueDates.includes(value)}
                   onChange={() => toggleDueDate(value)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+
+          <div className="filter-section">
+            <div className="filter-section-label">Time Estimate</div>
+            {ESTIMATE_OPTIONS.map(({ value, label }) => (
+              <label key={value} className="filter-option">
+                <input
+                  type="checkbox"
+                  checked={filter.estimates.includes(value)}
+                  onChange={() => toggleEstimate(value)}
                 />
                 {label}
               </label>
