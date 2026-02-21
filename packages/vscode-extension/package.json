@@ -39,6 +39,21 @@
                     "group": "navigation@10"
                 }
             ]
+        },
+        "configuration": {
+            "title": "Hexfield Deck",
+            "properties": {
+                "hexfield-deck.weekFilePattern": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "File path pattern for weekly planner files, relative to `#hexfield-deck.plannerRoot#`. Tokens: `{year}`, `{week}` (1–53), `{WW}` (zero-padded, 01–53). Example: `{year}/week-{WW}/{year}-W{WW}-weekly-plan.md`. Leave empty to disable week navigation."
+                },
+                "hexfield-deck.plannerRoot": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "Workspace-relative path to the root folder containing your weekly planner files. Leave empty to use the workspace root. Example: `planner`."
+                }
+            }
         }
     },
     "scripts": {

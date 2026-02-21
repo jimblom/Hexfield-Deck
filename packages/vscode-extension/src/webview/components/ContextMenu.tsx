@@ -10,6 +10,8 @@ export type ContextMenuAction =
   | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" }
   | { type: "moveToDay"; targetDay: string; newStatus: string }
   | { type: "moveToBacklog"; targetSection: string }
+  | { type: "moveToNextWeek" }
+  | { type: "moveToWeek" }
   | { type: "deleteTask" };
 
 interface ContextMenuProps {
@@ -87,8 +89,8 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
 
   items.push(
     { label: "", separator: true },
-    { label: "Move to Next Week", disabled: true },
-    { label: "Move to Week...", disabled: true },
+    { label: "Move to Next Week", action: { type: "moveToNextWeek" } },
+    { label: "Move to Week...", action: { type: "moveToWeek" } },
     { label: "", separator: true },
     { label: "Delete Task...", action: { type: "deleteTask" } },
   );
