@@ -393,25 +393,33 @@ Right-click on any card to access these options:
 
 ## Filtering & Sorting
 
-### Filter by Day
+### Metadata Filtering
 
-Show only tasks for specific days:
-- All Days (default)
-- Monday, Tuesday, Wednesday, etc.
+Click the **Filter** button in the toolbar to open the filter panel. Filter across five dimensions simultaneously — conditions are AND'd between dimensions and OR'd within each dimension (e.g. "hexfield OR sol" AND "High priority").
 
-### Filter by Project
+![Filter panel](docs/screenshots/phase-7-filtering.png)
 
-Show only tasks for specific projects (extracted from `#ProjectName` tags)
+| Dimension | Options | Notes |
+|-----------|---------|-------|
+| **Project** | Any project present in the file | Multi-select; list is built from all cards in the current file |
+| **Status** | To Do, In Progress, Done | Useful in Swimlane and Backlog views |
+| **Priority** | High, Medium, Low | Cards with no priority are excluded when any priority is selected |
+| **Due Date** | Overdue, Due Today, Due This Week, No Due Date | Buckets based on today's date |
+| **Time Estimate** | Short (≤30m), Medium (30m–2h), Long (2h+), No Estimate | "No Estimate" finds all unestimated cards |
+
+**Active filter indicator:** The Filter button shows a count badge (e.g. **Filter 2**) when filters are active, and its border highlights.
+
+**Clear all:** A **Clear all filters** button appears at the bottom of the panel when any filter is active. Switching views (Standard → Swimlane → Backlog) does not reset the active filter.
 
 ### Sort Options
 
-- By Day: Groups by Monday → Tuesday → etc.
-- By Project: Groups by project name
-- By Priority: High → Medium → Low → None
-- By Due Date: Soonest first
-- By Time Estimate: Longest first
+The sort bar appears below the header in all views:
 
-Filters and sorting work in both Standard and Swimlane views.
+- **File order** — Default; preserves order from the markdown file
+- **Priority** — High → Medium → Low → None
+- **Status** — In Progress → To Do → Done
+- **Project** — Alphabetical by project name
+- **Estimate** — Longest first
 
 ---
 
@@ -648,6 +656,7 @@ Displays as: **"Review docs"** (metadata shows as badges)
 
 | Version | Highlights |
 |---------|-----------|
+| **v0.5.0** | Metadata filtering — project (multi-select), status, priority, due date, time estimate |
 | **v0.4.0** | Inline markdown rendering in card and sub-task titles (bold, italic, strikethrough, code, links) |
 | **v0.3.0** | Right-click context menu, CRUD editing, Quick Add button |
 | **v0.2.x** | Multiple views (Swimlane, Backlog), card sorting, view persistence |

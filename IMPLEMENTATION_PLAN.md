@@ -44,7 +44,7 @@ hexfield-deck/
 │   │   │   │   └── App.tsx        # Root component
 │   │   │   └── fileOperations/    # Markdown file manipulation
 │   │   └── package.json
-│   └── obsidian-plugin/           # Obsidian plugin (Phase 8)
+│   └── obsidian-plugin/           # Obsidian plugin (Phase 10)
 │       ├── src/
 │       └── package.json
 ├── pnpm-workspace.yaml            # Monorepo configuration
@@ -349,7 +349,7 @@ tags: [planner, weekly]
 - [x] Extension: Quick add button (+ icon in toolbar)
 - [x] Extension: `_rebuildTaskLine()` normalizes metadata order on all edits
 
-**Deferred to Phase 7:**
+**Deferred to Phase 8:**
 - [ ] Extension: `moveToNextWeek` - Move task to Monday of next week (grayed out in menu)
 - [ ] Extension: `moveToWeek` - Prompt for week number, move task (grayed out in menu)
 
@@ -367,16 +367,16 @@ tags: [planner, weekly]
 
 ---
 
-### Phase 6: Inline Markdown Rendering (Week 6)
+### Phase 6: Inline Markdown Rendering (Week 6) ✅
 **Goal:** Render bold, italic, links, and code in card titles across all views
 
 **Tasks:**
-- [ ] Webview UI: Install `marked` library (inline parse mode only)
-- [ ] Webview UI: Create `MarkdownTitle.tsx` shared component using `marked.parseInline()`
-- [ ] Webview UI: Replace plain text title rendering in `Card.tsx` and `BacklogView.tsx`
-- [ ] Webview UI: Global link click interceptor in `App.tsx` (event delegation via `.closest("a")`)
-- [ ] Extension: Handle `openLink` message → `vscode.env.openExternal()`
-- [ ] CSS: Add styles for `strong`, `em`, `a`, `code`, `del` scoped to `.card-title`
+- [x] Webview UI: Install `marked` library (inline parse mode only)
+- [x] Webview UI: Create `MarkdownTitle.tsx` shared component using `marked.parseInline()`
+- [x] Webview UI: Replace plain text title rendering in `Card.tsx` and `BacklogView.tsx`
+- [x] Webview UI: Global link click interceptor in `App.tsx` (event delegation via `.closest("a")`)
+- [x] Extension: Handle `openLink` message → `vscode.env.openExternal()`
+- [x] CSS: Add styles for `strong`, `em`, `a`, `code`, `del` scoped to `.card-title`
 
 **Deliverable:** Card titles render inline markdown in all three views. Links open in the browser.
 
@@ -390,7 +390,36 @@ tags: [planner, weekly]
 
 ---
 
-### Phase 7: Week Navigation (Week 7-8)
+### Phase 7: Metadata Filtering (Week 7) ✅
+**Goal:** Filter board cards by project, status, priority, due date, and time estimate
+
+**Tasks:**
+- [x] Webview UI: Create `FilterDropdown.tsx` component (project/status/priority/due-date/estimate sections)
+- [x] App.tsx: Export `FilterState`, `EMPTY_FILTER`, `isFilterActive` from `FilterDropdown.tsx`
+- [x] App.tsx: Implement `filterCards()` and `filterBoardData()` pure functions
+- [x] App.tsx: Derive `filteredCards` and `filteredBoardData` via `useMemo`; thread to all three views
+- [x] Webview UI: Filter button shows active count badge when any filter is on
+- [x] Webview UI: Click-outside closes the filter panel
+- [x] Webview UI: "Clear all filters" button visible when filter is active
+- [x] CSS: Filter dropdown styles using VS Code design variables
+
+**Deliverable:** [Filter ▾] button in toolbar opens a dropdown with five filter dimensions. Filters apply across all views and persist when switching views.
+
+**Acceptance Criteria:**
+- ✅ Filter button appears in toolbar; shows active count badge when filters are on
+- ✅ Project section derives unique project list from unfiltered card array (alphabetically sorted)
+- ✅ Status filter: To Do / In Progress / Done
+- ✅ Priority filter: High / Medium / Low
+- ✅ Due date filter: Overdue / Due Today / Due This Week / No Due Date
+- ✅ Time estimate filter: Short (≤30m) / Medium (30m–2h) / Long (2h+) / No Estimate
+- ✅ AND logic between filter dimensions; OR logic within each dimension
+- ✅ Filters apply to Standard, Swimlane, and Backlog views simultaneously
+- ✅ Filter state persists when switching between views
+- ✅ "Clear all filters" restores full board
+
+---
+
+### Phase 8: Week Navigation (Week 8-9)
 **Goal:** Navigate between weeks, auto-create week files
 
 **Tasks:**
@@ -413,18 +442,18 @@ tags: [planner, weekly]
 **Deliverable:** Navigate forward/backward through weeks. Auto-create week files from template. Move tasks between weeks.
 
 **Acceptance Criteria:**
-- ✅ Week navigation toolbar shows current week and year
-- ✅ Click "Next Week" navigates to next week
-- ✅ Click "Previous Week" navigates to previous week
-- ✅ If week file doesn't exist, it's created from template
-- ✅ Template includes correct dates for all weekdays
-- ✅ "Move to Next Week" moves task to Monday of next week
-- ✅ "Move to Week..." prompts for week number and moves task
-- ✅ Year boundaries handled correctly (week 52 → 1)
+- [ ] Week navigation toolbar shows current week and year
+- [ ] Click "Next Week" navigates to next week
+- [ ] Click "Previous Week" navigates to previous week
+- [ ] If week file doesn't exist, it's created from template
+- [ ] Template includes correct dates for all weekdays
+- [ ] "Move to Next Week" moves task to Monday of next week
+- [ ] "Move to Week..." prompts for week number and moves task
+- [ ] Year boundaries handled correctly (week 52 → 1)
 
 ---
 
-### Phase 8: Polish & Production Ready (Week 8-9)
+### Phase 9: Polish & Production Ready (Week 9-10)
 **Goal:** Settings, testing, documentation for v1.0.0 release
 
 **Tasks:**
@@ -461,7 +490,7 @@ tags: [planner, weekly]
 
 ---
 
-### Phase 9: Obsidian Plugin (Future)
+### Phase 10: Obsidian Plugin (Future)
 **Goal:** Dual-platform support (VS Code + Obsidian)
 
 **Tasks:**
@@ -488,7 +517,7 @@ tags: [planner, weekly]
 
 ## Success Metrics
 
-### v1.0.0 Release (End of Phase 7)
+### v1.0.0 Release (End of Phase 9)
 - [ ] Extension published to VS Code Marketplace
 - [ ] At least 3 distinct board views (Standard, Swimlane, Backlog)
 - [ ] Full CRUD operations (create, read, update, delete tasks)
@@ -527,14 +556,15 @@ tags: [planner, weekly]
 | Phase 1 | 2 weeks | 2 weeks | Basic board viewing |
 | Phase 2 | 1 week | 3 weeks | Interactive drag & drop |
 | Phase 3 | 1 week | 4 weeks | Metadata & sub-tasks |
-| Phase 4 | 1 week | 5 weeks | Multiple views & filtering |
+| Phase 4 | 1 week | 5 weeks | Multiple views & sorting |
 | Phase 5 | 1 week | 6 weeks | Context menu CRUD |
 | Phase 6 | 1 week | 7 weeks | Inline markdown rendering |
-| Phase 7 | 1 week | 8 weeks | Week navigation |
-| Phase 8 | 1 week | 9 weeks | **v1.0.0 Release** |
-| Phase 9 | TBD | Future | Obsidian plugin |
+| Phase 7 | 1 week | 8 weeks | Metadata filtering |
+| Phase 8 | 1 week | 9 weeks | Week navigation |
+| Phase 9 | 1 week | 10 weeks | **v1.0.0 Release** |
+| Phase 10 | TBD | Future | Obsidian plugin |
 
-**Total Time to v1.0.0:** ~9 weeks
+**Total Time to v1.0.0:** ~10 weeks
 
 ---
 
@@ -543,7 +573,8 @@ tags: [planner, weekly]
 1. ~~**Review this plan** - User feedback and approval~~ ✅
 2. ~~**Set up development environment** - pnpm, TypeScript, ESLint, Prettier~~ ✅
 3. ~~**Initialize monorepo** - Create package structure, configure workspaces~~ ✅
-4. **Finish Phase 1** - VS Code webview: activation, webview panel, basic 3-column board
+4. ~~**Phases 1–7** - Core board, drag-and-drop, metadata, views, CRUD, markdown rendering, filtering~~ ✅
+5. **Phase 8** - Week navigation with auto-file creation and cross-week task movement
 
 ---
 
@@ -558,5 +589,5 @@ tags: [planner, weekly]
 
 ---
 
-**Last Updated:** 2026-02-18
-**Status:** ✅ Phase 5 complete — Context Menu & CRUD | 🚀 Phase 6 next (Inline Markdown Rendering)
+**Last Updated:** 2026-02-20
+**Status:** ✅ Phase 7 complete — Metadata Filtering | 🚀 Phase 8 next (Week Navigation)
