@@ -158,6 +158,10 @@ export function App() {
     vscode.setState({ ...vscode.getState(), viewMode: mode });
   };
 
+  const handleNavigateWeek = (delta: number) => {
+    vscode.postMessage({ type: "navigateWeek", delta });
+  };
+
   const handleCardMove = (cardId: string, newStatus: string) => {
     vscode.postMessage({ type: "moveCard", cardId, newStatus });
   };
@@ -206,6 +210,12 @@ export function App() {
         break;
       case "moveToBacklog":
         handleCardMoveToSection(card.id, action.targetSection);
+        break;
+      case "moveToNextWeek":
+        vscode.postMessage({ type: "moveToNextWeek", cardId: card.id });
+        break;
+      case "moveToWeek":
+        vscode.postMessage({ type: "moveToWeek", cardId: card.id });
         break;
       case "deleteTask":
         vscode.postMessage({ type: "deleteTask", cardId: card.id });
@@ -282,8 +292,24 @@ export function App() {
             )}
           </div>
           <div className="header-row">
-            <div className="subtitle">
-              Week {boardData.frontmatter.week}, {boardData.frontmatter.year}
+            <div className="week-nav">
+              <button
+                className="week-nav-btn"
+                onClick={() => handleNavigateWeek(-1)}
+                title="Previous week"
+              >
+                ◀
+              </button>
+              <span className="subtitle">
+                Week {boardData.frontmatter.week}, {boardData.frontmatter.year}
+              </span>
+              <button
+                className="week-nav-btn"
+                onClick={() => handleNavigateWeek(1)}
+                title="Next week"
+              >
+                ▶
+              </button>
             </div>
             <div className="toolbar-right">
               <FilterDropdown

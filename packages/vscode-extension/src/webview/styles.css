@@ -58,6 +58,31 @@ body {
   color: var(--vscode-descriptionForeground);
 }
 
+/* Week Navigation */
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.week-nav-btn {
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.week-nav-btn:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
 .view-switcher {
   display: flex;
   gap: 2px;

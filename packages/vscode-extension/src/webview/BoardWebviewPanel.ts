@@ -1,7 +1,107 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { parseBoard, allCards } from "@hexfield-deck/core";
 // @ts-expect-error — esbuild bundles CSS as a text string via --loader:.css=text
 import stylesContent from "./styles.css";
+
+// ---- ISO Week Utilities -----------------------------------------------------
+
+/** Returns the UTC Date of Monday for the given ISO week and year. */
+function mondayOfISOWeek(week: number, year: number): Date {
+  // Jan 4 of any year is always in ISO week 1.
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dow = jan4.getUTCDay() || 7; // Convert Sunday (0) → 7
+  const mondayW1 = new Date(jan4);
+  mondayW1.setUTCDate(jan4.getUTCDate() - (dow - 1));
+  const result = new Date(mondayW1);
+  result.setUTCDate(mondayW1.getUTCDate() + (week - 1) * 7);
+  return result;
+}
+
+/** Returns the ISO week number and ISO year for a given Date. */
+function getISOWeekAndYear(date: Date): { week: number; year: number } {
+  // Shift to the nearest Thursday to correctly determine ISO year at boundaries.
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86_400_000) + 1) / 7);
+  return { week, year: d.getUTCFullYear() };
+}
+
+/** Returns the number of ISO weeks in the given year (52 or 53). */
+function isoWeeksInYear(year: number): number {
+  // Dec 28 is always in the year's last ISO week.
+  return getISOWeekAndYear(new Date(Date.UTC(year, 11, 28))).week;
+}
+
+/** Returns the ISO week and year that is `delta` weeks from the given week/year. */
+function getAdjacentWeek(week: number, year: number, delta: number): { week: number; year: number } {
+  const monday = mondayOfISOWeek(week, year);
+  monday.setUTCDate(monday.getUTCDate() + delta * 7);
+  return getISOWeekAndYear(monday);
+}
+
+/** Formats a UTC Date as "Monday, February 16, 2026". */
+function formatUTCDate(date: Date): string {
+  const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const MONTHS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  return `${DAYS[date.getUTCDay()]}, ${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+}
+
+/** Generates a fresh weekly planner markdown file for the given ISO week/year. */
+function generateWeekTemplate(week: number, year: number): string {
+  const monday = mondayOfISOWeek(week, year);
+  const weekdayHeadings = [0, 1, 2, 3, 4].flatMap((offset) => {
+    const d = new Date(monday);
+    d.setUTCDate(monday.getUTCDate() + offset);
+    return [`## ${formatUTCDate(d)}`, ""];
+  });
+  return [
+    "---",
+    `week: ${week}`,
+    `year: ${year}`,
+    "tags: [planner, weekly]",
+    "---",
+    "",
+    ...weekdayHeadings,
+    "## Backlog",
+    "",
+    "### Now",
+    "",
+    "### Next 2 Weeks",
+    "",
+    "### This Month",
+    "",
+    "## This Quarter",
+    "",
+    "## This Year",
+    "",
+    "## Parking Lot",
+    "",
+  ].join("\n");
+}
+
+/** Resolves a week file path from the pattern and workspace settings. */
+function resolveWeekFilePath(
+  week: number,
+  year: number,
+  pattern: string,
+  plannerRoot: string,
+  workspaceRoot: string,
+): string {
+  const WW = String(week).padStart(2, "0");
+  const relative = pattern
+    .replace(/\{year\}/g, String(year))
+    .replace(/\{WW\}/g, WW)
+    .replace(/\{week\}/g, String(week));
+  const root = plannerRoot ? path.join(workspaceRoot, plannerRoot) : workspaceRoot;
+  return path.join(root, relative);
+}
+
+// -----------------------------------------------------------------------------
 
 export class BoardWebviewPanel {
   public static currentPanel: BoardWebviewPanel | undefined;
@@ -74,6 +174,15 @@ export class BoardWebviewPanel {
             break;
           case "addTask":
             this._handleAddTask(message.targetDay, message.targetSection);
+            break;
+          case "navigateWeek":
+            this._handleNavigateWeek(message.delta);
+            break;
+          case "moveToNextWeek":
+            this._handleMoveCardToNextWeek(message.cardId);
+            break;
+          case "moveToWeek":
+            this._handleMoveCardToWeek(message.cardId);
             break;
           case "openLink":
             if (message.url && typeof message.url === "string") {
@@ -627,23 +736,233 @@ export class BoardWebviewPanel {
     const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
 
     const edit = new vscode.WorkspaceEdit();
-    // Delete the lines — include trailing newline if not last line
+    this._addCardDeleteToEdit(edit, this._document.uri, lines, rangeStart, rangeEnd);
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  /**
+   * Adds a delete operation for a card block to an existing WorkspaceEdit.
+   * Handles edge case where the card is at the end of the file.
+   */
+  private _addCardDeleteToEdit(
+    edit: vscode.WorkspaceEdit,
+    uri: vscode.Uri,
+    lines: string[],
+    rangeStart: number,
+    rangeEnd: number,
+  ): void {
     const startPos = new vscode.Position(rangeStart, 0);
-    let endPos: vscode.Position;
     if (rangeEnd < lines.length) {
-      endPos = new vscode.Position(rangeEnd, 0);
+      edit.delete(uri, new vscode.Range(startPos, new vscode.Position(rangeEnd, 0)));
     } else {
-      // Last line(s) — delete from end of previous line
-      endPos = new vscode.Position(rangeEnd - 1, lines[rangeEnd - 1].length);
-      const adjustedStart = rangeStart > 0
-        ? new vscode.Position(rangeStart - 1, lines[rangeStart - 1].length)
-        : startPos;
-      edit.delete(this._document.uri, new vscode.Range(adjustedStart, endPos));
-      await vscode.workspace.applyEdit(edit);
+      // Card is at the end of the file — delete from end of preceding line.
+      const endPos = new vscode.Position(rangeEnd - 1, lines[rangeEnd - 1].length);
+      const adjustedStart =
+        rangeStart > 0
+          ? new vscode.Position(rangeStart - 1, lines[rangeStart - 1].length)
+          : startPos;
+      edit.delete(uri, new vscode.Range(adjustedStart, endPos));
+    }
+  }
+
+  // ---- Week Navigation -------------------------------------------------------
+
+  private async _promptConfigureWeekNav(): Promise<void> {
+    const open = await vscode.window.showInformationMessage(
+      "Set hexfield-deck.weekFilePattern in settings to enable week navigation.",
+      "Open Settings",
+    );
+    if (open === "Open Settings") {
+      await vscode.commands.executeCommand(
+        "workbench.action.openSettings",
+        "hexfield-deck.weekFilePattern",
+      );
+    }
+  }
+
+  private _getWeekNavSettings(): { pattern: string; plannerRoot: string } {
+    const config = vscode.workspace.getConfiguration("hexfield-deck");
+    return {
+      pattern: config.get<string>("weekFilePattern", ""),
+      plannerRoot: config.get<string>("plannerRoot", ""),
+    };
+  }
+
+  private _getWorkspaceRoot(): string | null {
+    const folders = vscode.workspace.workspaceFolders;
+    return folders && folders.length > 0 ? folders[0].uri.fsPath : null;
+  }
+
+  /**
+   * Ensures the week file exists (creating it from template if needed).
+   * Returns the URI and text content, or null if configuration is missing.
+   */
+  private async _ensureWeekFile(
+    week: number,
+    year: number,
+  ): Promise<{ uri: vscode.Uri; text: string } | null> {
+    const { pattern, plannerRoot } = this._getWeekNavSettings();
+    if (!pattern) {
+      await this._promptConfigureWeekNav();
+      return null;
+    }
+
+    const workspaceRoot = this._getWorkspaceRoot();
+    if (!workspaceRoot) {
+      vscode.window.showErrorMessage("No workspace folder open.");
+      return null;
+    }
+
+    const filePath = resolveWeekFilePath(week, year, pattern, plannerRoot, workspaceRoot);
+    const uri = vscode.Uri.file(filePath);
+
+    try {
+      await vscode.workspace.fs.stat(uri);
+      const doc = await vscode.workspace.openTextDocument(uri);
+      return { uri, text: doc.getText() };
+    } catch {
+      // File doesn't exist — create it from template.
+      const template = generateWeekTemplate(week, year);
+      const dirUri = vscode.Uri.file(path.dirname(filePath));
+      await vscode.workspace.fs.createDirectory(dirUri);
+      await vscode.workspace.fs.writeFile(uri, Buffer.from(template, "utf-8"));
+      return { uri, text: template };
+    }
+  }
+
+  private async _handleNavigateWeek(delta: number): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const { week, year } = board.frontmatter;
+
+    if (!week || !year) {
+      vscode.window.showErrorMessage("Current file has no week/year in frontmatter.");
       return;
     }
-    edit.delete(this._document.uri, new vscode.Range(startPos, endPos));
+
+    const { pattern } = this._getWeekNavSettings();
+    if (!pattern) {
+      await this._promptConfigureWeekNav();
+      return;
+    }
+
+    const { week: targetWeek, year: targetYear } = getAdjacentWeek(week, year, delta);
+    const result = await this._ensureWeekFile(targetWeek, targetYear);
+    if (!result) return;
+
+    this._document = await vscode.workspace.openTextDocument(result.uri);
+    this._update();
+  }
+
+  /**
+   * Moves a card to the Monday section of the given target week's file.
+   * Creates the target file from template if it doesn't exist.
+   */
+  private async _moveCardToWeekFile(
+    cardId: string,
+    targetWeek: number,
+    targetYear: number,
+  ): Promise<void> {
+    const result = await this._ensureWeekFile(targetWeek, targetYear);
+    if (!result) return;
+
+    const sourceText = this._document.getText();
+    const board = parseBoard(sourceText);
+    const cards = allCards(board);
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) {
+      vscode.window.showErrorMessage(`Card not found: ${cardId}`);
+      return;
+    }
+
+    const sourceLines = sourceText.split("\n");
+    const cardLineIndex = card.lineNumber - 1;
+    const [rangeStart, rangeEnd] = this._getCardLineRange(sourceLines, cardLineIndex);
+    const cardLines = sourceLines.slice(rangeStart, rangeEnd);
+
+    const targetLines = result.text.split("\n");
+    const insertAt = this._findDaySectionInsertionPoint(targetLines, "Monday");
+
+    const edit = new vscode.WorkspaceEdit();
+
+    // Insert into target file's Monday section (or end of file if no Monday heading).
+    if (insertAt !== null) {
+      edit.insert(result.uri, new vscode.Position(insertAt, 0), cardLines.join("\n") + "\n");
+    } else {
+      const lastIdx = targetLines.length - 1;
+      edit.insert(
+        result.uri,
+        new vscode.Position(lastIdx, targetLines[lastIdx].length),
+        "\n" + cardLines.join("\n") + "\n",
+      );
+    }
+
+    // Delete from source file.
+    this._addCardDeleteToEdit(edit, this._document.uri, sourceLines, rangeStart, rangeEnd);
+
     await vscode.workspace.applyEdit(edit);
+  }
+
+  private async _handleMoveCardToNextWeek(cardId: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const { week, year } = board.frontmatter;
+
+    if (!week || !year) {
+      vscode.window.showErrorMessage("Current file has no week/year in frontmatter.");
+      return;
+    }
+
+    const { pattern } = this._getWeekNavSettings();
+    if (!pattern) {
+      await this._promptConfigureWeekNav();
+      return;
+    }
+
+    const { week: nextWeek, year: nextYear } = getAdjacentWeek(week, year, 1);
+    await this._moveCardToWeekFile(cardId, nextWeek, nextYear);
+  }
+
+  private async _handleMoveCardToWeek(cardId: string): Promise<void> {
+    const text = this._document.getText();
+    const board = parseBoard(text);
+    const { week: currentWeek, year } = board.frontmatter;
+
+    if (!year) {
+      vscode.window.showErrorMessage("Current file has no year in frontmatter.");
+      return;
+    }
+
+    const { pattern } = this._getWeekNavSettings();
+    if (!pattern) {
+      await this._promptConfigureWeekNav();
+      return;
+    }
+
+    const MONTHS_SHORT = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    const weeksInYear = isoWeeksInYear(year);
+    const items = Array.from({ length: weeksInYear }, (_, i) => {
+      const w = i + 1;
+      const monday = mondayOfISOWeek(w, year);
+      const friday = new Date(monday);
+      friday.setUTCDate(monday.getUTCDate() + 4);
+      return {
+        label: `Week ${w}`,
+        description: `${MONTHS_SHORT[monday.getUTCMonth()]} ${monday.getUTCDate()} – ${MONTHS_SHORT[friday.getUTCMonth()]} ${friday.getUTCDate()}, ${year}`,
+        week: w,
+      };
+    });
+
+    const selected = await vscode.window.showQuickPick(items, {
+      placeHolder: `Select target week (currently Week ${currentWeek ?? "?"})`,
+      title: "Move Task to Week",
+    });
+    if (!selected || selected.week === currentWeek) return;
+
+    await this._moveCardToWeekFile(cardId, selected.week, year);
   }
 
   private async _handleAddTask(targetDay?: string, targetSection?: string): Promise<void> {
