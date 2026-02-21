@@ -10,11 +10,13 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 |:---:|:---:|
 | ![Swimlane View](docs/screenshots/phase-6-swimlane.png) | ![Backlog View](docs/screenshots/phase-6-backlog.png) |
 
+![Filtering](docs/screenshots/phase-7-filtering.png)
+
 ---
 
 ## ✨ Features
 
-### Current (v0.4.0)
+### Current (v0.5.0)
 
 - ✅ **3-column kanban board** (To Do / In Progress / Done)
 - ✅ **Drag-and-drop editing** — Move cards between columns to update checkbox states
@@ -34,6 +36,7 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 - ✅ **Quick Add** — `+` button in toolbar inserts a new task into today's section
 - ✅ **Open in Markdown** — Jump directly to any task's source line from the board
 - ✅ **Inline markdown rendering** — Bold, italic, strikethrough, code spans, and links render in card and sub-task titles; links open in the browser
+- ✅ **Metadata filtering** — Filter by project (multi-select), status, priority, due date, and time estimate; active filter count shown in toolbar
 
 ### Coming Soon
 
@@ -141,7 +144,7 @@ See [examples/weekly-planner.md](examples/weekly-planner.md) for a complete exam
 
 ## 📚 Documentation
 
-- **[User Guide](USER_GUIDE.md)** — Complete usage documentation _(coming soon)_
+- **[User Guide](USER_GUIDE.md)** — Complete usage documentation
 - **[Setup Guide](SETUP.md)** — Development environment setup
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** — Roadmap and phases
 - **[Architecture Decisions](docs/decisions/)** — Technical ADRs
@@ -196,9 +199,10 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full technical plan
 | **Phase 4** | ✅ Complete | Multiple views & sorting          |
 | **Phase 5** | ✅ Complete | Context menu CRUD operations      |
 | **Phase 6** | ✅ Complete | Inline markdown rendering         |
-| **Phase 7** | 🔜 Next     | Week navigation                   |
-| **Phase 8** | 📋 Planned  | Settings & production polish      |
-| **Phase 9** | 🔮 Future   | Obsidian plugin                   |
+| **Phase 7** | ✅ Complete | Metadata filtering                |
+| **Phase 8** | 🔜 Next     | Week navigation                   |
+| **Phase 9** | 📋 Planned  | Settings & production polish      |
+| **Phase 10** | 🔮 Future  | Obsidian plugin                   |
 
 **Target:** v1.0.0 release in ~8 weeks from start
 

@@ -1,10 +1,13 @@
-import React, { useState, useEffect, createContext, useCallback } from "react";
+import React, { useState, useEffect, useMemo, createContext, useCallback } from "react";
 import { Board } from "./Board.js";
 import { BacklogView } from "./BacklogView.js";
 import { SwimlaneView } from "./SwimlaneView.js";
 import { ContextMenu } from "./ContextMenu.js";
 import type { ContextMenuAction } from "./ContextMenu.js";
-import type { BoardData, Card } from "@hexfield-deck/core";
+import { FilterDropdown } from "./FilterDropdown.js";
+import type { FilterState, DueDateBucket, EstimateBucket } from "./FilterDropdown.js";
+import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
+import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
 
 type ViewMode = "standard" | "swimlane" | "backlog";
 
@@ -29,12 +32,82 @@ function getInitialViewMode(): ViewMode {
 export type ContextMenuHandler = (card: Card, pos: { x: number; y: number }) => void;
 export const ContextMenuContext = createContext<ContextMenuHandler>(() => {});
 
+// ---- Filter helpers --------------------------------------------------------
+
+function matchesDueDateBucket(dueDate: string | undefined, buckets: DueDateBucket[]): boolean {
+  if (buckets.includes("none") && !dueDate) return true;
+  if (!dueDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dueDate);
+  d.setHours(0, 0, 0, 0);
+  const diff = Math.floor((d.getTime() - today.getTime()) / 86_400_000);
+  if (buckets.includes("overdue") && diff < 0) return true;
+  if (buckets.includes("today") && diff === 0) return true;
+  if (buckets.includes("this-week") && diff >= 0 && diff <= 7) return true;
+  return false;
+}
+
+function parseEstimateMinutes(est?: string): number | null {
+  if (!est) return null;
+  let total = 0;
+  const hours = est.match(/(\d+)h/);
+  const mins = est.match(/(\d+)m/);
+  if (hours) total += parseInt(hours[1]) * 60;
+  if (mins) total += parseInt(mins[1]);
+  return total || null;
+}
+
+function matchesEstimateBucket(timeEstimate: string | undefined, buckets: EstimateBucket[]): boolean {
+  if (buckets.includes("none") && !timeEstimate) return true;
+  if (!timeEstimate) return false;
+  const mins = parseEstimateMinutes(timeEstimate);
+  if (mins === null) return false;
+  if (buckets.includes("short") && mins <= 30) return true;
+  if (buckets.includes("medium") && mins > 30 && mins <= 120) return true;
+  if (buckets.includes("long") && mins > 120) return true;
+  return false;
+}
+
+function filterCards(cards: Card[], f: FilterState): Card[] {
+  if (!isFilterActive(f)) return cards;
+  return cards.filter((card) => {
+    if (f.projects.length > 0 && (!card.project || !f.projects.includes(card.project)))
+      return false;
+    if (f.statuses.length > 0 && !f.statuses.includes(card.status as TaskStatus))
+      return false;
+    if (f.priorities.length > 0 && (!card.priority || !f.priorities.includes(card.priority as Priority)))
+      return false;
+    if (f.dueDates.length > 0 && !matchesDueDateBucket(card.dueDate, f.dueDates))
+      return false;
+    if (f.estimates.length > 0 && !matchesEstimateBucket(card.timeEstimate, f.estimates))
+      return false;
+    return true;
+  });
+}
+
+function filterBoardData(boardData: BoardData, f: FilterState): BoardData {
+  if (!isFilterActive(f)) return boardData;
+  const keep = (cards: Card[]) => filterCards(cards, f);
+  return {
+    ...boardData,
+    days: boardData.days.map((day) => ({ ...day, cards: keep(day.cards) })),
+    backlog: boardData.backlog.map((bucket) => ({ ...bucket, cards: keep(bucket.cards) })),
+    thisQuarter: keep(boardData.thisQuarter),
+    thisYear: keep(boardData.thisYear),
+    parkingLot: keep(boardData.parkingLot),
+  };
+}
+
+// ---------------------------------------------------------------------------
+
 export function App() {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
   const [isDirty, setIsDirty] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
   const [contextMenu, setContextMenu] = useState<{ card: Card; x: number; y: number } | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterState>(EMPTY_FILTER);
 
   useEffect(() => {
     // Listen for messages from extension
@@ -71,6 +144,14 @@ export function App() {
       document.removeEventListener("click", linkClickHandler);
     };
   }, []);
+
+  // Filtered data — recomputed whenever cards, boardData, or the active filter changes.
+  // `cards` (unfiltered) is still passed to FilterDropdown so it can enumerate all projects.
+  const filteredCards = useMemo(() => filterCards(cards, activeFilter), [cards, activeFilter]);
+  const filteredBoardData = useMemo(
+    () => (boardData ? filterBoardData(boardData, activeFilter) : null),
+    [boardData, activeFilter]
+  );
 
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
@@ -150,7 +231,7 @@ export function App() {
     }
   };
 
-  if (!boardData) {
+  if (!boardData || !filteredBoardData) {
     return (
       <div className="loading">
         <p>Loading board...</p>
@@ -161,18 +242,30 @@ export function App() {
   const renderView = () => {
     switch (viewMode) {
       case "standard":
-        return <Board cards={cards} onCardMove={handleCardMove} onToggleSubTask={handleToggleSubTask} />;
+        return (
+          <Board
+            cards={filteredCards}
+            onCardMove={handleCardMove}
+            onToggleSubTask={handleToggleSubTask}
+          />
+        );
       case "swimlane":
         return (
           <SwimlaneView
-            boardData={boardData}
+            boardData={filteredBoardData}
             onCardMove={handleCardMove}
             onCardMoveToDay={handleCardMoveToDay}
             onToggleSubTask={handleToggleSubTask}
           />
         );
       case "backlog":
-        return <BacklogView boardData={boardData} onCardMove={handleCardMove} onCardMoveToSection={handleCardMoveToSection} />;
+        return (
+          <BacklogView
+            boardData={filteredBoardData}
+            onCardMove={handleCardMove}
+            onCardMoveToSection={handleCardMoveToSection}
+          />
+        );
     }
   };
 
@@ -193,6 +286,11 @@ export function App() {
               Week {boardData.frontmatter.week}, {boardData.frontmatter.year}
             </div>
             <div className="toolbar-right">
+              <FilterDropdown
+                cards={cards}
+                filter={activeFilter}
+                onChange={setActiveFilter}
+              />
               <button
                 className="quick-add-btn"
                 onClick={handleQuickAdd}
