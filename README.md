@@ -83,6 +83,7 @@ Hexfield Deck parses structured markdown files with a specific format:
 
 ```markdown
 ---
+type: hexfield-planner
 week: 7
 year: 2026
 tags: [planner, weekly]
