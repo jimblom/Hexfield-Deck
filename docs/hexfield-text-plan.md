@@ -24,8 +24,8 @@ like the board.
 - Dynamically color due dates by proximity (overdue → red, today → orange, etc.)
   to match the board's badge colors
 - Highlight the three checkbox states (`[ ]`, `[/]`, `[x]`) distinctly
-- Activate only on Hexfield Deck planner files (files with `week:` frontmatter)
-  so it never interferes with normal markdown files
+- Activate **only** on Hexfield product files — identified by a `type:` frontmatter
+  field — so it never interferes with normal markdown files
 - Ship as a separate VS Code Marketplace extension, with a recommendation from
   the Hexfield Deck listing
 
@@ -46,24 +46,72 @@ the Marketplace and clearly signals its relationship to Hexfield Deck.
 
 ---
 
-## Architecture Decision: TextMate Grammar + Decoration API (Hybrid)
+## Frontmatter File Identity Field
 
-Three approaches were evaluated:
+Hexfield Deck is early enough that we can enforce a canonical product identifier
+in frontmatter. All Hexfield planner files will require a `type:` field:
+
+```yaml
+---
+type: hexfield-planner    # ← canonical Hexfield product identifier
+week: 1
+year: 2026
+tags: [planner, weekly]
+start_date: 2026-02-05
+end_date: 2026-02-09
+---
+```
+
+**Why `type: hexfield-planner`:**
+- Self-documenting — any tool or human reading the file knows its purpose
+- Scales across the product family (`hexfield-timechaser`, etc. if future tools
+  have their own file formats)
+- Simple to check in code: `frontmatter.type === 'hexfield-planner'`
+- Follows a well-established convention (static site generators, Matter.js, etc.)
+
+**Hexfield Deck changes required:**
+- Add `type: hexfield-planner` to the week template generator (`generateWeekTemplate()`)
+- Update the frontmatter detection logic: check `type === 'hexfield-planner'` as
+  the primary signal (alongside or replacing the current `week:` + `year:` + `tags:` heuristic)
+- Update USER_GUIDE.md to document `type:` as a required frontmatter field
+- Existing files without `type:` continue to work via the current heuristic;
+  `type:` becomes required for new files
+
+---
+
+## Architecture Decision: Custom Language ID + Hybrid Grammar/Decoration
+
+Three approaches were evaluated for scoping colorization to Hexfield files only:
 
 | Approach | Pros | Cons |
 |---|---|---|
-| **TextMate Grammar only** | Zero runtime cost, instant on load, no API | Static colors only — can't do date-proximity coloring |
-| **Decoration API only** | Full dynamic control, date proximity, icon overlays | Activates after load (flicker), more moving parts |
-| **Hybrid (recommended)** | Static tokens colored immediately; dynamic dates colored at runtime | Slightly more complexity |
+| **Grammar on all `.md` files** | Simple | False positives; `!!!` colors non-Hexfield markdown |
+| **Decoration API only** | Perfectly scoped to Hexfield files | All colorization deferred to runtime; slight load flicker |
+| **Custom language ID (recommended)** | Grammar scoped precisely; decorations scoped precisely; no false positives | Small runtime cost to promote language on file open |
 
-**Recommendation: Hybrid.**
+**Recommendation: Custom language ID (`hexfield-markdown`) + Hybrid grammar/decoration.**
 
-- TextMate grammar handles everything static: `#project-tag`, `!!!`/`!!`/`!`,
-  `est:2h`/`est:30m`, `[YYYY-MM-DD]` brackets, `[/]` checkbox variant, frontmatter fields.
-- Decoration API handles everything dynamic: coloring due dates by proximity to
-  today (overdue, today, soon, future), and any future icon overlays.
-- This matches what the VS Code ecosystem recommends (e.g., GitLens uses the same
-  pattern: grammar for structure, decorations for live data).
+When a `.md` file is opened, the extension reads its frontmatter. If
+`type: hexfield-planner` is found, it calls:
+
+```typescript
+vscode.languages.setTextDocumentLanguage(document, 'hexfield-markdown');
+```
+
+This promotes the file to the `hexfield-markdown` language ID. From that point:
+
+- The **TextMate grammar** is contributed for `hexfield-markdown` only — it never
+  touches regular markdown files
+- The **Decoration API** uses a `{ language: 'hexfield-markdown' }` document
+  selector — it also never activates on regular markdown
+- VS Code's built-in markdown features (preview, folding) are inherited via the
+  grammar's `embeddedLanguages` and `baseLanguage` declarations
+
+**TextMate grammar** handles everything static: `#project-tag`, `!!!`/`!!`/`!`,
+`est:2h`/`est:30m`, `[YYYY-MM-DD]` brackets, `[/]` checkbox variant, frontmatter keys.
+
+**Decoration API** handles the one dynamic element: due date proximity coloring,
+which requires knowing today's date at runtime.
 
 ---
 
@@ -98,10 +146,11 @@ hexfield-text/
 
 ## Token Scope Map (TextMate Grammar)
 
-The grammar injects into `text.html.markdown` (VS Code's markdown scope) and
-fires only when the document has Hexfield Deck frontmatter. Because TextMate
-grammars can't read runtime state, the grammar will colorize all `[YYYY-MM-DD]`
-tokens uniformly; the Decoration API will then override colors for date proximity.
+The grammar contributes to the `hexfield-markdown` language ID only (not
+`text.html.markdown`). It fires only on files that have been promoted via
+the `type: hexfield-planner` frontmatter check. Because TextMate grammars
+can't read runtime state, the grammar colorizes all `[YYYY-MM-DD]` tokens
+uniformly; the Decoration API then overrides colors for date proximity.
 
 | Token | Example | Proposed Scope | Default Color (Dark Theme) |
 |---|---|---|---|
@@ -143,29 +192,39 @@ if the product family grows).
 
 ## Implementation Phases
 
-### Phase 1: Repo Bootstrap + Grammar (MVP)
+### Phase 1: Repo Bootstrap + Language ID Promotion + Grammar (MVP)
 
-**Goal:** Extension installs, grammar fires, all static tokens are colorized.
+**Goal:** Extension installs, promotes Hexfield files to `hexfield-markdown`,
+grammar fires, all static tokens are colorized.
 
 - [ ] Create `hexfield-text` GitHub repository
 - [ ] Bootstrap VS Code extension scaffold (`yo code` or manual)
 - [ ] TypeScript + ESLint + Prettier (match Hexfield Deck conventions)
-- [ ] Write `hexfield-deck.tmLanguage.json` injection grammar
-  - Inject into `text.html.markdown`
+- [ ] `package.json`: Declare `hexfield-markdown` language (`contributes.languages`)
+  with `extends: "markdown"` so built-in markdown features are inherited
+- [ ] `extension.ts`: On `onDidOpenTextDocument` and `onDidChangeActiveTextEditor`,
+  read frontmatter, check `type === 'hexfield-planner'`, call
+  `setTextDocumentLanguage(doc, 'hexfield-markdown')`
+- [ ] Write `hexfield-deck.tmLanguage.json` grammar scoped to `hexfield-markdown`
   - Scope: `#project-tag`, `[YYYY-MM-DD]`, `!!!`/`!!`/`!`, `est:Xh`/`est:Xm`, `[/]`
 - [ ] Wire grammar in `package.json` (`contributes.grammars`)
-- [ ] Manual test against `examples/weekly-planner.md` from Hexfield Deck
-- [ ] README with screenshots of before/after
+- [ ] **Hexfield Deck side:** Add `type: hexfield-planner` to `generateWeekTemplate()`
+  and update detection heuristic; update USER_GUIDE.md
+- [ ] Manual test: open existing example file (without `type:`) → no colorization;
+  add `type: hexfield-planner` → colorization activates immediately
+- [ ] README with before/after screenshots
 
-**Deliverable:** Install the `.vsix`, open a planner file, see all metadata tokens colored.
+**Deliverable:** Install the `.vsix`, open a Hexfield planner file, see all metadata
+tokens colored. Open a regular markdown file — no effect.
 
 **Acceptance criteria:**
-- `#project-tag` tokens are blue
-- `!!!`/`!!`/`!` show red/yellow/green
+- `#project-tag` tokens are blue in Hexfield files only
+- `!!!`/`!!`/`!` show red/yellow/green in Hexfield files only
 - `est:2h` shows teal
-- `[2026-02-15]` shows in a distinct color (gray as default before decorator)
+- `[2026-02-15]` shows in a distinct default color
 - `[/]` checkbox shows differently from `[ ]` and `[x]`
-- Normal markdown files are unaffected
+- Regular `.md` files (README, notes) are completely unaffected
+- Removing `type: hexfield-planner` from frontmatter deactivates colorization
 
 ---
 
@@ -173,14 +232,14 @@ if the product family grows).
 
 **Goal:** Due dates change color based on proximity to today.
 
-- [ ] `extension.ts`: Register activation events (`onLanguage:markdown`)
-- [ ] Detect Hexfield Deck files (parse frontmatter for `week:` key)
+- [ ] `extension.ts`: Register activation events (`onLanguage:hexfield-markdown`)
+- [ ] Document selector scoped to `{ language: 'hexfield-markdown' }` — no
+  frontmatter re-checking needed; language promotion in Phase 1 handles this
 - [ ] `dueDateDecorator.ts`: Scan document for `[YYYY-MM-DD]` pattern
 - [ ] Compute date proximity (overdue / today / within 3 days / future)
 - [ ] Create four `TextEditorDecorationType` instances (one per proximity bucket)
 - [ ] Apply correct decoration ranges on activation and on document change
   (debounced 500ms)
-- [ ] Deactivate decorator on non-Hexfield-Deck files
 
 **Acceptance criteria:**
 - `[2026-02-08]` (past) renders red in the editor
@@ -220,20 +279,12 @@ if the product family grows).
    strikethrough on done tasks in the editor)? Leaning toward grammar-only for
    checkboxes and keeping the decorator focused on dates only.
 
-2. **Frontmatter activation guard**: TextMate grammars are stateless — they can't
-   check frontmatter. The grammar will apply to *all* markdown files. Options:
-   - Accept this (colorization in non-planner files is cosmetic and harmless)
-   - Use the Decoration API *only* (no grammar) and apply all styling programmatically,
-     scoped to Hexfield Deck files
-   - Ship the grammar scoped to a custom language ID (`hexfield-markdown`) and add
-     a document selector that promotes `.md` files with `week:` frontmatter to that
-     language ID
+2. **~~Frontmatter activation guard~~** ✅ Resolved — Custom language ID
+   (`hexfield-markdown`) promoted via `setTextDocumentLanguage()` on files with
+   `type: hexfield-planner` frontmatter. Grammar and decorations scope to
+   `hexfield-markdown` only. No false positives on regular markdown files.
 
-   **Recommended:** Accept the grammar applying to all `.md` files. The tokens
-   (`#tag`, `!!!`, `est:2h`) are Hexfield-specific enough that false-positive
-   colorization in other markdown files will be rare and unobtrusive.
-
-3. **Monorepo vs separate repo**: Resolved above — separate repo.
+3. **Monorepo vs separate repo**: Resolved — separate repo.
 
 4. **Shared date logic with Hexfield Deck core**: The date proximity logic in
    `@hexfield-deck/core` could be extracted to a published npm package
@@ -264,5 +315,5 @@ if the product family grows).
 
 ---
 
-*Last updated: 2026-02-22*
+*Last updated: 2026-02-22 (rev 2 — custom language ID + `type:` frontmatter field)*
 *Author: Claude (planning session `bxVtq`)*
