@@ -24,18 +24,46 @@
                 "title": "Hexfield Deck: Open Board"
             }
         ],
+        "configuration": {
+            "title": "Hexfield Deck",
+            "properties": {
+                "hexfield-deck.projects": {
+                    "type": "object",
+                    "default": {},
+                    "description": "Per-project configuration. Keys are project names (without #). Each value may have 'color' (hex string for card left border) and/or 'url' (makes project badge a clickable link).",
+                    "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                            "color": {
+                                "type": "string",
+                                "description": "Hex color for the card left border"
+                            },
+                            "url": {
+                                "type": "string",
+                                "description": "URL to open when the project badge is clicked"
+                            },
+                            "style": {
+                                "type": "string",
+                                "enum": ["border", "fill", "both"],
+                                "description": "How to apply the color to matching cards (default: border)"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "menus": {
             "explorer/context": [
                 {
                     "command": "hexfield-deck.openBoard",
-                    "when": "resourceLangId == markdown",
+                    "when": "resourceLangId == markdown || resourceLangId == hexfield-markdown",
                     "group": "navigation@10"
                 }
             ],
             "editor/title/context": [
                 {
                     "command": "hexfield-deck.openBoard",
-                    "when": "resourceLangId == markdown",
+                    "when": "resourceLangId == markdown || resourceLangId == hexfield-markdown",
                     "group": "navigation@10"
                 }
             ]
