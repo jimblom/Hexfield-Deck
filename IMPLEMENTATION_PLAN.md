@@ -89,6 +89,7 @@ Platform-specific packages (`vscode-extension`, `obsidian-plugin`) will:
 
 ```markdown
 ---
+type: hexfield-planner
 week: 1
 year: 2026
 tags: [planner, weekly]
@@ -128,7 +129,7 @@ end_date: 2026-02-11
 
 ### Key Parsing Rules
 
-1. **Frontmatter Detection:** Files with `week:`, `year:`, and `tags:` fields are Hexfield Deck planners
+1. **Frontmatter Detection:** Files with `type: hexfield-planner` are Hexfield Deck planners (primary signal); fall back to `week:` + `year:` + `tags:` heuristic for files created before this field was introduced
 2. **Day Sections:** Level 2 headings matching pattern `## {DayName}, {Month} {Day}, {Year}`
 3. **Project Tags:** Extracted from inline `#tag-name` in task text
 4. **Bold Text Ignored:** `**Section Name**` is ignored by parser (user's visual organization)
@@ -174,6 +175,7 @@ function generateWeekTemplate(week: number, year: number): string {
   const formatISODate = (date: Date) => format(date, 'yyyy-MM-dd');
 
   return `---
+type: hexfield-planner
 week: ${week}
 year: ${year}
 quarter: Q${quarter}

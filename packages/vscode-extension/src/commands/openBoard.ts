@@ -31,7 +31,7 @@ export async function openBoard(
     document = editor.document;
   }
 
-  if (document.languageId !== "markdown") {
+  if (document.languageId !== "markdown" && document.languageId !== "hexfield-markdown") {
     vscode.window.showWarningMessage(
       "Hexfield Deck: Selected file is not markdown.",
     );
