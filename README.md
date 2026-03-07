@@ -16,7 +16,7 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 ## ✨ Features
 
-### Current (v0.5.0)
+### Current (v0.6.0)
 
 - ✅ **3-column kanban board** (To Do / In Progress / Done)
 - ✅ **Drag-and-drop editing** — Move cards between columns to update checkbox states
@@ -37,11 +37,13 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 - ✅ **Open in Markdown** — Jump directly to any task's source line from the board
 - ✅ **Inline markdown rendering** — Bold, italic, strikethrough, code spans, and links render in card and sub-task titles; links open in the browser
 - ✅ **Metadata filtering** — Filter by project (multi-select), status, priority, due date, and time estimate; active filter count shown in toolbar
+- ✅ **Project color configuration** — "Projects" toolbar panel to set per-project card colors (border stripe, fill tint, or both), styles, and URL links without touching settings JSON
+- ✅ **Configurable badge colors** — All metadata badge colors follow `hexfield.colors.*` settings, shared with the Hexfield Text companion extension
+- ✅ **Hexfield Text compatibility** — Works alongside the [Hexfield Text](https://github.com/jimblom/hexfield-text) companion extension for editor syntax highlighting
 
 ### Coming Soon
 
 - 🗓️ **Week navigation** — Browse weeks with auto-file creation
-- 🎨 **Project customization** — Configure colors and links for project tags
 - 🔌 **Obsidian plugin** — Full feature parity for Obsidian users
 
 ---

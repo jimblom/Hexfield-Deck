@@ -49,10 +49,10 @@ export function ProjectPanel({ projects, config, onChange }: ProjectPanelProps) 
     }
 
     function clearProject(name: string) {
-        const { ...rest } = config[name] ?? {};
         const next = { ...config };
-        if (Object.keys(rest).length > 0) {
-            next[name] = rest;
+        const url = config[name]?.url;
+        if (url !== undefined) {
+            next[name] = { url };
         } else {
             delete next[name];
         }
@@ -70,10 +70,12 @@ export function ProjectPanel({ projects, config, onChange }: ProjectPanelProps) 
         if (url) {
             onChange({ ...config, [name]: { ...existing, url } });
         } else {
-            const { ...rest } = existing;
             const next = { ...config };
-            if (Object.keys(rest).length > 0) {
-                next[name] = rest;
+            const retained: ProjectConfig = {};
+            if (existing.color) retained.color = existing.color;
+            if (existing.style) retained.style = existing.style;
+            if (Object.keys(retained).length > 0) {
+                next[name] = retained;
             } else {
                 delete next[name];
             }
@@ -191,6 +193,7 @@ export function ProjectPanel({ projects, config, onChange }: ProjectPanelProps) 
                                         defaultValue={cfg.url ?? ''}
                                         placeholder="url..."
                                         onBlur={(e) => setUrl(name, e.target.value.trim())}
+                                        onChange={(e) => setUrl(name, e.target.value.trim())}
                                         onPointerDown={(e) => e.stopPropagation()}
                                     />
                                 </div>
