@@ -4,7 +4,20 @@ All notable changes to Hexfield Deck are documented here.
 
 ---
 
-## [0.6.0] — 2026-03-07
+## [0.6.1] — 2026-03-07
+
+### Fixed
+
+- **Project clear button (✕)** — Clicking ✕ in the color picker now correctly clears
+  the color and style, retaining only the URL if one was set. Previously the button had
+  no effect due to a spread bug that re-wrote the unchanged config.
+
+- **Project URL input** — URL values now save reliably. Previously, clicking outside the
+  panel closed it before the `blur` event fired, silently discarding any typed URL.
+
+---
+
+## [0.6.0] — 2026-02-28
 
 ### Added
 
@@ -51,15 +64,6 @@ All notable changes to Hexfield Deck are documented here.
   is unchanged.
 
 - `contributes.configuration` title updated from `"Hexfield"` to `"Hexfield Deck"`.
-
-### Fixed
-
-- **Project clear button (✕)** — Clicking ✕ in the color picker now correctly clears
-  the color and style, retaining only the URL if one was set. Previously the button had
-  no effect due to a spread bug that re-wrote the unchanged config.
-
-- **Project URL input** — URL values now save reliably. Previously, clicking outside the
-  panel closed it before the `blur` event fired, silently discarding any typed URL.
 
 ### Architecture
 
