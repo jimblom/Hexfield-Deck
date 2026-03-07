@@ -7,9 +7,18 @@ import type { ContextMenuAction } from "./ContextMenu.js";
 import { FilterDropdown } from "./FilterDropdown.js";
 import type { FilterState, DueDateBucket, EstimateBucket } from "./FilterDropdown.js";
 import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
+import { ProjectPanel } from "./ProjectPanel.js";
 import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
 
 type ViewMode = "standard" | "swimlane" | "backlog";
+
+export interface ProjectConfig {
+  color?: string;
+  url?: string;
+  style?: "border" | "fill" | "both";
+}
+
+type ColorConfig = Record<string, string>;
 
 // VS Code API type
 declare const acquireVsCodeApi: () => {
@@ -31,6 +40,22 @@ function getInitialViewMode(): ViewMode {
 // Context for opening the context menu from any card
 export type ContextMenuHandler = (card: Card, pos: { x: number; y: number }) => void;
 export const ContextMenuContext = createContext<ContextMenuHandler>(() => {});
+
+// Context for per-project config (color, url)
+export const ProjectContext = createContext<Record<string, ProjectConfig>>({});
+
+function applyColorVars(colors: ColorConfig): void {
+  const root = document.documentElement;
+  root.style.setProperty("--hx-project-tag", colors.projectTag);
+  root.style.setProperty("--hx-priority-high", colors.priorityHigh);
+  root.style.setProperty("--hx-priority-med", colors.priorityMed);
+  root.style.setProperty("--hx-priority-low", colors.priorityLow);
+  root.style.setProperty("--hx-time-estimate", colors.timeEstimate);
+  root.style.setProperty("--hx-due-overdue", colors.dueDateOverdue);
+  root.style.setProperty("--hx-due-today", colors.dueDateToday);
+  root.style.setProperty("--hx-due-soon", colors.dueDateSoon);
+  root.style.setProperty("--hx-due-future", colors.dueDateFuture);
+}
 
 // ---- Filter helpers --------------------------------------------------------
 
@@ -108,6 +133,7 @@ export function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
   const [contextMenu, setContextMenu] = useState<{ card: Card; x: number; y: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterState>(EMPTY_FILTER);
+  const [projects, setProjects] = useState<Record<string, ProjectConfig>>({});
 
   useEffect(() => {
     // Listen for messages from extension
@@ -118,6 +144,8 @@ export function App() {
           setBoardData(message.boardData);
           setCards(message.cards);
           setIsDirty(message.isDirty ?? false);
+          if (message.colors) applyColorVars(message.colors);
+          if (message.projects) setProjects(message.projects);
           break;
       }
     };
@@ -152,6 +180,16 @@ export function App() {
     () => (boardData ? filterBoardData(boardData, activeFilter) : null),
     [boardData, activeFilter]
   );
+
+  const discoveredProjects = useMemo(
+    () => [...new Set(cards.map((c) => c.project).filter((p): p is string => !!p))].sort(),
+    [cards]
+  );
+
+  const handleProjectConfigChange = useCallback((newConfig: Record<string, ProjectConfig>) => {
+    setProjects(newConfig);
+    vscode.postMessage({ type: "updateProjectConfig", projects: newConfig });
+  }, []);
 
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
@@ -270,6 +308,7 @@ export function App() {
   };
 
   return (
+    <ProjectContext.Provider value={projects}>
     <ContextMenuContext.Provider value={openContextMenu}>
       <div className="app">
         <div className="header">
@@ -286,6 +325,11 @@ export function App() {
               Week {boardData.frontmatter.week}, {boardData.frontmatter.year}
             </div>
             <div className="toolbar-right">
+              <ProjectPanel
+                projects={discoveredProjects}
+                config={projects}
+                onChange={handleProjectConfigChange}
+              />
               <FilterDropdown
                 cards={cards}
                 filter={activeFilter}
@@ -337,5 +381,6 @@ export function App() {
         )}
       </div>
     </ContextMenuContext.Provider>
+    </ProjectContext.Provider>
   );
 }

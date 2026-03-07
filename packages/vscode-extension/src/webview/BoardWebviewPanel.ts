@@ -23,6 +23,20 @@ export class BoardWebviewPanel {
     // Set initial HTML
     this._panel.webview.html = this._getHtmlForWebview();
 
+    // Listen to configuration changes
+    vscode.workspace.onDidChangeConfiguration(
+      (e) => {
+        if (
+          e.affectsConfiguration("hexfield.colors") ||
+          e.affectsConfiguration("hexfield-deck.projects")
+        ) {
+          this._update();
+        }
+      },
+      null,
+      this._disposables,
+    );
+
     // Listen to document changes
     vscode.workspace.onDidChangeTextDocument(
       (e) => {
@@ -78,6 +92,13 @@ export class BoardWebviewPanel {
           case "openLink":
             if (message.url && typeof message.url === "string") {
               vscode.env.openExternal(vscode.Uri.parse(message.url));
+            }
+            break;
+          case "updateProjectConfig":
+            if (message.projects && typeof message.projects === "object") {
+              vscode.workspace
+                .getConfiguration("hexfield-deck")
+                .update("projects", message.projects, vscode.ConfigurationTarget.Global);
             }
             break;
         }
@@ -164,6 +185,28 @@ export class BoardWebviewPanel {
     return text;
   }
 
+  private _getColors(): Record<string, string> {
+    const cfg = vscode.workspace.getConfiguration("hexfield.colors");
+    return {
+      projectTag: cfg.get<string>("projectTag", "#569CD6"),
+      priorityHigh: cfg.get<string>("priorityHigh", "#F44747"),
+      priorityMed: cfg.get<string>("priorityMed", "#CCA700"),
+      priorityLow: cfg.get<string>("priorityLow", "#89D185"),
+      timeEstimate: cfg.get<string>("timeEstimate", "#4EC9B0"),
+      inProgressCheckbox: cfg.get<string>("inProgressCheckbox", "#CE9178"),
+      dueDateOverdue: cfg.get<string>("dueDateOverdue", "#F44747"),
+      dueDateToday: cfg.get<string>("dueDateToday", "#CE9178"),
+      dueDateSoon: cfg.get<string>("dueDateSoon", "#CCA700"),
+      dueDateFuture: cfg.get<string>("dueDateFuture", "#858585"),
+    };
+  }
+
+  private _getProjectConfig(): Record<string, { color?: string; url?: string }> {
+    return vscode.workspace
+      .getConfiguration("hexfield-deck")
+      .get<Record<string, { color?: string; url?: string }>>("projects", {});
+  }
+
   private _update(): void {
     const text = this._document.getText();
     const board = parseBoard(text);
@@ -175,6 +218,8 @@ export class BoardWebviewPanel {
       boardData: board,
       cards: cards,
       isDirty: this._document.isDirty,
+      colors: this._getColors(),
+      projects: this._getProjectConfig(),
     });
   }
 

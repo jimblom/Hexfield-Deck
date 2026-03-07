@@ -1,4 +1,5 @@
 ---
+type: hexfield-planner
 week: 7
 year: 2026
 tags: [planner, weekly]

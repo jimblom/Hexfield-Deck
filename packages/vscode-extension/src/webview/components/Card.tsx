@@ -3,12 +3,20 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { marked } from "marked";
 import type { Card, SubTask } from "@hexfield-deck/core";
-import { ContextMenuContext } from "./App.js";
+import { ContextMenuContext, ProjectContext } from "./App.js";
+import type { ProjectConfig } from "./App.js";
 import { MarkdownTitle } from "./MarkdownTitle.js";
 
 interface CardProps {
   card: Card;
   onToggleSubTask: (lineNumber: number) => void;
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function getDueDateColor(dueDate: string): string {
@@ -21,20 +29,20 @@ function getDueDateColor(dueDate: string): string {
   const diffMs = due.getTime() - today.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return "var(--vscode-errorForeground)";
-  if (diffDays === 0) return "var(--vscode-editorWarning-foreground)";
-  if (diffDays <= 3) return "var(--vscode-editorInfo-foreground)";
-  return "var(--vscode-descriptionForeground)";
+  if (diffDays < 0) return "var(--hx-due-overdue, #F44747)";
+  if (diffDays === 0) return "var(--hx-due-today, #CE9178)";
+  if (diffDays >= 1 && diffDays <= 3) return "var(--hx-due-soon, #CCA700)";
+  return "var(--hx-due-future, #858585)";
 }
 
 function getPriorityColor(priority: string): string {
   switch (priority) {
     case "high":
-      return "var(--vscode-errorForeground)";
+      return "var(--hx-priority-high, #F44747)";
     case "medium":
-      return "var(--vscode-editorWarning-foreground)";
+      return "var(--hx-priority-med, #CCA700)";
     case "low":
-      return "var(--vscode-charts-green)";
+      return "var(--hx-priority-low, #89D185)";
     default:
       return "var(--vscode-descriptionForeground)";
   }
@@ -99,13 +107,22 @@ function SubTaskProgress({
 
 export function CardComponent({ card, onToggleSubTask }: CardProps) {
   const openContextMenu = useContext(ContextMenuContext);
+  const projectsConfig = useContext(ProjectContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
-  const style = {
+  const projectCfg: ProjectConfig | undefined = card.project ? projectsConfig[card.project] : undefined;
+
+  const color = projectCfg?.color;
+  const colorStyle = projectCfg?.style ?? "border";
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    ...(color && (colorStyle === "border" || colorStyle === "both")
+      ? { borderLeft: `3px solid ${color}` } : {}),
+    ...(color && (colorStyle === "fill" || colorStyle === "both")
+      ? { backgroundColor: hexToRgba(color, 0.1) } : {}),
   };
 
   return (
@@ -124,7 +141,18 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
       {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
         <div className="card-badges">
           {card.project && (
-            <Badge label={card.project} color="var(--vscode-charts-blue)" />
+            projectCfg?.url ? (
+              <a
+                className="badge"
+                href={projectCfg.url}
+                style={{ color: "var(--hx-project-tag, #569CD6)" }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {card.project}
+              </a>
+            ) : (
+              <Badge label={card.project} color="var(--hx-project-tag, #569CD6)" />
+            )
           )}
           {card.dueDate && (
             <Badge label={card.dueDate} color={getDueDateColor(card.dueDate)} />
@@ -135,7 +163,9 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
               color={getPriorityColor(card.priority)}
             />
           )}
-          {card.timeEstimate && <Badge label={card.timeEstimate} />}
+          {card.timeEstimate && (
+            <Badge label={card.timeEstimate} color="var(--hx-time-estimate, #4EC9B0)" />
+          )}
           {card.day && <Badge label={card.day} />}
         </div>
       )}

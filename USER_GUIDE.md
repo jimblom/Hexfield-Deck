@@ -10,6 +10,7 @@ Hexfield Deck displays your markdown tasks as a Kanban board. Here's the minimal
 
 ```markdown
 ---
+type: hexfield-planner
 week: 1
 year: 2026
 tags: [planner, weekly]
@@ -34,6 +35,7 @@ Every file must start with YAML frontmatter:
 
 ```yaml
 ---
+type: hexfield-planner          # Hexfield product identifier (required)
 week: 1                         # Week number (required)
 year: 2026                      # Year (required)
 tags: [planner, weekly]         # Tags array (required)
@@ -42,7 +44,7 @@ end_date: 2026-02-09            # Optional: Week end date
 ---
 ```
 
-**Required fields:** `week`, `year`, `tags`
+**Required fields:** `type`, `week`, `year`, `tags`
 
 ### Heading Hierarchy
 
@@ -512,6 +514,7 @@ Control default board behavior:
 
 ```markdown
 ---
+type: hexfield-planner
 week: 1
 year: 2026
 tags: [planner, weekly]
