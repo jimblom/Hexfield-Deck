@@ -8,7 +8,7 @@ export type ContextMenuAction =
   | { type: "editTimeEstimate" }
   | { type: "setPriority"; priority: "high" | "medium" | "low" | "none" }
   | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" | "wont-do" }
-  | { type: "moveToSection"; sectionHeading: string; bucketHeading?: string }
+  | { type: "moveToSection"; sectionHeading: string; boardHeading: string }
   | { type: "deleteTask" };
 
 interface ContextMenuProps {
@@ -29,9 +29,13 @@ interface MenuItem {
 }
 
 function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
-  const daySections = boardData.sections.filter((s) => s.type === "day");
-  const bucketSections = boardData.sections.filter((s) => s.type === "bucket");
-  const boardSections = boardData.sections.filter((s) => s.type === "board");
+  const dayRows = boardData.boards.flatMap((b) =>
+    b.rows.filter((r) => r.dayName).map((r) => ({ ...r, boardHeading: b.heading }))
+  );
+
+  const nonDayBoards = boardData.boards
+    .map((b) => ({ ...b, rows: b.rows.filter((r) => !r.dayName) }))
+    .filter((b) => b.rows.length > 0);
 
   const items: MenuItem[] = [
     { label: "Open in Markdown", action: { type: "openInMarkdown" } },
@@ -61,38 +65,32 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     { label: "", separator: true },
   ];
 
-  if (daySections.length > 0) {
+  // "Move to Day" — all day rows across all boards
+  if (dayRows.length > 0) {
     items.push({
       label: "Move to Day",
-      submenu: daySections.map((s) => ({
-        label: s.dayName ?? s.heading,
-        action: { type: "moveToSection" as const, sectionHeading: s.heading },
+      submenu: dayRows.map((r) => ({
+        label: r.dayName ?? r.heading,
+        action: {
+          type: "moveToSection" as const,
+          sectionHeading: r.heading,
+          boardHeading: r.boardHeading,
+        },
       })),
     });
   }
 
-  for (const section of bucketSections) {
-    if (section.buckets && section.buckets.length > 0) {
-      items.push({
-        label: `Move to ${section.heading}`,
-        submenu: section.buckets.map((b) => ({
-          label: b.heading,
-          action: {
-            type: "moveToSection" as const,
-            sectionHeading: section.heading,
-            bucketHeading: b.heading,
-          },
-        })),
-      });
-    }
-  }
-
-  if (boardSections.length > 0) {
+  // One submenu per non-day board (e.g. "Move to Backlog")
+  for (const board of nonDayBoards) {
     items.push({
-      label: "Move to Section",
-      submenu: boardSections.map((s) => ({
-        label: s.heading,
-        action: { type: "moveToSection" as const, sectionHeading: s.heading },
+      label: `Move to ${board.heading || "Section"}`,
+      submenu: board.rows.map((r) => ({
+        label: r.heading,
+        action: {
+          type: "moveToSection" as const,
+          sectionHeading: r.heading,
+          boardHeading: board.heading,
+        },
       })),
     });
   }

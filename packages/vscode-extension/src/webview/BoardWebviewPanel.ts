@@ -53,7 +53,6 @@ export class BoardWebviewPanel {
       (message) => {
         switch (message.type) {
           case "ready":
-            // Webview is ready, send initial data
             this._update();
             break;
           case "moveCard":
@@ -63,8 +62,8 @@ export class BoardWebviewPanel {
             this._handleMoveCardToSection(
               message.cardId,
               message.sectionHeading,
+              message.boardHeading,
               message.newStatus,
-              message.bucketHeading,
             );
             break;
           case "toggleSubTask":
@@ -89,7 +88,7 @@ export class BoardWebviewPanel {
             this._handleDeleteTask(message.cardId);
             break;
           case "addTask":
-            this._handleAddTask(message.sectionHeading, message.bucketHeading);
+            this._handleAddTask(message.sectionHeading, message.boardHeading);
             break;
           case "openLink":
             if (message.url && typeof message.url === "string") {
@@ -109,7 +108,6 @@ export class BoardWebviewPanel {
       this._disposables,
     );
 
-    // Handle panel disposal
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
   }
 
@@ -117,11 +115,9 @@ export class BoardWebviewPanel {
     extensionUri: vscode.Uri,
     document: vscode.TextDocument,
   ): void {
-    // If panel exists, reveal it and update document if different
     if (BoardWebviewPanel.currentPanel) {
       BoardWebviewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Beside);
 
-      // Update document reference if different file
       if (
         BoardWebviewPanel.currentPanel._document.uri.toString() !==
         document.uri.toString()
@@ -132,7 +128,6 @@ export class BoardWebviewPanel {
       return;
     }
 
-    // Create new panel
     const panel = vscode.window.createWebviewPanel(
       "hexfieldDeckBoard",
       "Hexfield Deck",
@@ -214,7 +209,6 @@ export class BoardWebviewPanel {
     const board = parseBoard(text);
     const cards = allCards(board);
 
-    // Send update to webview
     this._panel.webview.postMessage({
       type: "update",
       boardData: board,
@@ -230,14 +224,12 @@ export class BoardWebviewPanel {
     const board = parseBoard(text);
     const cards = allCards(board);
 
-    // Find the card
     const card = cards.find((c) => c.id === cardId);
     if (!card) {
       vscode.window.showErrorMessage(`Card not found: ${cardId}`);
       return;
     }
 
-    // Map status to checkbox
     const checkboxMap: Record<string, string> = {
       "todo": "[ ]",
       "in-progress": "[/]",
@@ -251,24 +243,14 @@ export class BoardWebviewPanel {
       return;
     }
 
-    // Get the line content
     const lines = text.split("\n");
-    const lineIndex = card.lineNumber - 1; // Convert to 0-based
+    const lineIndex = card.lineNumber - 1;
     const oldLine = lines[lineIndex];
-
-    // Replace checkbox in the line
     const newLine = oldLine.replace(/^(\s*-\s*)\[[x /-]\]/, `$1${newCheckbox}`);
 
-    // Apply edit
     const edit = new vscode.WorkspaceEdit();
-    const range = new vscode.Range(
-      lineIndex,
-      0,
-      lineIndex,
-      oldLine.length,
-    );
+    const range = new vscode.Range(lineIndex, 0, lineIndex, oldLine.length);
     edit.replace(this._document.uri, range, newLine);
-
     await vscode.workspace.applyEdit(edit);
   }
 
@@ -280,15 +262,11 @@ export class BoardWebviewPanel {
     const start = cardLineIndex;
     let end = start + 1;
 
-    // The card's title line starts with optional whitespace + "- ["
     const titleIndent = lines[start].match(/^(\s*)/)?.[1].length ?? 0;
 
-    // Collect all following lines that are more indented (sub-tasks, body text)
     while (end < lines.length) {
       const line = lines[end];
-      // Empty lines within a card block — include if followed by indented content
       if (line.trim() === "") {
-        // Peek ahead
         if (end + 1 < lines.length) {
           const nextIndent = lines[end + 1].match(/^(\s*)/)?.[1].length ?? 0;
           if (nextIndent > titleIndent) {
@@ -307,51 +285,20 @@ export class BoardWebviewPanel {
   }
 
   /**
-   * Find the insertion point for the end of a section or sub-section.
-   * Searches for the H2 heading matching sectionHeading, then optionally
-   * the H3 heading matching bucketHeading within that section.
-   * Returns the 0-based line index where a card should be inserted.
+   * Find the insertion point at the end of a heading block.
+   * headingIndex: 0-based line index of the heading line.
+   * boundaryPattern: pattern that signals the end of this block.
+   * limit: upper bound on line index to search (default: end of file).
    */
-  private _findSectionInsertionPoint(
+  private _findEndOfBlock(
     lines: string[],
-    sectionHeading: string,
-    bucketHeading?: string,
-  ): number | null {
-    const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const h2Pattern = new RegExp(`^##\\s+${escapeRe(sectionHeading)}\\s*$`, "i");
-
-    for (let i = 0; i < lines.length; i++) {
-      if (!h2Pattern.test(lines[i])) continue;
-
-      if (!bucketHeading) {
-        // Insert at end of this H2 section (before next ## or EOF)
-        return this._findEndOfBlock(lines, i, /^##\s/);
-      }
-
-      // Find the H3 bucket within this H2 section
-      const h3Pattern = new RegExp(`^###\\s+${escapeRe(bucketHeading)}\\s*$`, "i");
-      for (let j = i + 1; j < lines.length; j++) {
-        if (/^##\s/.test(lines[j])) break; // Left the H2 section
-        if (!h3Pattern.test(lines[j])) continue;
-        // Found the H3 — insert at end of this H3 block
-        return this._findEndOfBlock(lines, j, /^#{1,3}\s/);
-      }
-
-      return null; // Bucket not found within section
-    }
-
-    return null;
-  }
-
-  /**
-   * Find the insertion point at the end of a block that starts at headingIndex.
-   * The block ends at the next line matching boundaryPattern or EOF.
-   * Backs up past trailing blank lines.
-   */
-  private _findEndOfBlock(lines: string[], headingIndex: number, boundaryPattern: RegExp): number {
+    headingIndex: number,
+    boundaryPattern: RegExp,
+    limit: number = lines.length,
+  ): number {
     let insertAt = headingIndex + 1;
 
-    for (let j = headingIndex + 1; j < lines.length; j++) {
+    for (let j = headingIndex + 1; j < limit; j++) {
       if (boundaryPattern.test(lines[j])) break;
       insertAt = j + 1;
     }
@@ -364,11 +311,56 @@ export class BoardWebviewPanel {
     return insertAt;
   }
 
+  /**
+   * Find the 0-based insertion point for a card in a target row.
+   *
+   * sectionHeading: the H2 row heading to target.
+   * boardHeading:   the H1 board heading to scope the search (optional but recommended
+   *                 when the same H2 heading might appear in multiple boards).
+   */
+  private _findSectionInsertionPoint(
+    lines: string[],
+    sectionHeading: string,
+    boardHeading?: string,
+  ): number | null {
+    const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    let searchStart = 0;
+    let searchEnd = lines.length;
+
+    // If a board heading is provided, narrow the search to within that H1 block
+    if (boardHeading) {
+      const h1Pattern = new RegExp(`^#\\s+${escapeRe(boardHeading)}\\s*$`, "i");
+      for (let i = 0; i < lines.length; i++) {
+        if (!h1Pattern.test(lines[i])) continue;
+        searchStart = i + 1;
+        // Find end of this H1 block (before the next # heading)
+        for (let j = i + 1; j < lines.length; j++) {
+          if (/^#\s/.test(lines[j])) {
+            searchEnd = j;
+            break;
+          }
+        }
+        break;
+      }
+    }
+
+    const h2Pattern = new RegExp(`^##\\s+${escapeRe(sectionHeading)}\\s*$`, "i");
+
+    for (let i = searchStart; i < searchEnd; i++) {
+      if (!h2Pattern.test(lines[i])) continue;
+      // Found the H2 — insert at end of this row block (before next # or ## heading)
+      return this._findEndOfBlock(lines, i, /^#{1,2}\s/, searchEnd);
+    }
+
+    return null;
+  }
+
   private async _handleMoveCardToSection(
     cardId: string,
     sectionHeading: string,
+    boardHeading: string,
     newStatus?: string,
-    bucketHeading?: string,
   ): Promise<void> {
     const text = this._document.getText();
     const board = parseBoard(text);
@@ -384,7 +376,7 @@ export class BoardWebviewPanel {
     const cardLineIndex = card.lineNumber - 1;
     const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
 
-    // Extract the card lines, optionally updating the checkbox
+    // Extract card lines, optionally updating the checkbox status
     const cardLines = lines.slice(rangeStart, rangeEnd).map((line, i) => {
       if (i === 0 && newStatus) {
         const checkboxMap: Record<string, string> = {
@@ -401,10 +393,9 @@ export class BoardWebviewPanel {
       return line;
     });
 
-    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, bucketHeading);
+    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, boardHeading);
     if (insertAt === null) {
-      const target = bucketHeading ? `${sectionHeading} / ${bucketHeading}` : sectionHeading;
-      vscode.window.showErrorMessage(`Section not found: ${target}`);
+      vscode.window.showErrorMessage(`Section not found: ${sectionHeading}`);
       return;
     }
 
@@ -424,14 +415,13 @@ export class BoardWebviewPanel {
       lines.length - 1, lines[lines.length - 1].length,
     );
     edit.replace(this._document.uri, fullRange, newLines.join("\n"));
-
     await vscode.workspace.applyEdit(edit);
   }
 
   private async _handleToggleSubTask(lineNumber: number): Promise<void> {
     const text = this._document.getText();
     const lines = text.split("\n");
-    const lineIndex = lineNumber - 1; // Convert to 0-based
+    const lineIndex = lineNumber - 1;
     const oldLine = lines[lineIndex];
 
     if (!oldLine) return;
@@ -449,7 +439,6 @@ export class BoardWebviewPanel {
     const edit = new vscode.WorkspaceEdit();
     const range = new vscode.Range(lineIndex, 0, lineIndex, oldLine.length);
     edit.replace(this._document.uri, range, newLine);
-
     await vscode.workspace.applyEdit(edit);
   }
 
@@ -457,8 +446,10 @@ export class BoardWebviewPanel {
    * Reconstruct a task line from card fields + optional overrides.
    * Normalizes metadata order: title #project [date] !!! est:Xh
    */
-  private _rebuildTaskLine(card: { rawLine: string; title: string; project?: string; dueDate?: string; priority?: string; timeEstimate?: string }, overrides: { title?: string; project?: string; dueDate?: string | null; priority?: string | null; timeEstimate?: string | null }): string {
-    // Extract leading whitespace + checkbox prefix from rawLine
+  private _rebuildTaskLine(
+    card: { rawLine: string; title: string; project?: string; dueDate?: string; priority?: string; timeEstimate?: string },
+    overrides: { title?: string; project?: string; dueDate?: string | null; priority?: string | null; timeEstimate?: string | null },
+  ): string {
     const prefixMatch = card.rawLine.match(/^(\s*-\s*\[[x /-]\]\s*)/);
     const prefix = prefixMatch ? prefixMatch[1] : "- [ ] ";
 
@@ -606,13 +597,11 @@ export class BoardWebviewPanel {
     const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
 
     const edit = new vscode.WorkspaceEdit();
-    // Delete the lines — include trailing newline if not last line
     const startPos = new vscode.Position(rangeStart, 0);
     let endPos: vscode.Position;
     if (rangeEnd < lines.length) {
       endPos = new vscode.Position(rangeEnd, 0);
     } else {
-      // Last line(s) — delete from end of previous line
       endPos = new vscode.Position(rangeEnd - 1, lines[rangeEnd - 1].length);
       const adjustedStart = rangeStart > 0
         ? new vscode.Position(rangeStart - 1, lines[rangeStart - 1].length)
@@ -625,7 +614,7 @@ export class BoardWebviewPanel {
     await vscode.workspace.applyEdit(edit);
   }
 
-  private async _handleAddTask(sectionHeading?: string, bucketHeading?: string): Promise<void> {
+  private async _handleAddTask(sectionHeading?: string, boardHeading?: string): Promise<void> {
     const title = await vscode.window.showInputBox({
       prompt: "New task title",
       placeHolder: "What needs doing?",
@@ -636,10 +625,9 @@ export class BoardWebviewPanel {
     const lines = text.split("\n");
     const newTaskLine = `- [ ] ${title}`;
 
-    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, bucketHeading);
+    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, boardHeading);
     if (insertAt === null) {
-      const target = bucketHeading ? `${sectionHeading} / ${bucketHeading}` : sectionHeading;
-      vscode.window.showErrorMessage(`Section not found: ${target}`);
+      vscode.window.showErrorMessage(`Section not found: ${sectionHeading}`);
       return;
     }
 

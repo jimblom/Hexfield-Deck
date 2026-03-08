@@ -8,6 +8,8 @@ startDate: 2026-02-09
 endDate: 2026-02-15
 ---
 
+# Week 7, 2026
+
 ## Monday, February 9, 2026
 
 - [x] Morning standup — discuss experiment results #deep13
@@ -54,6 +56,7 @@ endDate: 2026-02-15
   - [ ] Key Result 2: Survive another movie
 
 ## Saturday, February 14, 2026
+
 - [ ] Date night on the Satellite of Love 💕
   Dinner reservations at the Tubular Boobular Joy cafe
 
@@ -62,9 +65,9 @@ endDate: 2026-02-15
 - [ ] Implement drag-and-drop card reordering #hexfield !!!
 - [ ] Weekly review and planning
 
-## Backlog
+# Backlog
 
-### Now
+## Now
 
 - [ ] Fix Joel's escape pod hatch — keeps jamming #sol !! est:1h
 - [ ] Add Obsidian plugin scaffold #hexfield
@@ -73,13 +76,13 @@ endDate: 2026-02-15
   - [x] ~~Draft changelog entry~~ (moved to PR description)
   - [ ] Add *before/after* screenshots
 
-### Next 2 Weeks
+## Next 2 Weeks
 
 - [ ] Investigate Tom Servo's hoverskirt power drain #sol est:4h
 - [ ] Set up CI pipeline for Hexfield Deck #hexfield !!
 - [ ] Catalog all MST3K movie inventory #sol
 
-### This Month
+## This Month
 
 - [ ] Design card detail panel UI #hexfield est:8h
 - [ ] Annual Satellite of Love safety inspection #sol

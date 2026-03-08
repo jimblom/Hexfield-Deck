@@ -1,9 +1,9 @@
 import type {
   BoardData,
+  Board,
+  Row,
   Card,
   TaskStatus,
-  Section,
-  Bucket,
 } from "../models/types.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { parseAllMetadata } from "./metadata.js";
@@ -58,75 +58,61 @@ export function parseBoard(input: string): BoardData {
   const lines = input.split(/\r?\n/);
   const { frontmatter, bodyStartLine } = parseFrontmatter(lines);
 
-  const sections: Section[] = [];
-  let currentSection: Section | null = null;
-  let currentBucket: Bucket | null = null;
-
-  /** Where to push completed cards. */
-  function currentCardTarget(): Card[] | null {
-    if (!currentSection) return null;
-    if (currentSection.type === "bucket") {
-      return currentBucket?.cards ?? null;
-    }
-    return currentSection.cards;
-  }
-
+  const boards: Board[] = [];
+  let currentBoard: Board | null = null;
+  let currentRow: Row | null = null;
   let pendingCard: Card | null = null;
 
   function flushCard(): void {
-    if (!pendingCard) return;
-    const target = currentCardTarget();
-    if (target) target.push(pendingCard);
+    if (!pendingCard || !currentRow) return;
+    currentRow.cards.push(pendingCard);
     pendingCard = null;
+  }
+
+  /** Ensure an implicit board exists when an H2 appears with no preceding H1. */
+  function ensureBoard(lineNumber: number): Board {
+    if (!currentBoard) {
+      currentBoard = { heading: "", rows: [], lineNumber };
+      boards.push(currentBoard);
+    }
+    return currentBoard;
   }
 
   for (let i = bodyStartLine; i < lines.length; i++) {
     const line = lines[i];
     const lineNumber = i + 1;
 
-    // --- H2 heading: new section ---
+    // --- H1 heading: new board ---
+    const h1Match = line.match(/^# (.+)$/);
+    if (h1Match) {
+      flushCard();
+      const heading = h1Match[1].trim();
+      currentRow = null;
+      currentBoard = { heading, rows: [], lineNumber };
+      boards.push(currentBoard);
+      continue;
+    }
+
+    // --- H2 heading: new row ---
     const h2Match = line.match(/^## (.+)$/);
     if (h2Match) {
       flushCard();
       const heading = h2Match[1].trim();
-      currentBucket = null;
-
+      const board = ensureBoard(lineNumber);
       const dayName = DAY_NAMES.find((d) => heading.startsWith(d));
-      if (dayName) {
-        currentSection = {
-          heading,
-          type: "day",
-          dayName,
-          date: parseDayDate(heading),
-          cards: [],
-          lineNumber,
-        };
-      } else {
-        currentSection = {
-          heading,
-          type: "board",
-          cards: [],
-          lineNumber,
-        };
-      }
-      sections.push(currentSection);
+      currentRow = {
+        heading,
+        ...(dayName ? { dayName, date: parseDayDate(heading) } : {}),
+        cards: [],
+        lineNumber,
+      };
+      board.rows.push(currentRow);
       continue;
     }
 
-    // --- H3 heading: bucket sub-section ---
-    const h3Match = line.match(/^### (.+)$/);
-    if (h3Match && currentSection && currentSection.type !== "day") {
+    // --- H3+: no structural significance — flush pending card and skip ---
+    if (/^#{3,}/.test(line)) {
       flushCard();
-      const heading = h3Match[1].trim();
-
-      // Retroactively upgrade section to bucket type on first H3 seen
-      if (currentSection.type === "board") {
-        currentSection.type = "bucket";
-        currentSection.buckets = [];
-      }
-
-      currentBucket = { heading, cards: [], lineNumber };
-      currentSection.buckets!.push(currentBucket);
       continue;
     }
 
@@ -151,15 +137,13 @@ export function parseBoard(input: string): BoardData {
         lineNumber,
         body: [],
         subTasks: [],
-        sectionHeading: currentSection?.heading ?? "",
+        sectionHeading: currentRow?.heading ?? "",
+        boardHeading: currentBoard?.heading ?? "",
         ...(meta.project !== undefined ? { project: meta.project } : {}),
         ...(meta.dueDate !== undefined ? { dueDate: meta.dueDate } : {}),
         ...(meta.priority !== undefined ? { priority: meta.priority } : {}),
         ...(meta.timeEstimate !== undefined ? { timeEstimate: meta.timeEstimate } : {}),
-        ...(currentSection?.type === "day" && currentSection.dayName
-          ? { day: currentSection.dayName }
-          : {}),
-        ...(currentBucket ? { bucketHeading: currentBucket.heading } : {}),
+        ...(currentRow?.dayName ? { day: currentRow.dayName } : {}),
       };
       continue;
     }
@@ -192,6 +176,6 @@ export function parseBoard(input: string): BoardData {
 
   return {
     frontmatter: frontmatter ?? { week: 0, year: 0, tags: [] },
-    sections,
+    boards,
   };
 }

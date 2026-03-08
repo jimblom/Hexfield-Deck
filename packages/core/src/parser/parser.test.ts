@@ -11,6 +11,8 @@ startDate: 2026-02-09
 endDate: 2026-02-15
 ---
 
+# Week 7, 2026
+
 ## Monday, February 9, 2026
 
 - [x] Morning standup #work
@@ -24,18 +26,18 @@ endDate: 2026-02-15
 - [/] Write parser #hexfield est:4h
 - [ ] Update docs
 
-## Backlog
+# Backlog
 
-### Now
+## Now
 
 - [ ] Fix critical bug !!! #core
 - [ ] Deploy hotfix
 
-### Next 2 Weeks
+## Next 2 Weeks
 
 - [ ] Refactor auth module #backend
 
-### This Month
+## This Month
 
 - [ ] Performance audit est:8h
 
@@ -53,7 +55,7 @@ endDate: 2026-02-15
 `;
 
 describe("parseBoard", () => {
-  it("parses a full planner file into sections", () => {
+  it("parses a full planner file into boards", () => {
     const board = parseBoard(FULL_PLANNER);
 
     expect(board.frontmatter.week).toBe(7);
@@ -61,52 +63,52 @@ describe("parseBoard", () => {
     expect(board.frontmatter.tags).toEqual(["planner", "weekly"]);
     expect(board.frontmatter.quarter).toBe("Q1");
 
-    // 2 day + 1 bucket (Backlog) + 3 board (This Quarter, This Year, Parking Lot)
-    expect(board.sections).toHaveLength(6);
+    // 2 H1 boards: "Week 7, 2026" and "Backlog"
+    expect(board.boards).toHaveLength(2);
+    expect(board.boards[0].heading).toBe("Week 7, 2026");
+    expect(board.boards[1].heading).toBe("Backlog");
   });
 
-  it("classifies day sections correctly", () => {
+  it("parses rows within each board", () => {
     const board = parseBoard(FULL_PLANNER);
-    const monday = board.sections[0];
-    const tuesday = board.sections[1];
+    const week = board.boards[0];
+    const backlog = board.boards[1];
 
-    expect(monday.type).toBe("day");
-    expect(monday.heading).toBe("Monday, February 9, 2026");
+    // Week board has 2 day rows
+    expect(week.rows).toHaveLength(2);
+    expect(week.rows[0].heading).toBe("Monday, February 9, 2026");
+    expect(week.rows[1].heading).toBe("Tuesday, February 10, 2026");
+
+    // Backlog board has 6 rows
+    expect(backlog.rows).toHaveLength(6);
+    expect(backlog.rows[0].heading).toBe("Now");
+    expect(backlog.rows[5].heading).toBe("Parking Lot");
+  });
+
+  it("classifies day rows correctly", () => {
+    const board = parseBoard(FULL_PLANNER);
+    const monday = board.boards[0].rows[0];
+    const tuesday = board.boards[0].rows[1];
+
     expect(monday.dayName).toBe("Monday");
     expect(monday.date).toBe("2026-02-09");
 
-    expect(tuesday.type).toBe("day");
     expect(tuesday.dayName).toBe("Tuesday");
+    expect(tuesday.date).toBe("2026-02-10");
   });
 
-  it("classifies bucket sections correctly", () => {
+  it("non-day rows have no dayName or date", () => {
     const board = parseBoard(FULL_PLANNER);
-    const backlog = board.sections[2];
+    const nowRow = board.boards[1].rows[0];
 
-    expect(backlog.type).toBe("bucket");
-    expect(backlog.heading).toBe("Backlog");
-    expect(backlog.buckets).toHaveLength(3);
-    expect(backlog.buckets![0].heading).toBe("Now");
-    expect(backlog.buckets![1].heading).toBe("Next 2 Weeks");
-    expect(backlog.buckets![2].heading).toBe("This Month");
+    expect(nowRow.dayName).toBeUndefined();
+    expect(nowRow.date).toBeUndefined();
+    expect(nowRow.heading).toBe("Now");
   });
 
-  it("classifies board sections correctly", () => {
+  it("parses day row cards correctly", () => {
     const board = parseBoard(FULL_PLANNER);
-    const thisQuarter = board.sections[3];
-    const thisYear = board.sections[4];
-    const parkingLot = board.sections[5];
-
-    expect(thisQuarter.type).toBe("board");
-    expect(thisQuarter.heading).toBe("This Quarter");
-    expect(thisYear.type).toBe("board");
-    expect(parkingLot.type).toBe("board");
-    expect(parkingLot.heading).toBe("Parking Lot");
-  });
-
-  it("parses day section cards correctly", () => {
-    const board = parseBoard(FULL_PLANNER);
-    const monday = board.sections[0];
+    const monday = board.boards[0].rows[0];
 
     expect(monday.cards).toHaveLength(2);
 
@@ -115,6 +117,7 @@ describe("parseBoard", () => {
     expect(standup.project).toBe("work");
     expect(standup.day).toBe("Monday");
     expect(standup.sectionHeading).toBe("Monday, February 9, 2026");
+    expect(standup.boardHeading).toBe("Week 7, 2026");
 
     const review = monday.cards[1];
     expect(review.status).toBe("todo");
@@ -124,7 +127,7 @@ describe("parseBoard", () => {
 
   it("parses sub-tasks and body content", () => {
     const board = parseBoard(FULL_PLANNER);
-    const review = board.sections[0].cards[1];
+    const review = board.boards[0].rows[0].cards[1];
 
     expect(review.subTasks).toHaveLength(2);
     expect(review.subTasks[0].text).toBe("PR #123");
@@ -135,46 +138,37 @@ describe("parseBoard", () => {
 
   it("handles [/] checkbox as in-progress", () => {
     const board = parseBoard(FULL_PLANNER);
-    const parser = board.sections[1].cards[0];
+    const parser = board.boards[0].rows[1].cards[0];
 
     expect(parser.status).toBe("in-progress");
     expect(parser.project).toBe("hexfield");
     expect(parser.timeEstimate).toBe("4h");
   });
 
-  it("parses bucket section cards with bucketHeading set", () => {
+  it("parses backlog row cards with correct boardHeading", () => {
     const board = parseBoard(FULL_PLANNER);
-    const backlog = board.sections[2];
+    const backlog = board.boards[1];
 
-    const nowBucket = backlog.buckets![0];
-    expect(nowBucket.cards).toHaveLength(2);
-    expect(nowBucket.cards[0].priority).toBe("high");
-    expect(nowBucket.cards[0].project).toBe("core");
-    expect(nowBucket.cards[0].sectionHeading).toBe("Backlog");
-    expect(nowBucket.cards[0].bucketHeading).toBe("Now");
+    const nowRow = backlog.rows[0];
+    expect(nowRow.cards).toHaveLength(2);
+    expect(nowRow.cards[0].priority).toBe("high");
+    expect(nowRow.cards[0].project).toBe("core");
+    expect(nowRow.cards[0].sectionHeading).toBe("Now");
+    expect(nowRow.cards[0].boardHeading).toBe("Backlog");
 
-    const next2Bucket = backlog.buckets![1];
-    expect(next2Bucket.cards[0].project).toBe("backend");
-    expect(next2Bucket.cards[0].bucketHeading).toBe("Next 2 Weeks");
+    const next2Row = backlog.rows[1];
+    expect(next2Row.cards[0].project).toBe("backend");
+    expect(next2Row.cards[0].sectionHeading).toBe("Next 2 Weeks");
+    expect(next2Row.cards[0].boardHeading).toBe("Backlog");
 
-    const thisMonthBucket = backlog.buckets![2];
-    expect(thisMonthBucket.cards[0].timeEstimate).toBe("8h");
-  });
+    const thisMonthRow = backlog.rows[2];
+    expect(thisMonthRow.cards[0].timeEstimate).toBe("8h");
 
-  it("parses board section cards correctly", () => {
-    const board = parseBoard(FULL_PLANNER);
+    const thisQuarterRow = backlog.rows[3];
+    expect(thisQuarterRow.cards[0].dueDate).toBe("2026-03-31");
 
-    const thisQuarter = board.sections[3];
-    expect(thisQuarter.cards[0].project).toBe("hexfield");
-    expect(thisQuarter.cards[0].dueDate).toBe("2026-03-31");
-    expect(thisQuarter.cards[0].sectionHeading).toBe("This Quarter");
-
-    const thisYear = board.sections[4];
-    expect(thisYear.cards[0].title).toBe("Conference talk proposal");
-
-    const parkingLot = board.sections[5];
-    expect(parkingLot.cards[0].title).toBe("Rewrite in Rust");
-    expect(parkingLot.cards[0].sectionHeading).toBe("Parking Lot");
+    const parkingLotRow = backlog.rows[5];
+    expect(parkingLotRow.cards[0].title).toBe("Rewrite in Rust");
   });
 
   it("collects all cards via allCards helper", () => {
@@ -191,19 +185,45 @@ year: 2026
 tags: []
 ---
 
+# Week 1
+
 ## Monday, February 2, 2026
 
 - [-] Decided not to do this
 - [ ] Still doing this
 `;
     const board = parseBoard(input);
-    const cards = board.sections[0].cards;
+    const cards = board.boards[0].rows[0].cards;
     expect(cards[0].status).toBe("wont-do");
     expect(cards[0].title).toBe("Decided not to do this");
     expect(cards[1].status).toBe("todo");
   });
 
-  it("handles arbitrary H2 sections as board type", () => {
+  it("H3 headings are ignored as structural elements", () => {
+    const input = `---
+week: 1
+year: 2026
+tags: []
+---
+
+# Backlog
+
+## Active
+
+### Priority (ignored)
+
+- [ ] Task A
+- [ ] Task B
+`;
+    const board = parseBoard(input);
+    // One board with one row; H3 is skipped, cards still belong to the H2 row
+    expect(board.boards).toHaveLength(1);
+    expect(board.boards[0].rows).toHaveLength(1);
+    expect(board.boards[0].rows[0].cards).toHaveLength(2);
+    expect(board.boards[0].rows[0].cards[0].title).toBe("Task A");
+  });
+
+  it("H2 rows without a preceding H1 go into an implicit board", () => {
     const input = `---
 week: 1
 year: 2026
@@ -220,69 +240,40 @@ tags: []
 - [ ] Someday maybe
 `;
     const board = parseBoard(input);
-    expect(board.sections).toHaveLength(2);
-    expect(board.sections[0].type).toBe("board");
-    expect(board.sections[0].heading).toBe("Sprint 1");
-    expect(board.sections[0].cards).toHaveLength(2);
-    expect(board.sections[1].type).toBe("board");
-    expect(board.sections[1].heading).toBe("Ideas");
+    // One implicit board (heading: "") with 2 rows
+    expect(board.boards).toHaveLength(1);
+    expect(board.boards[0].heading).toBe("");
+    expect(board.boards[0].rows).toHaveLength(2);
+    expect(board.boards[0].rows[0].heading).toBe("Sprint 1");
+    expect(board.boards[0].rows[0].cards).toHaveLength(2);
+    expect(board.boards[0].rows[1].heading).toBe("Ideas");
   });
 
-  it("upgrades a section to bucket when H3 is encountered", () => {
-    const input = `---
-week: 1
-year: 2026
-tags: []
----
-
-## Icebox
-
-### Near Term
-
-- [ ] Task A
-
-### Long Term
-
-- [ ] Task B
-`;
-    const board = parseBoard(input);
-    expect(board.sections).toHaveLength(1);
-    const icebox = board.sections[0];
-    expect(icebox.type).toBe("bucket");
-    expect(icebox.heading).toBe("Icebox");
-    expect(icebox.buckets).toHaveLength(2);
-    expect(icebox.buckets![0].heading).toBe("Near Term");
-    expect(icebox.buckets![0].cards[0].title).toBe("Task A");
-    expect(icebox.buckets![0].cards[0].bucketHeading).toBe("Near Term");
-    expect(icebox.buckets![1].heading).toBe("Long Term");
-  });
-
-  it("handles empty sections", () => {
+  it("handles empty rows", () => {
     const input = `---
 week: 1
 year: 2026
 tags: [planner]
 ---
 
+# Week 1
+
 ## Monday, February 2, 2026
 
-## Backlog
+# Backlog
 
-### Now
-
-## This Quarter
+## Now
 `;
     const board = parseBoard(input);
-    const day = board.sections[0];
-    const backlog = board.sections[1];
-    const quarter = board.sections[2];
+    expect(board.boards).toHaveLength(2);
 
-    expect(day.type).toBe("day");
+    const day = board.boards[0].rows[0];
+    const now = board.boards[1].rows[0];
+
+    expect(day.dayName).toBe("Monday");
     expect(day.cards).toHaveLength(0);
-    expect(backlog.type).toBe("bucket");
-    expect(backlog.buckets![0].cards).toHaveLength(0);
-    expect(quarter.type).toBe("board");
-    expect(quarter.cards).toHaveLength(0);
+    expect(now.heading).toBe("Now");
+    expect(now.cards).toHaveLength(0);
   });
 
   it("skips bold text lines", () => {
@@ -298,8 +289,8 @@ tags: [planner]
 - [ ] Actual task
 `;
     const board = parseBoard(input);
-    expect(board.sections[0].cards).toHaveLength(1);
-    expect(board.sections[0].cards[0].title).toBe("Actual task");
+    expect(board.boards[0].rows[0].cards).toHaveLength(1);
+    expect(board.boards[0].rows[0].cards[0].title).toBe("Actual task");
   });
 
   it("handles file with no frontmatter", () => {
@@ -309,21 +300,62 @@ tags: [planner]
 `;
     const board = parseBoard(input);
     expect(board.frontmatter.week).toBe(0);
-    expect(board.sections).toHaveLength(1);
-    expect(board.sections[0].cards).toHaveLength(1);
+    expect(board.boards).toHaveLength(1);
+    expect(board.boards[0].rows).toHaveLength(1);
+    expect(board.boards[0].rows[0].cards).toHaveLength(1);
   });
 
-  it("assigns card IDs based on line numbers and sets sectionHeading", () => {
+  it("assigns card IDs based on line numbers and sets heading fields", () => {
     const board = parseBoard(FULL_PLANNER);
-    const card = board.sections[0].cards[0];
+    const card = board.boards[0].rows[0].cards[0];
     expect(card.id).toMatch(/^card-\d+$/);
     expect(card.lineNumber).toBeGreaterThan(0);
     expect(card.sectionHeading).toBe("Monday, February 9, 2026");
+    expect(card.boardHeading).toBe("Week 7, 2026");
   });
 
   it("preserves rawLine for roundtripping", () => {
     const board = parseBoard(FULL_PLANNER);
-    const card = board.sections[0].cards[0];
+    const card = board.boards[0].rows[0].cards[0];
     expect(card.rawLine).toBe("- [x] Morning standup #work");
+  });
+
+  it("multiple H1 boards coexist independently", () => {
+    const input = `---
+week: 1
+year: 2026
+tags: []
+---
+
+# Week 1
+
+## Monday
+
+- [ ] Task A
+
+# Projects
+
+## Hexfield
+
+- [ ] Task B
+
+## Deep 13
+
+- [ ] Task C
+`;
+    const board = parseBoard(input);
+    expect(board.boards).toHaveLength(2);
+
+    const week = board.boards[0];
+    expect(week.heading).toBe("Week 1");
+    expect(week.rows).toHaveLength(1);
+    expect(week.rows[0].cards[0].boardHeading).toBe("Week 1");
+
+    const projects = board.boards[1];
+    expect(projects.heading).toBe("Projects");
+    expect(projects.rows).toHaveLength(2);
+    expect(projects.rows[0].heading).toBe("Hexfield");
+    expect(projects.rows[0].cards[0].boardHeading).toBe("Projects");
+    expect(projects.rows[1].heading).toBe("Deep 13");
   });
 });

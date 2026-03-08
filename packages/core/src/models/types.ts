@@ -21,7 +21,7 @@ export interface SubTask {
   lineNumber: number;
 }
 
-/** A single task card on the board. */
+/** A single task card. */
 export interface Card {
   id: string;
   title: string;
@@ -34,58 +34,46 @@ export interface Card {
   dueDate?: string;
   priority?: Priority;
   timeEstimate?: string;
-  /** The H2 heading of the section this card belongs to. Always set. */
+  /** The H2 heading of the row this card belongs to. Always set. */
   sectionHeading: string;
-  /** The H3 heading of the bucket this card belongs to (bucket-type sections only). */
-  bucketHeading?: string;
-  /** Day name shorthand for day-type sections (e.g. "Monday"). */
+  /** The H1 heading of the board this card belongs to. Empty string if no H1 in file. */
+  boardHeading: string;
+  /** Day name shorthand for day rows (e.g. "Monday"). */
   day?: string;
 }
 
-/** An H3 sub-section within a bucket-type section. */
-export interface Bucket {
+/**
+ * An H2 row within a board. Every H2 heading is a row — the swimlane unit.
+ * Day rows (heading starts with a day name) additionally carry `dayName` and `date`.
+ */
+export interface Row {
   heading: string;
+  /** Day name shorthand (day rows only, e.g. "Monday"). */
+  dayName?: string;
+  /** ISO date string (day rows only, e.g. "2026-02-09"). */
+  date?: string;
   cards: Card[];
   lineNumber: number;
 }
 
 /**
- * A parsed H2 section. Type is inferred from structure (ADR-0008):
- * - `day`:    H2 heading starts with a day name.
- * - `bucket`: H2 section contains H3 sub-headings (discovered retroactively).
- * - `board`:  Any other H2 with direct task cards.
+ * An H1 board. Groups related H2 rows.
+ * Files with no H1 headings produce a single implicit board with `heading: ""`.
  */
-export interface Section {
+export interface Board {
   heading: string;
-  type: "day" | "board" | "bucket";
-  /** Day name shorthand (day-type only, e.g. "Monday"). */
-  dayName?: string;
-  /** ISO date string (day-type only, e.g. "2026-02-09"). */
-  date?: string;
-  /** Direct cards (day and board sections). Empty for bucket sections. */
-  cards: Card[];
-  /** H3 sub-buckets (bucket-type sections only). */
-  buckets?: Bucket[];
+  rows: Row[];
   lineNumber: number;
 }
 
-/** The full parsed board. */
+/** The full parsed planner. */
 export interface BoardData {
   frontmatter: Frontmatter;
-  sections: Section[];
+  /** H1-level boards, each containing H2-level rows. */
+  boards: Board[];
 }
 
-/** Collect every card across all sections. */
-export function allCards(board: BoardData): Card[] {
-  const result: Card[] = [];
-  for (const section of board.sections) {
-    if (section.type === "bucket" && section.buckets) {
-      for (const bucket of section.buckets) {
-        result.push(...bucket.cards);
-      }
-    } else {
-      result.push(...section.cards);
-    }
-  }
-  return result;
+/** Collect every card across all boards and rows. */
+export function allCards(boardData: BoardData): Card[] {
+  return boardData.boards.flatMap((b) => b.rows.flatMap((r) => r.cards));
 }

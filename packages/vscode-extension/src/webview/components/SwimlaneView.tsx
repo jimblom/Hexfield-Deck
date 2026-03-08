@@ -19,17 +19,23 @@ import type { BoardData, Card, TaskStatus } from "@hexfield-deck/core";
 interface SwimlaneViewProps {
   boardData: BoardData;
   onCardMove: (cardId: string, newStatus: string) => void;
-  onCardMoveToSection: (cardId: string, sectionHeading: string, newStatus: string) => void;
+  onCardMoveToSection: (
+    cardId: string,
+    sectionHeading: string,
+    boardHeading: string,
+    newStatus: string,
+  ) => void;
   onToggleSubTask: (lineNumber: number) => void;
 }
 
 interface SwimlaneRow {
+  /** Numeric index as string — used as the stable droppable ID prefix. */
   key: string;
   label: string;
   sectionHeading: string;
+  boardHeading: string;
   dayName?: string;
   cards: Card[];
-  isBacklog?: boolean;
 }
 
 const STATUS_COLUMNS: { id: TaskStatus; label: string }[] = [
@@ -67,51 +73,37 @@ function MiniColumn({
   );
 }
 
+/** Every H2 row across every H1 board becomes a swimlane row. */
 function buildRows(boardData: BoardData): SwimlaneRow[] {
-  const rows: SwimlaneRow[] = [];
-
-  for (const section of boardData.sections) {
-    if (section.type === "day") {
-      rows.push({
-        key: section.heading,
-        label: section.heading,
-        sectionHeading: section.heading,
-        dayName: section.dayName,
-        cards: section.cards,
+  const result: SwimlaneRow[] = [];
+  for (const board of boardData.boards) {
+    for (const row of board.rows) {
+      result.push({
+        key: String(result.length), // stable numeric index
+        label: row.heading,
+        sectionHeading: row.heading,
+        boardHeading: board.heading,
+        dayName: row.dayName,
+        cards: row.cards,
       });
     }
   }
-
-  // Combine all non-day section cards into one Backlog row
-  const backlogCards = boardData.sections
-    .filter((s) => s.type !== "day")
-    .flatMap((s) =>
-      s.type === "bucket" && s.buckets ? s.buckets.flatMap((b) => b.cards) : s.cards
-    );
-
-  if (backlogCards.length > 0) {
-    rows.push({
-      key: "Backlog",
-      label: "Backlog",
-      sectionHeading: "Backlog",
-      cards: backlogCards,
-      isBacklog: true,
-    });
-  }
-
-  return rows;
+  return result;
 }
 
-/** Parse a composite droppable ID like "Monday, February 9, 2026:todo" — splits on last colon. */
-function parseDropId(id: string): { sectionHeading: string; status: TaskStatus } | null {
+/** Parse a droppable ID like "3:in-progress" — splits on last colon. */
+function parseDropId(
+  id: string,
+  rows: SwimlaneRow[],
+): { row: SwimlaneRow; status: TaskStatus } | null {
   const lastColon = id.lastIndexOf(":");
   if (lastColon === -1) return null;
-  const sectionHeading = id.substring(0, lastColon);
+  const rowKey = id.substring(0, lastColon);
   const status = id.substring(lastColon + 1);
-  if (status === "todo" || status === "in-progress" || status === "done") {
-    return { sectionHeading, status };
-  }
-  return null;
+  if (status !== "todo" && status !== "in-progress" && status !== "done") return null;
+  const row = rows.find((r) => r.key === rowKey);
+  if (!row) return null;
+  return { row, status };
 }
 
 export function SwimlaneView({
@@ -132,10 +124,10 @@ export function SwimlaneView({
   const allCards = rows.flatMap((r) => r.cards);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
-    // Backlog collapsed by default
+    // Collapse non-day rows by default
     const initial: Record<string, boolean> = {};
     for (const row of rows) {
-      if (row.isBacklog) initial[row.key] = true;
+      if (!row.dayName) initial[row.key] = true;
     }
     return initial;
   });
@@ -144,11 +136,13 @@ export function SwimlaneView({
     setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  /** Check if a card belongs to the backlog (no day property). */
-  const isBacklogCard = (c: Card) => !c.day;
-
-  /** Get the effective row key for a card. */
-  const getCardRow = (c: Card) => (c.day ? c.sectionHeading : "Backlog");
+  /** Find the swimlane row a card belongs to. */
+  const getCardRowKey = (c: Card) => {
+    const row = rows.find(
+      (r) => r.sectionHeading === c.sectionHeading && r.boardHeading === c.boardHeading
+    );
+    return row?.key ?? "";
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -160,21 +154,24 @@ export function SwimlaneView({
 
     const overId = over.id as string;
 
-    // Try parsing as a composite drop zone ID (sectionHeading:status)
-    const dropTarget = parseDropId(overId);
+    // Try parsing as a composite drop zone ID (rowKey:status)
+    const dropTarget = parseDropId(overId, rows);
     if (dropTarget) {
-      const sourceRow = getCardRow(card);
-      const targetRow = dropTarget.sectionHeading;
-      const sameRow = sourceRow === targetRow;
+      const sourceRowKey = getCardRowKey(card);
+      const targetRowKey = dropTarget.row.key;
+      const sameRow = sourceRowKey === targetRowKey;
 
       if (sameRow && card.status === dropTarget.status) return;
 
-      if (sameRow || isBacklogCard(card) || targetRow === "Backlog") {
-        // Same row, or involves backlog — just change status
+      if (sameRow) {
         onCardMove(cardId, dropTarget.status);
       } else {
-        // Cross-day-section move
-        onCardMoveToSection(cardId, dropTarget.sectionHeading, dropTarget.status);
+        onCardMoveToSection(
+          cardId,
+          dropTarget.row.sectionHeading,
+          dropTarget.row.boardHeading,
+          dropTarget.status,
+        );
       }
       return;
     }
@@ -183,18 +180,24 @@ export function SwimlaneView({
     const targetCard = allCards.find((c) => c.id === overId);
     if (!targetCard) return;
 
-    const sourceRow = getCardRow(card);
-    const targetRow = getCardRow(targetCard);
-    const sameRow = sourceRow === targetRow;
+    const sourceRowKey = getCardRowKey(card);
+    const targetRowKey = getCardRowKey(targetCard);
+    const sameRow = sourceRowKey === targetRowKey;
 
     if (sameRow && card.status === targetCard.status) return;
 
-    if (sameRow || isBacklogCard(card) || isBacklogCard(targetCard)) {
-      // Same row, or involves backlog — just change status
+    if (sameRow) {
       onCardMove(cardId, targetCard.status);
     } else {
-      // Cross-day-section move
-      onCardMoveToSection(cardId, targetRow, targetCard.status);
+      const targetRow = rows.find((r) => r.key === targetRowKey);
+      if (targetRow) {
+        onCardMoveToSection(
+          cardId,
+          targetRow.sectionHeading,
+          targetRow.boardHeading,
+          targetCard.status,
+        );
+      }
     }
   };
 
@@ -211,7 +214,7 @@ export function SwimlaneView({
           ))}
         </div>
 
-        {/* Rows */}
+        {/* Rows — every H2 from every board */}
         {rows.map((row) => {
           const isCollapsed = collapsed[row.key] ?? false;
           const todoCards = sortCards(row.cards.filter((c) => c.status === "todo"), sortKey);

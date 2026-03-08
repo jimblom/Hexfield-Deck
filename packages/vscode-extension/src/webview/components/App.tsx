@@ -118,15 +118,10 @@ function filterBoardData(boardData: BoardData, f: FilterState): BoardData {
   const keep = (cards: Card[]) => filterCards(cards, f);
   return {
     ...boardData,
-    sections: boardData.sections.map((section) => {
-      if (section.type === "bucket" && section.buckets) {
-        return {
-          ...section,
-          buckets: section.buckets.map((b) => ({ ...b, cards: keep(b.cards) })),
-        };
-      }
-      return { ...section, cards: keep(section.cards) };
-    }),
+    boards: boardData.boards.map((board) => ({
+      ...board,
+      rows: board.rows.map((row) => ({ ...row, cards: keep(row.cards) })),
+    })),
   };
 }
 
@@ -209,10 +204,10 @@ export function App() {
   const handleCardMoveToSection = (
     cardId: string,
     sectionHeading: string,
+    boardHeading: string,
     newStatus?: string,
-    bucketHeading?: string,
   ) => {
-    vscode.postMessage({ type: "moveCardToSection", cardId, sectionHeading, newStatus, bucketHeading });
+    vscode.postMessage({ type: "moveCardToSection", cardId, sectionHeading, boardHeading, newStatus });
   };
 
   const handleToggleSubTask = (lineNumber: number) => {
@@ -247,7 +242,7 @@ export function App() {
         handleCardMove(card.id, action.newStatus);
         break;
       case "moveToSection":
-        handleCardMoveToSection(card.id, action.sectionHeading, undefined, action.bucketHeading);
+        handleCardMoveToSection(card.id, action.sectionHeading, action.boardHeading);
         break;
       case "deleteTask":
         vscode.postMessage({ type: "deleteTask", cardId: card.id });
@@ -259,26 +254,31 @@ export function App() {
     if (!boardData) return;
 
     if (viewMode === "backlog") {
-      // Target first bucket section's first bucket
-      const firstBucketSection = boardData.sections.find(
-        (s) => s.type === "bucket" && s.buckets && s.buckets.length > 0
-      );
-      if (firstBucketSection?.buckets?.[0]) {
+      // Target first non-day row of the first board that has one
+      const firstBoard = boardData.boards.find((b) => b.rows.some((r) => !r.dayName));
+      const firstRow = firstBoard?.rows.find((r) => !r.dayName);
+      if (firstBoard && firstRow) {
         vscode.postMessage({
           type: "addTask",
-          sectionHeading: firstBucketSection.heading,
-          bucketHeading: firstBucketSection.buckets[0].heading,
+          sectionHeading: firstRow.heading,
+          boardHeading: firstBoard.heading,
         });
       }
     } else {
       const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
-      const daySections = boardData.sections.filter((s) => s.type === "day");
-      const todaySection = daySections.find(
-        (s) => s.dayName?.toLowerCase() === todayName.toLowerCase()
+      const allDayRows = boardData.boards.flatMap((b) =>
+        b.rows.filter((r) => r.dayName).map((r) => ({ ...r, boardHeading: b.heading }))
       );
-      const targetSection = todaySection ?? daySections[0];
-      if (targetSection) {
-        vscode.postMessage({ type: "addTask", sectionHeading: targetSection.heading });
+      const todayRow = allDayRows.find(
+        (r) => r.dayName?.toLowerCase() === todayName.toLowerCase()
+      );
+      const targetRow = todayRow ?? allDayRows[0];
+      if (targetRow) {
+        vscode.postMessage({
+          type: "addTask",
+          sectionHeading: targetRow.heading,
+          boardHeading: targetRow.boardHeading,
+        });
       }
     }
   };
@@ -306,8 +306,8 @@ export function App() {
           <SwimlaneView
             boardData={filteredBoardData}
             onCardMove={handleCardMove}
-            onCardMoveToSection={(cardId, sectionHeading, newStatus) =>
-              handleCardMoveToSection(cardId, sectionHeading, newStatus)
+            onCardMoveToSection={(cardId, sectionHeading, boardHeading, newStatus) =>
+              handleCardMoveToSection(cardId, sectionHeading, boardHeading, newStatus)
             }
             onToggleSubTask={handleToggleSubTask}
           />
@@ -317,8 +317,8 @@ export function App() {
           <BacklogView
             boardData={filteredBoardData}
             onCardMove={handleCardMove}
-            onCardMoveToSection={(cardId, sectionHeading, bucketHeading) =>
-              handleCardMoveToSection(cardId, sectionHeading, undefined, bucketHeading)
+            onCardMoveToSection={(cardId, sectionHeading, boardHeading) =>
+              handleCardMoveToSection(cardId, sectionHeading, boardHeading)
             }
           />
         );
@@ -371,14 +371,14 @@ export function App() {
                 <button
                   className={`view-btn ${viewMode === "swimlane" ? "active" : ""}`}
                   onClick={() => handleViewChange("swimlane")}
-                  title="Swimlane view — grouped by day"
+                  title="Swimlane view — grouped by row"
                 >
                   Swimlane
                 </button>
                 <button
                   className={`view-btn ${viewMode === "backlog" ? "active" : ""}`}
                   onClick={() => handleViewChange("backlog")}
-                  title="Backlog view — priority buckets"
+                  title="Backlog view — non-day rows"
                 >
                   Backlog
                 </button>

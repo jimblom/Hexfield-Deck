@@ -21,43 +21,36 @@ import type { BoardData, Card } from "@hexfield-deck/core";
 interface BacklogViewProps {
   boardData: BoardData;
   onCardMove: (cardId: string, newStatus: string) => void;
-  onCardMoveToSection: (cardId: string, sectionHeading: string, bucketHeading?: string) => void;
+  onCardMoveToSection: (
+    cardId: string,
+    sectionHeading: string,
+    boardHeading: string,
+  ) => void;
 }
 
 interface BucketItem {
   id: string;
   title: string;
   sectionHeading: string;
-  bucketHeading?: string;
+  boardHeading: string;
   cards: Card[];
 }
 
+/** All non-day rows across all boards become backlog buckets. */
 function getBuckets(boardData: BoardData): BucketItem[] {
   const items: BucketItem[] = [];
-
-  for (const section of boardData.sections) {
-    if (section.type === "day") continue;
-
-    if (section.type === "bucket" && section.buckets) {
-      for (const bucket of section.buckets) {
-        items.push({
-          id: `${section.heading}:${bucket.heading}`,
-          title: bucket.heading,
-          sectionHeading: section.heading,
-          bucketHeading: bucket.heading,
-          cards: bucket.cards,
-        });
-      }
-    } else {
+  for (const board of boardData.boards) {
+    for (const row of board.rows) {
+      if (row.dayName) continue; // skip day rows
       items.push({
-        id: section.heading,
-        title: section.heading,
-        sectionHeading: section.heading,
-        cards: section.cards,
+        id: `${board.heading}::${row.heading}`,
+        title: row.heading,
+        sectionHeading: row.heading,
+        boardHeading: board.heading,
+        cards: row.cards,
       });
     }
   }
-
   return items;
 }
 
@@ -202,7 +195,7 @@ export function BacklogView({ boardData, onCardMove, onCardMoveToSection }: Back
     if (targetBucket) {
       const sourceBucket = buckets.find((b) => b.cards.some((c) => c.id === cardId));
       if (sourceBucket && sourceBucket.id !== targetBucket.id) {
-        onCardMoveToSection(cardId, targetBucket.sectionHeading, targetBucket.bucketHeading);
+        onCardMoveToSection(cardId, targetBucket.sectionHeading, targetBucket.boardHeading);
       }
       return;
     }
@@ -215,7 +208,7 @@ export function BacklogView({ boardData, onCardMove, onCardMoveToSection }: Back
     const destBucket = buckets.find((b) => b.cards.some((c) => c.id === overId));
 
     if (sourceBucket && destBucket && sourceBucket.id !== destBucket.id) {
-      onCardMoveToSection(cardId, destBucket.sectionHeading, destBucket.bucketHeading);
+      onCardMoveToSection(cardId, destBucket.sectionHeading, destBucket.boardHeading);
     }
   };
 
