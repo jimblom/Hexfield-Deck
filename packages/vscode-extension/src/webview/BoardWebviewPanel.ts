@@ -59,11 +59,13 @@ export class BoardWebviewPanel {
           case "moveCard":
             this._handleMoveCard(message.cardId, message.newStatus);
             break;
-          case "moveCardToDay":
-            this._handleMoveCardToDay(message.cardId, message.targetDay, message.newStatus);
-            break;
           case "moveCardToSection":
-            this._handleMoveCardToSection(message.cardId, message.targetSection);
+            this._handleMoveCardToSection(
+              message.cardId,
+              message.sectionHeading,
+              message.newStatus,
+              message.bucketHeading,
+            );
             break;
           case "toggleSubTask":
             this._handleToggleSubTask(message.lineNumber);
@@ -87,7 +89,7 @@ export class BoardWebviewPanel {
             this._handleDeleteTask(message.cardId);
             break;
           case "addTask":
-            this._handleAddTask(message.targetDay, message.targetSection);
+            this._handleAddTask(message.sectionHeading, message.bucketHeading);
             break;
           case "openLink":
             if (message.url && typeof message.url === "string") {
@@ -240,6 +242,7 @@ export class BoardWebviewPanel {
       "todo": "[ ]",
       "in-progress": "[/]",
       "done": "[x]",
+      "wont-do": "[-]",
     };
 
     const newCheckbox = checkboxMap[newStatus];
@@ -254,7 +257,7 @@ export class BoardWebviewPanel {
     const oldLine = lines[lineIndex];
 
     // Replace checkbox in the line
-    const newLine = oldLine.replace(/^(\s*-\s*)\[[x /]\]/, `$1${newCheckbox}`);
+    const newLine = oldLine.replace(/^(\s*-\s*)\[[x /-]\]/, `$1${newCheckbox}`);
 
     // Apply edit
     const edit = new vscode.WorkspaceEdit();
@@ -304,152 +307,68 @@ export class BoardWebviewPanel {
   }
 
   /**
-   * Find the insertion point for a card in a target day section.
-   * Returns the 0-based line index where the card should be inserted.
+   * Find the insertion point for the end of a section or sub-section.
+   * Searches for the H2 heading matching sectionHeading, then optionally
+   * the H3 heading matching bucketHeading within that section.
+   * Returns the 0-based line index where a card should be inserted.
    */
-  private _findDaySectionInsertionPoint(lines: string[], targetDay: string): number | null {
-    // Find the ## heading that contains the target day name
-    const headingPattern = new RegExp(`^##\\s+${targetDay}`, "i");
+  private _findSectionInsertionPoint(
+    lines: string[],
+    sectionHeading: string,
+    bucketHeading?: string,
+  ): number | null {
+    const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const h2Pattern = new RegExp(`^##\\s+${escapeRe(sectionHeading)}\\s*$`, "i");
 
     for (let i = 0; i < lines.length; i++) {
-      if (headingPattern.test(lines[i])) {
-        // Found the heading — find the end of this section (next ## heading or EOF)
-        let insertAt = i + 1;
+      if (!h2Pattern.test(lines[i])) continue;
 
-        // Skip past all content in this section
-        for (let j = i + 1; j < lines.length; j++) {
-          if (/^##\s/.test(lines[j])) break;
-          insertAt = j + 1;
-        }
-
-        // Back up past trailing blank lines to insert before them
-        while (insertAt > i + 1 && lines[insertAt - 1].trim() === "") {
-          insertAt--;
-        }
-
-        return insertAt;
+      if (!bucketHeading) {
+        // Insert at end of this H2 section (before next ## or EOF)
+        return this._findEndOfBlock(lines, i, /^##\s/);
       }
+
+      // Find the H3 bucket within this H2 section
+      const h3Pattern = new RegExp(`^###\\s+${escapeRe(bucketHeading)}\\s*$`, "i");
+      for (let j = i + 1; j < lines.length; j++) {
+        if (/^##\s/.test(lines[j])) break; // Left the H2 section
+        if (!h3Pattern.test(lines[j])) continue;
+        // Found the H3 — insert at end of this H3 block
+        return this._findEndOfBlock(lines, j, /^#{1,3}\s/);
+      }
+
+      return null; // Bucket not found within section
     }
 
     return null;
   }
 
-  private async _handleMoveCardToDay(
-    cardId: string,
-    targetDay: string,
-    newStatus: string,
-  ): Promise<void> {
-    const text = this._document.getText();
-    const board = parseBoard(text);
-    const cards = allCards(board);
+  /**
+   * Find the insertion point at the end of a block that starts at headingIndex.
+   * The block ends at the next line matching boundaryPattern or EOF.
+   * Backs up past trailing blank lines.
+   */
+  private _findEndOfBlock(lines: string[], headingIndex: number, boundaryPattern: RegExp): number {
+    let insertAt = headingIndex + 1;
 
-    const card = cards.find((c) => c.id === cardId);
-    if (!card) {
-      vscode.window.showErrorMessage(`Card not found: ${cardId}`);
-      return;
+    for (let j = headingIndex + 1; j < lines.length; j++) {
+      if (boundaryPattern.test(lines[j])) break;
+      insertAt = j + 1;
     }
 
-    const checkboxMap: Record<string, string> = {
-      "todo": "[ ]",
-      "in-progress": "[/]",
-      "done": "[x]",
-    };
-
-    const newCheckbox = checkboxMap[newStatus];
-    if (!newCheckbox) {
-      vscode.window.showErrorMessage(`Invalid status: ${newStatus}`);
-      return;
+    // Back up past trailing blank lines
+    while (insertAt > headingIndex + 1 && lines[insertAt - 1].trim() === "") {
+      insertAt--;
     }
 
-    const lines = text.split("\n");
-    const cardLineIndex = card.lineNumber - 1;
-    const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
-
-    // Extract the card lines and update the checkbox on the title line
-    const cardLines = lines.slice(rangeStart, rangeEnd).map((line, i) => {
-      if (i === 0) {
-        return line.replace(/^(\s*-\s*)\[[x /]\]/, `$1${newCheckbox}`);
-      }
-      return line;
-    });
-
-    // Find where to insert in the target section
-    const insertAt = this._findDaySectionInsertionPoint(lines, targetDay);
-    if (insertAt === null) {
-      vscode.window.showErrorMessage(`Day section not found: ${targetDay}`);
-      return;
-    }
-
-    // Build new document: remove old lines, insert at new position
-    // We need to be careful about index shifting when remove happens before insert
-    const newLines = [...lines];
-
-    // Remove the old card lines first
-    newLines.splice(rangeStart, rangeEnd - rangeStart);
-
-    // Adjust insertion index if the removal was before the insertion point
-    let adjustedInsertAt = insertAt;
-    if (rangeStart < insertAt) {
-      adjustedInsertAt -= (rangeEnd - rangeStart);
-    }
-
-    // Insert the card lines at the new position
-    newLines.splice(adjustedInsertAt, 0, ...cardLines);
-
-    // Apply as a full document replacement
-    const edit = new vscode.WorkspaceEdit();
-    const fullRange = new vscode.Range(
-      0, 0,
-      lines.length - 1, lines[lines.length - 1].length,
-    );
-    edit.replace(this._document.uri, fullRange, newLines.join("\n"));
-
-    await vscode.workspace.applyEdit(edit);
-  }
-
-  /** Map section keys to their markdown heading patterns. */
-  private _findSectionInsertionPoint(lines: string[], sectionKey: string): number | null {
-    // Map section keys to heading text
-    const sectionHeadings: Record<string, { level: number; text: string }> = {
-      "now": { level: 3, text: "Now" },
-      "next-2-weeks": { level: 3, text: "Next 2 Weeks" },
-      "this-month": { level: 3, text: "This Month" },
-      "this-quarter": { level: 2, text: "This Quarter" },
-      "this-year": { level: 2, text: "This Year" },
-      "parking-lot": { level: 2, text: "Parking Lot" },
-    };
-
-    const target = sectionHeadings[sectionKey];
-    if (!target) return null;
-
-    const prefix = "#".repeat(target.level);
-    const headingPattern = new RegExp(`^${prefix}\\s+${target.text}`, "i");
-    // The boundary is any heading at the same level or higher
-    const boundaryPattern = new RegExp(`^#{1,${target.level}}\\s`);
-
-    for (let i = 0; i < lines.length; i++) {
-      if (headingPattern.test(lines[i])) {
-        let insertAt = i + 1;
-
-        for (let j = i + 1; j < lines.length; j++) {
-          if (boundaryPattern.test(lines[j])) break;
-          insertAt = j + 1;
-        }
-
-        while (insertAt > i + 1 && lines[insertAt - 1].trim() === "") {
-          insertAt--;
-        }
-
-        return insertAt;
-      }
-    }
-
-    return null;
+    return insertAt;
   }
 
   private async _handleMoveCardToSection(
     cardId: string,
-    targetSection: string,
+    sectionHeading: string,
+    newStatus?: string,
+    bucketHeading?: string,
   ): Promise<void> {
     const text = this._document.getText();
     const board = parseBoard(text);
@@ -465,12 +384,27 @@ export class BoardWebviewPanel {
     const cardLineIndex = card.lineNumber - 1;
     const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
 
-    // Extract the card lines (keep checkbox as-is for section moves)
-    const cardLines = lines.slice(rangeStart, rangeEnd);
+    // Extract the card lines, optionally updating the checkbox
+    const cardLines = lines.slice(rangeStart, rangeEnd).map((line, i) => {
+      if (i === 0 && newStatus) {
+        const checkboxMap: Record<string, string> = {
+          "todo": "[ ]",
+          "in-progress": "[/]",
+          "done": "[x]",
+          "wont-do": "[-]",
+        };
+        const newCheckbox = checkboxMap[newStatus];
+        if (newCheckbox) {
+          return line.replace(/^(\s*-\s*)\[[x /-]\]/, `$1${newCheckbox}`);
+        }
+      }
+      return line;
+    });
 
-    const insertAt = this._findSectionInsertionPoint(lines, targetSection);
+    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, bucketHeading);
     if (insertAt === null) {
-      vscode.window.showErrorMessage(`Section not found: ${targetSection}`);
+      const target = bucketHeading ? `${sectionHeading} / ${bucketHeading}` : sectionHeading;
+      vscode.window.showErrorMessage(`Section not found: ${target}`);
       return;
     }
 
@@ -525,7 +459,7 @@ export class BoardWebviewPanel {
    */
   private _rebuildTaskLine(card: { rawLine: string; title: string; project?: string; dueDate?: string; priority?: string; timeEstimate?: string }, overrides: { title?: string; project?: string; dueDate?: string | null; priority?: string | null; timeEstimate?: string | null }): string {
     // Extract leading whitespace + checkbox prefix from rawLine
-    const prefixMatch = card.rawLine.match(/^(\s*-\s*\[[x /]\]\s*)/);
+    const prefixMatch = card.rawLine.match(/^(\s*-\s*\[[x /-]\]\s*)/);
     const prefix = prefixMatch ? prefixMatch[1] : "- [ ] ";
 
     const title = overrides.title !== undefined ? overrides.title : card.title;
@@ -691,32 +625,21 @@ export class BoardWebviewPanel {
     await vscode.workspace.applyEdit(edit);
   }
 
-  private async _handleAddTask(targetDay?: string, targetSection?: string): Promise<void> {
+  private async _handleAddTask(sectionHeading?: string, bucketHeading?: string): Promise<void> {
     const title = await vscode.window.showInputBox({
       prompt: "New task title",
       placeHolder: "What needs doing?",
     });
-    if (!title) return;
+    if (!title || !sectionHeading) return;
 
     const text = this._document.getText();
     const lines = text.split("\n");
     const newTaskLine = `- [ ] ${title}`;
 
-    let insertAt: number | null = null;
-
-    if (targetDay) {
-      insertAt = this._findDaySectionInsertionPoint(lines, targetDay);
-      if (insertAt === null) {
-        vscode.window.showErrorMessage(`Day section not found: ${targetDay}`);
-        return;
-      }
-    } else if (targetSection) {
-      insertAt = this._findSectionInsertionPoint(lines, targetSection);
-      if (insertAt === null) {
-        vscode.window.showErrorMessage(`Section not found: ${targetSection}`);
-        return;
-      }
-    } else {
+    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, bucketHeading);
+    if (insertAt === null) {
+      const target = bucketHeading ? `${sectionHeading} / ${bucketHeading}` : sectionHeading;
+      vscode.window.showErrorMessage(`Section not found: ${target}`);
       return;
     }
 

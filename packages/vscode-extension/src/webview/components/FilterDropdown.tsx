@@ -47,6 +47,7 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: "todo", label: "To Do" },
   { value: "in-progress", label: "In Progress" },
   { value: "done", label: "Done" },
+  { value: "wont-do", label: "Won't Do" },
 ];
 
 const ESTIMATE_OPTIONS: { value: EstimateBucket; label: string }[] = [
@@ -59,26 +60,26 @@ const ESTIMATE_OPTIONS: { value: EstimateBucket; label: string }[] = [
 interface FilterDropdownProps {
   cards: Card[];
   filter: FilterState;
-  onChange: (f: FilterState) => void;
+  onChange: (filter: FilterState) => void;
+}
+
+function toggle<T>(arr: T[], val: T): T[] {
+  return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
 }
 
 export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Derive unique sorted project list from all (unfiltered) cards
-  const projects = [
-    ...new Set(cards.map((c) => c.project).filter((p): p is string => !!p)),
-  ].sort();
-
-  const activeCount =
+  const projects = [...new Set(cards.map((c) => c.project).filter((p): p is string => !!p))].sort();
+  const activeCount = (
     filter.projects.length +
     filter.priorities.length +
     filter.dueDates.length +
     filter.statuses.length +
-    filter.estimates.length;
+    filter.estimates.length
+  );
 
-  // Close panel on click outside
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
@@ -90,56 +91,33 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
     return () => document.removeEventListener("mousedown", handler);
   }, [isOpen]);
 
-  function toggleProject(p: string) {
-    const next = filter.projects.includes(p)
-      ? filter.projects.filter((x) => x !== p)
-      : [...filter.projects, p];
-    onChange({ ...filter, projects: next });
-  }
-
-  function togglePriority(p: Priority) {
-    const next = filter.priorities.includes(p)
-      ? filter.priorities.filter((x) => x !== p)
-      : [...filter.priorities, p];
-    onChange({ ...filter, priorities: next });
-  }
-
-  function toggleDueDate(d: DueDateBucket) {
-    const next = filter.dueDates.includes(d)
-      ? filter.dueDates.filter((x) => x !== d)
-      : [...filter.dueDates, d];
-    onChange({ ...filter, dueDates: next });
-  }
-
-  function toggleStatus(s: TaskStatus) {
-    const next = filter.statuses.includes(s)
-      ? filter.statuses.filter((x) => x !== s)
-      : [...filter.statuses, s];
-    onChange({ ...filter, statuses: next });
-  }
-
-  function toggleEstimate(e: EstimateBucket) {
-    const next = filter.estimates.includes(e)
-      ? filter.estimates.filter((x) => x !== e)
-      : [...filter.estimates, e];
-    onChange({ ...filter, estimates: next });
-  }
+  const set = <K extends keyof FilterState>(key: K, val: FilterState[K]) =>
+    onChange({ ...filter, [key]: val });
 
   return (
     <div className="filter-wrapper" ref={ref}>
       <button
-        className={`filter-btn ${isFilterActive(filter) ? "active" : ""}`}
+        className={`filter-btn ${activeCount > 0 ? "active" : ""}`}
         onClick={() => setIsOpen((o) => !o)}
         title="Filter cards"
       >
-        Filter
-        {activeCount > 0 && (
-          <span className="filter-badge">{activeCount}</span>
-        )}
+        Filter {activeCount > 0 && <span className="filter-count">{activeCount}</span>}
       </button>
 
       {isOpen && (
         <div className="filter-panel">
+          <div className="filter-panel-header">
+            <span>Filters</span>
+            {isFilterActive(filter) && (
+              <button
+                className="filter-clear-btn"
+                onClick={() => onChange(EMPTY_FILTER)}
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+
           {projects.length > 0 && (
             <div className="filter-section">
               <div className="filter-section-label">Project</div>
@@ -148,9 +126,9 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
                   <input
                     type="checkbox"
                     checked={filter.projects.includes(p)}
-                    onChange={() => toggleProject(p)}
+                    onChange={() => set("projects", toggle(filter.projects, p))}
                   />
-                  {p}
+                  #{p}
                 </label>
               ))}
             </div>
@@ -158,68 +136,59 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
 
           <div className="filter-section">
             <div className="filter-section-label">Status</div>
-            {STATUS_OPTIONS.map(({ value, label }) => (
-              <label key={value} className="filter-option">
+            {STATUS_OPTIONS.map((opt) => (
+              <label key={opt.value} className="filter-option">
                 <input
                   type="checkbox"
-                  checked={filter.statuses.includes(value)}
-                  onChange={() => toggleStatus(value)}
+                  checked={filter.statuses.includes(opt.value)}
+                  onChange={() => set("statuses", toggle(filter.statuses, opt.value))}
                 />
-                {label}
+                {opt.label}
               </label>
             ))}
           </div>
 
           <div className="filter-section">
             <div className="filter-section-label">Priority</div>
-            {PRIORITY_OPTIONS.map(({ value, label }) => (
-              <label key={value} className="filter-option">
+            {PRIORITY_OPTIONS.map((opt) => (
+              <label key={opt.value} className="filter-option">
                 <input
                   type="checkbox"
-                  checked={filter.priorities.includes(value)}
-                  onChange={() => togglePriority(value)}
+                  checked={filter.priorities.includes(opt.value)}
+                  onChange={() => set("priorities", toggle(filter.priorities, opt.value))}
                 />
-                {label}
+                {opt.label}
               </label>
             ))}
           </div>
 
           <div className="filter-section">
             <div className="filter-section-label">Due Date</div>
-            {DUE_DATE_OPTIONS.map(({ value, label }) => (
-              <label key={value} className="filter-option">
+            {DUE_DATE_OPTIONS.map((opt) => (
+              <label key={opt.value} className="filter-option">
                 <input
                   type="checkbox"
-                  checked={filter.dueDates.includes(value)}
-                  onChange={() => toggleDueDate(value)}
+                  checked={filter.dueDates.includes(opt.value)}
+                  onChange={() => set("dueDates", toggle(filter.dueDates, opt.value))}
                 />
-                {label}
+                {opt.label}
               </label>
             ))}
           </div>
 
           <div className="filter-section">
-            <div className="filter-section-label">Time Estimate</div>
-            {ESTIMATE_OPTIONS.map(({ value, label }) => (
-              <label key={value} className="filter-option">
+            <div className="filter-section-label">Estimate</div>
+            {ESTIMATE_OPTIONS.map((opt) => (
+              <label key={opt.value} className="filter-option">
                 <input
                   type="checkbox"
-                  checked={filter.estimates.includes(value)}
-                  onChange={() => toggleEstimate(value)}
+                  checked={filter.estimates.includes(opt.value)}
+                  onChange={() => set("estimates", toggle(filter.estimates, opt.value))}
                 />
-                {label}
+                {opt.label}
               </label>
             ))}
           </div>
-
-          {isFilterActive(filter) && (
-            <button
-              className="filter-clear-btn"
-              onClick={() => onChange(EMPTY_FILTER)}
-            >
-              Clear all filters
-            </button>
-          )}
         </div>
       )}
     </div>

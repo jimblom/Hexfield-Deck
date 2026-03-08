@@ -13,11 +13,9 @@ export type {
   Frontmatter,
   TaskStatus,
   Priority,
-  BacklogSection,
-  LongTermSection,
+  Bucket,
+  Section,
   SubTask,
   Card,
-  DaySection,
-  BacklogBucket,
   BoardData,
 } from "./models/types.js";

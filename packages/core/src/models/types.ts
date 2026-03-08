@@ -8,17 +8,11 @@ export interface Frontmatter {
   endDate?: string;
 }
 
-/** Checkbox states: unchecked, in-progress ([/]), checked. */
-export type TaskStatus = "todo" | "in-progress" | "done";
+/** Checkbox states. `wont-do` is hidden by default; filter-in via status filter. */
+export type TaskStatus = "todo" | "in-progress" | "done" | "wont-do";
 
 /** Priority markers: !!! = high, !! = medium, ! = low. */
 export type Priority = "high" | "medium" | "low";
-
-/** Backlog sub-section identifiers. */
-export type BacklogSection = "now" | "next-2-weeks" | "this-month";
-
-/** Long-term section identifiers. */
-export type LongTermSection = "this-quarter" | "this-year" | "parking-lot";
 
 /** A sub-task nested under a card. */
 export interface SubTask {
@@ -40,48 +34,58 @@ export interface Card {
   dueDate?: string;
   priority?: Priority;
   timeEstimate?: string;
+  /** The H2 heading of the section this card belongs to. Always set. */
+  sectionHeading: string;
+  /** The H3 heading of the bucket this card belongs to (bucket-type sections only). */
+  bucketHeading?: string;
+  /** Day name shorthand for day-type sections (e.g. "Monday"). */
   day?: string;
-  section?: string;
 }
 
-/** A day column (## Monday, February 5, 2026). */
-export interface DaySection {
+/** An H3 sub-section within a bucket-type section. */
+export interface Bucket {
   heading: string;
-  dayName: string;
-  date?: string;
   cards: Card[];
   lineNumber: number;
 }
 
-/** A bucket within the ## Backlog section. */
-export interface BacklogBucket {
-  label: string;
-  key: BacklogSection;
+/**
+ * A parsed H2 section. Type is inferred from structure (ADR-0008):
+ * - `day`:    H2 heading starts with a day name.
+ * - `bucket`: H2 section contains H3 sub-headings (discovered retroactively).
+ * - `board`:  Any other H2 with direct task cards.
+ */
+export interface Section {
+  heading: string;
+  type: "day" | "board" | "bucket";
+  /** Day name shorthand (day-type only, e.g. "Monday"). */
+  dayName?: string;
+  /** ISO date string (day-type only, e.g. "2026-02-09"). */
+  date?: string;
+  /** Direct cards (day and board sections). Empty for bucket sections. */
   cards: Card[];
+  /** H3 sub-buckets (bucket-type sections only). */
+  buckets?: Bucket[];
   lineNumber: number;
 }
 
 /** The full parsed board. */
 export interface BoardData {
   frontmatter: Frontmatter;
-  days: DaySection[];
-  backlog: BacklogBucket[];
-  thisQuarter: Card[];
-  thisYear: Card[];
-  parkingLot: Card[];
+  sections: Section[];
 }
 
 /** Collect every card across all sections. */
 export function allCards(board: BoardData): Card[] {
-  const cards: Card[] = [];
-  for (const day of board.days) {
-    cards.push(...day.cards);
+  const result: Card[] = [];
+  for (const section of board.sections) {
+    if (section.type === "bucket" && section.buckets) {
+      for (const bucket of section.buckets) {
+        result.push(...bucket.cards);
+      }
+    } else {
+      result.push(...section.cards);
+    }
   }
-  for (const bucket of board.backlog) {
-    cards.push(...bucket.cards);
-  }
-  cards.push(...board.thisQuarter);
-  cards.push(...board.thisYear);
-  cards.push(...board.parkingLot);
-  return cards;
+  return result;
 }

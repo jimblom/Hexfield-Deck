@@ -7,9 +7,8 @@ export type ContextMenuAction =
   | { type: "editDueDate" }
   | { type: "editTimeEstimate" }
   | { type: "setPriority"; priority: "high" | "medium" | "low" | "none" }
-  | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" }
-  | { type: "moveToDay"; targetDay: string; newStatus: string }
-  | { type: "moveToBacklog"; targetSection: string }
+  | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" | "wont-do" }
+  | { type: "moveToSection"; sectionHeading: string; bucketHeading?: string }
   | { type: "deleteTask" };
 
 interface ContextMenuProps {
@@ -30,15 +29,9 @@ interface MenuItem {
 }
 
 function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
-  const dayNames = boardData.days.map((d) => d.dayName);
-  const backlogSections = [
-    { label: "Now", key: "now" },
-    { label: "Next 2 Weeks", key: "next-2-weeks" },
-    { label: "This Month", key: "this-month" },
-    { label: "This Quarter", key: "this-quarter" },
-    { label: "This Year", key: "this-year" },
-    { label: "Parking Lot", key: "parking-lot" },
-  ];
+  const daySections = boardData.sections.filter((s) => s.type === "day");
+  const bucketSections = boardData.sections.filter((s) => s.type === "bucket");
+  const boardSections = boardData.sections.filter((s) => s.type === "board");
 
   const items: MenuItem[] = [
     { label: "Open in Markdown", action: { type: "openInMarkdown" } },
@@ -62,33 +55,49 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
         { label: "To Do", action: { type: "changeState", newStatus: "todo" } },
         { label: "In Progress", action: { type: "changeState", newStatus: "in-progress" } },
         { label: "Done", action: { type: "changeState", newStatus: "done" } },
+        { label: "Won't Do", action: { type: "changeState", newStatus: "wont-do" } },
       ],
     },
     { label: "", separator: true },
   ];
 
-  if (dayNames.length > 0) {
+  if (daySections.length > 0) {
     items.push({
       label: "Move to Day",
-      submenu: dayNames.map((day) => ({
-        label: day,
-        action: { type: "moveToDay" as const, targetDay: day, newStatus: card.status },
+      submenu: daySections.map((s) => ({
+        label: s.dayName ?? s.heading,
+        action: { type: "moveToSection" as const, sectionHeading: s.heading },
       })),
     });
   }
 
-  items.push({
-    label: "Move to Backlog",
-    submenu: backlogSections.map((s) => ({
-      label: s.label,
-      action: { type: "moveToBacklog" as const, targetSection: s.key },
-    })),
-  });
+  for (const section of bucketSections) {
+    if (section.buckets && section.buckets.length > 0) {
+      items.push({
+        label: `Move to ${section.heading}`,
+        submenu: section.buckets.map((b) => ({
+          label: b.heading,
+          action: {
+            type: "moveToSection" as const,
+            sectionHeading: section.heading,
+            bucketHeading: b.heading,
+          },
+        })),
+      });
+    }
+  }
+
+  if (boardSections.length > 0) {
+    items.push({
+      label: "Move to Section",
+      submenu: boardSections.map((s) => ({
+        label: s.heading,
+        action: { type: "moveToSection" as const, sectionHeading: s.heading },
+      })),
+    });
+  }
 
   items.push(
-    { label: "", separator: true },
-    { label: "Move to Next Week", disabled: true },
-    { label: "Move to Week...", disabled: true },
     { label: "", separator: true },
     { label: "Delete Task...", action: { type: "deleteTask" } },
   );

@@ -19,14 +19,15 @@ import type { BoardData, Card, TaskStatus } from "@hexfield-deck/core";
 interface SwimlaneViewProps {
   boardData: BoardData;
   onCardMove: (cardId: string, newStatus: string) => void;
-  onCardMoveToDay: (cardId: string, targetDay: string, newStatus: string) => void;
+  onCardMoveToSection: (cardId: string, sectionHeading: string, newStatus: string) => void;
   onToggleSubTask: (lineNumber: number) => void;
 }
 
 interface SwimlaneRow {
   key: string;
   label: string;
-  dayName: string;
+  sectionHeading: string;
+  dayName?: string;
   cards: Card[];
   isBacklog?: boolean;
 }
@@ -69,27 +70,30 @@ function MiniColumn({
 function buildRows(boardData: BoardData): SwimlaneRow[] {
   const rows: SwimlaneRow[] = [];
 
-  for (const day of boardData.days) {
-    rows.push({
-      key: day.dayName,
-      label: day.heading,
-      dayName: day.dayName,
-      cards: day.cards,
-    });
+  for (const section of boardData.sections) {
+    if (section.type === "day") {
+      rows.push({
+        key: section.heading,
+        label: section.heading,
+        sectionHeading: section.heading,
+        dayName: section.dayName,
+        cards: section.cards,
+      });
+    }
   }
 
-  // Combine all backlog cards into one row
-  const backlogCards: Card[] = [
-    ...boardData.backlog.flatMap((b) => b.cards),
-    ...boardData.thisQuarter,
-    ...boardData.thisYear,
-    ...boardData.parkingLot,
-  ];
+  // Combine all non-day section cards into one Backlog row
+  const backlogCards = boardData.sections
+    .filter((s) => s.type !== "day")
+    .flatMap((s) =>
+      s.type === "bucket" && s.buckets ? s.buckets.flatMap((b) => b.cards) : s.cards
+    );
+
   if (backlogCards.length > 0) {
     rows.push({
-      key: "backlog",
+      key: "Backlog",
       label: "Backlog",
-      dayName: "Backlog",
+      sectionHeading: "Backlog",
       cards: backlogCards,
       isBacklog: true,
     });
@@ -98,13 +102,14 @@ function buildRows(boardData: BoardData): SwimlaneRow[] {
   return rows;
 }
 
-/** Parse a composite droppable ID like "Monday:todo" */
-function parseDropId(id: string): { day: string; status: TaskStatus } | null {
-  const parts = id.split(":");
-  if (parts.length !== 2) return null;
-  const [day, status] = parts;
+/** Parse a composite droppable ID like "Monday, February 9, 2026:todo" — splits on last colon. */
+function parseDropId(id: string): { sectionHeading: string; status: TaskStatus } | null {
+  const lastColon = id.lastIndexOf(":");
+  if (lastColon === -1) return null;
+  const sectionHeading = id.substring(0, lastColon);
+  const status = id.substring(lastColon + 1);
   if (status === "todo" || status === "in-progress" || status === "done") {
-    return { day, status };
+    return { sectionHeading, status };
   }
   return null;
 }
@@ -112,7 +117,7 @@ function parseDropId(id: string): { day: string; status: TaskStatus } | null {
 export function SwimlaneView({
   boardData,
   onCardMove,
-  onCardMoveToDay,
+  onCardMoveToSection,
   onToggleSubTask,
 }: SwimlaneViewProps) {
   const [sortKey, setSortKey] = useState<SortKey>("default");
@@ -143,7 +148,7 @@ export function SwimlaneView({
   const isBacklogCard = (c: Card) => !c.day;
 
   /** Get the effective row key for a card. */
-  const getCardRow = (c: Card) => c.day || "Backlog";
+  const getCardRow = (c: Card) => (c.day ? c.sectionHeading : "Backlog");
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -155,11 +160,11 @@ export function SwimlaneView({
 
     const overId = over.id as string;
 
-    // Try parsing as a composite drop zone ID (day:status)
+    // Try parsing as a composite drop zone ID (sectionHeading:status)
     const dropTarget = parseDropId(overId);
     if (dropTarget) {
       const sourceRow = getCardRow(card);
-      const targetRow = dropTarget.day;
+      const targetRow = dropTarget.sectionHeading;
       const sameRow = sourceRow === targetRow;
 
       if (sameRow && card.status === dropTarget.status) return;
@@ -168,13 +173,13 @@ export function SwimlaneView({
         // Same row, or involves backlog — just change status
         onCardMove(cardId, dropTarget.status);
       } else {
-        // Cross-day move (between actual day sections)
-        onCardMoveToDay(cardId, dropTarget.day, dropTarget.status);
+        // Cross-day-section move
+        onCardMoveToSection(cardId, dropTarget.sectionHeading, dropTarget.status);
       }
       return;
     }
 
-    // Dropped on a card — find that card's day and status
+    // Dropped on a card — find that card's row and status
     const targetCard = allCards.find((c) => c.id === overId);
     if (!targetCard) return;
 
@@ -188,8 +193,8 @@ export function SwimlaneView({
       // Same row, or involves backlog — just change status
       onCardMove(cardId, targetCard.status);
     } else {
-      // Cross-day move
-      onCardMoveToDay(cardId, targetRow, targetCard.status);
+      // Cross-day-section move
+      onCardMoveToSection(cardId, targetRow, targetCard.status);
     }
   };
 
@@ -224,23 +229,23 @@ export function SwimlaneView({
                 >
                   {isCollapsed ? "▶" : "▼"}
                 </button>
-                <span className="swimlane-label">{row.dayName}</span>
+                <span className="swimlane-label">{row.dayName ?? row.label}</span>
                 <span className="swimlane-count">{totalCards}</span>
               </div>
               {!isCollapsed && (
                 <>
                   <MiniColumn
-                    droppableId={`${row.dayName}:todo`}
+                    droppableId={`${row.key}:todo`}
                     cards={todoCards}
                     onToggleSubTask={onToggleSubTask}
                   />
                   <MiniColumn
-                    droppableId={`${row.dayName}:in-progress`}
+                    droppableId={`${row.key}:in-progress`}
                     cards={inProgressCards}
                     onToggleSubTask={onToggleSubTask}
                   />
                   <MiniColumn
-                    droppableId={`${row.dayName}:done`}
+                    droppableId={`${row.key}:done`}
                     cards={doneCards}
                     onToggleSubTask={onToggleSubTask}
                   />

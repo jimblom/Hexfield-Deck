@@ -95,8 +95,11 @@ function matchesEstimateBucket(timeEstimate: string | undefined, buckets: Estima
 }
 
 function filterCards(cards: Card[], f: FilterState): Card[] {
-  if (!isFilterActive(f)) return cards;
+  const wontDoVisible = f.statuses.includes("wont-do" as TaskStatus);
   return cards.filter((card) => {
+    // wont-do is hidden by default; only visible when explicitly filtered in
+    if (card.status === "wont-do" && !wontDoVisible) return false;
+    if (!isFilterActive(f)) return true;
     if (f.projects.length > 0 && (!card.project || !f.projects.includes(card.project)))
       return false;
     if (f.statuses.length > 0 && !f.statuses.includes(card.status as TaskStatus))
@@ -112,15 +115,18 @@ function filterCards(cards: Card[], f: FilterState): Card[] {
 }
 
 function filterBoardData(boardData: BoardData, f: FilterState): BoardData {
-  if (!isFilterActive(f)) return boardData;
   const keep = (cards: Card[]) => filterCards(cards, f);
   return {
     ...boardData,
-    days: boardData.days.map((day) => ({ ...day, cards: keep(day.cards) })),
-    backlog: boardData.backlog.map((bucket) => ({ ...bucket, cards: keep(bucket.cards) })),
-    thisQuarter: keep(boardData.thisQuarter),
-    thisYear: keep(boardData.thisYear),
-    parkingLot: keep(boardData.parkingLot),
+    sections: boardData.sections.map((section) => {
+      if (section.type === "bucket" && section.buckets) {
+        return {
+          ...section,
+          buckets: section.buckets.map((b) => ({ ...b, cards: keep(b.cards) })),
+        };
+      }
+      return { ...section, cards: keep(section.cards) };
+    }),
   };
 }
 
@@ -200,12 +206,13 @@ export function App() {
     vscode.postMessage({ type: "moveCard", cardId, newStatus });
   };
 
-  const handleCardMoveToDay = (cardId: string, targetDay: string, newStatus: string) => {
-    vscode.postMessage({ type: "moveCardToDay", cardId, targetDay, newStatus });
-  };
-
-  const handleCardMoveToSection = (cardId: string, targetSection: string) => {
-    vscode.postMessage({ type: "moveCardToSection", cardId, targetSection });
+  const handleCardMoveToSection = (
+    cardId: string,
+    sectionHeading: string,
+    newStatus?: string,
+    bucketHeading?: string,
+  ) => {
+    vscode.postMessage({ type: "moveCardToSection", cardId, sectionHeading, newStatus, bucketHeading });
   };
 
   const handleToggleSubTask = (lineNumber: number) => {
@@ -239,11 +246,8 @@ export function App() {
       case "changeState":
         handleCardMove(card.id, action.newStatus);
         break;
-      case "moveToDay":
-        handleCardMoveToDay(card.id, action.targetDay, action.newStatus);
-        break;
-      case "moveToBacklog":
-        handleCardMoveToSection(card.id, action.targetSection);
+      case "moveToSection":
+        handleCardMoveToSection(card.id, action.sectionHeading, undefined, action.bucketHeading);
         break;
       case "deleteTask":
         vscode.postMessage({ type: "deleteTask", cardId: card.id });
@@ -255,16 +259,26 @@ export function App() {
     if (!boardData) return;
 
     if (viewMode === "backlog") {
-      vscode.postMessage({ type: "addTask", targetSection: "now" });
-    } else {
-      // Find today's day name
-      const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
-      const todaySection = boardData.days.find(
-        (d) => d.dayName.toLowerCase() === todayName.toLowerCase()
+      // Target first bucket section's first bucket
+      const firstBucketSection = boardData.sections.find(
+        (s) => s.type === "bucket" && s.buckets && s.buckets.length > 0
       );
-      const targetDay = todaySection?.dayName ?? boardData.days[0]?.dayName;
-      if (targetDay) {
-        vscode.postMessage({ type: "addTask", targetDay });
+      if (firstBucketSection?.buckets?.[0]) {
+        vscode.postMessage({
+          type: "addTask",
+          sectionHeading: firstBucketSection.heading,
+          bucketHeading: firstBucketSection.buckets[0].heading,
+        });
+      }
+    } else {
+      const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+      const daySections = boardData.sections.filter((s) => s.type === "day");
+      const todaySection = daySections.find(
+        (s) => s.dayName?.toLowerCase() === todayName.toLowerCase()
+      );
+      const targetSection = todaySection ?? daySections[0];
+      if (targetSection) {
+        vscode.postMessage({ type: "addTask", sectionHeading: targetSection.heading });
       }
     }
   };
@@ -292,7 +306,9 @@ export function App() {
           <SwimlaneView
             boardData={filteredBoardData}
             onCardMove={handleCardMove}
-            onCardMoveToDay={handleCardMoveToDay}
+            onCardMoveToSection={(cardId, sectionHeading, newStatus) =>
+              handleCardMoveToSection(cardId, sectionHeading, newStatus)
+            }
             onToggleSubTask={handleToggleSubTask}
           />
         );
@@ -301,7 +317,9 @@ export function App() {
           <BacklogView
             boardData={filteredBoardData}
             onCardMove={handleCardMove}
-            onCardMoveToSection={handleCardMoveToSection}
+            onCardMoveToSection={(cardId, sectionHeading, bucketHeading) =>
+              handleCardMoveToSection(cardId, sectionHeading, undefined, bucketHeading)
+            }
           />
         );
     }
