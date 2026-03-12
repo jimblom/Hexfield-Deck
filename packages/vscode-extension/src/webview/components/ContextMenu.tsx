@@ -58,28 +58,33 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     { label: "", separator: true },
   ];
 
-  // Flat "Move" submenu — all H2 rows across all Slates.
-  // Prefix row label with slate name when multiple slates exist (avoids ambiguity).
-  const multiBoard = boardData.boards.length > 1;
-  const allRows = boardData.boards.flatMap((b) =>
-    b.rows.map((r) => ({
-      label: multiBoard
-        ? `${b.heading || "Board"} — ${r.dayName ?? r.heading}`
-        : r.dayName ?? r.heading,
-      sectionHeading: r.heading,
-      boardHeading: b.heading,
-    }))
-  );
-
-  if (allRows.length > 0) {
+  // "Move" — rows within the card's own Slate
+  const homeBoard = boardData.boards.find((b) => b.heading === card.boardHeading);
+  if (homeBoard && homeBoard.rows.length > 0) {
     items.push({
       label: "Move",
-      submenu: allRows.map((r) => ({
-        label: r.label,
+      submenu: homeBoard.rows.map((r) => ({
+        label: r.dayName ?? r.heading,
         action: {
           type: "moveToSection" as const,
-          sectionHeading: r.sectionHeading,
-          boardHeading: r.boardHeading,
+          sectionHeading: r.heading,
+          boardHeading: homeBoard.heading,
+        },
+      })),
+    });
+  }
+
+  // "Move to [Slate]" — one submenu per other Slate
+  for (const board of boardData.boards) {
+    if (board.heading === card.boardHeading || board.rows.length === 0) continue;
+    items.push({
+      label: `Move to ${board.heading || "Board"}`,
+      submenu: board.rows.map((r) => ({
+        label: r.dayName ?? r.heading,
+        action: {
+          type: "moveToSection" as const,
+          sectionHeading: r.heading,
+          boardHeading: board.heading,
         },
       })),
     });
