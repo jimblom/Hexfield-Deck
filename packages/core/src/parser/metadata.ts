@@ -2,6 +2,7 @@ import type { Priority } from "../models/types.js";
 
 export interface ExtractedMetadata {
   cleanTitle: string;
+  comment?: string;
   project?: string;
   dueDate?: string;
   priority?: Priority;
@@ -103,14 +104,33 @@ export function extractTimeEstimate(text: string): {
   return { timeEstimate: undefined, cleanText: text };
 }
 
-/** Run all metadata extractors in sequence. */
+/**
+ * Extract a trailing `// comment` from text.
+ * The comment separator must be preceded by whitespace: `text // comment`.
+ * Returns the text before the separator and the comment text after it.
+ */
+export function extractComment(text: string): {
+  comment: string | undefined;
+  cleanText: string;
+} {
+  const idx = text.indexOf(" // ");
+  if (idx === -1) return { comment: undefined, cleanText: text };
+  return {
+    comment: text.slice(idx + 4).trim(),
+    cleanText: text.slice(0, idx).trimEnd(),
+  };
+}
+
+/** Run all metadata extractors in sequence. Comment is stripped first. */
 export function parseAllMetadata(text: string): ExtractedMetadata {
-  const { project, cleanText: t1 } = extractProject(text);
+  const { comment, cleanText: t0 } = extractComment(text);
+  const { project, cleanText: t1 } = extractProject(t0);
   const { dueDate, cleanText: t2 } = extractDueDate(t1);
   const { priority, cleanText: t3 } = extractPriority(t2);
   const { timeEstimate, cleanText: t4 } = extractTimeEstimate(t3);
   return {
     cleanTitle: t4,
+    ...(comment !== undefined ? { comment } : {}),
     ...(project !== undefined ? { project } : {}),
     ...(dueDate !== undefined ? { dueDate } : {}),
     ...(priority !== undefined ? { priority } : {}),

@@ -141,6 +141,7 @@ export function parseBoard(input: string): BoardData {
         subTasks: [],
         sectionHeading: currentRow?.heading ?? "",
         boardHeading: currentBoard?.heading ?? "",
+        ...(meta.comment !== undefined ? { comment: meta.comment } : {}),
         ...(meta.project !== undefined ? { project: meta.project } : {}),
         ...(meta.dueDate !== undefined ? { dueDate: meta.dueDate } : {}),
         ...(meta.priority !== undefined ? { priority: meta.priority } : {}),

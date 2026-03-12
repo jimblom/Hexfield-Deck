@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { displayLabel } from "@hexfield-deck/core";
 import type { Card, BoardData } from "@hexfield-deck/core";
 
 export type ContextMenuAction =
@@ -64,7 +65,7 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     items.push({
       label: "Move",
       submenu: homeBoard.rows.map((r) => ({
-        label: r.dayName ?? r.heading,
+        label: displayLabel(r.heading),
         action: {
           type: "moveToSection" as const,
           sectionHeading: r.heading,
@@ -80,7 +81,7 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     items.push({
       label: `Move to ${board.heading || "Board"}`,
       submenu: board.rows.map((r) => ({
-        label: r.dayName ?? r.heading,
+        label: displayLabel(r.heading),
         action: {
           type: "moveToSection" as const,
           sectionHeading: r.heading,

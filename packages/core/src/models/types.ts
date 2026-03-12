@@ -34,6 +34,8 @@ export interface Card {
   dueDate?: string;
   priority?: Priority;
   timeEstimate?: string;
+  /** Text after ` // ` on the task line — stripped from `title`, stored for future display. */
+  comment?: string;
   /** The H2 heading of the row this card belongs to. Always set. */
   sectionHeading: string;
   /** The H1 heading of the board this card belongs to. Empty string if no H1 in file. */
@@ -76,4 +78,15 @@ export interface BoardData {
 /** Collect every card across all boards and rows. */
 export function allCards(boardData: BoardData): Card[] {
   return boardData.boards.flatMap((b) => b.rows.flatMap((r) => r.cards));
+}
+
+/**
+ * Return the display label for a heading or row title.
+ * If the text contains ` // `, returns only the portion before it (trimmed).
+ * `## Sunday // February 9, 2026` → `"Sunday"`
+ * `## Monday, February 9, 2026` → `"Monday, February 9, 2026"` (unchanged)
+ */
+export function displayLabel(text: string): string {
+  const idx = text.indexOf(" // ");
+  return idx === -1 ? text : text.slice(0, idx).trimEnd();
 }

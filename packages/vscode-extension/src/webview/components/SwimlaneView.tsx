@@ -14,6 +14,7 @@ import {
 import { CardComponent } from "./Card.js";
 import { SortBar, sortCards } from "./SortBar.js";
 import type { SortKey } from "./SortBar.js";
+import { displayLabel } from "@hexfield-deck/core";
 import type { Board, Card, TaskStatus } from "@hexfield-deck/core";
 
 interface SwimlaneViewProps {
@@ -226,7 +227,7 @@ export function SwimlaneView({
                 >
                   {isCollapsed ? "▶" : "▼"}
                 </button>
-                <span className="swimlane-label">{row.dayName ?? row.label}</span>
+                <span className="swimlane-label">{displayLabel(row.label)}</span>
                 <span className="swimlane-count">{totalCards}</span>
               </div>
               {!isCollapsed && (
