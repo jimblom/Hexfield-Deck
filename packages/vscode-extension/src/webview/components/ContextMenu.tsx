@@ -29,14 +29,6 @@ interface MenuItem {
 }
 
 function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
-  const dayRows = boardData.boards.flatMap((b) =>
-    b.rows.filter((r) => r.dayName).map((r) => ({ ...r, boardHeading: b.heading }))
-  );
-
-  const nonDayBoards = boardData.boards
-    .map((b) => ({ ...b, rows: b.rows.filter((r) => !r.dayName) }))
-    .filter((b) => b.rows.length > 0);
-
   const items: MenuItem[] = [
     { label: "Open in Markdown", action: { type: "openInMarkdown" } },
     { label: "", separator: true },
@@ -66,27 +58,13 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     { label: "", separator: true },
   ];
 
-  // "Move to Day" — all day rows across all boards
-  if (dayRows.length > 0) {
+  // One submenu per Slate (H1 board) — all H2 rows within it
+  for (const board of boardData.boards) {
+    if (board.rows.length === 0) continue;
     items.push({
-      label: "Move to Day",
-      submenu: dayRows.map((r) => ({
-        label: r.dayName ?? r.heading,
-        action: {
-          type: "moveToSection" as const,
-          sectionHeading: r.heading,
-          boardHeading: r.boardHeading,
-        },
-      })),
-    });
-  }
-
-  // One submenu per non-day board (e.g. "Move to Backlog")
-  for (const board of nonDayBoards) {
-    items.push({
-      label: `Move to ${board.heading || "Section"}`,
+      label: `Move to ${board.heading || "Board"}`,
       submenu: board.rows.map((r) => ({
-        label: r.heading,
+        label: r.dayName ?? r.heading,
         action: {
           type: "moveToSection" as const,
           sectionHeading: r.heading,
