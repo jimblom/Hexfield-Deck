@@ -235,6 +235,7 @@ export class BoardWebviewPanel {
       "in-progress": "[/]",
       "done": "[x]",
       "wont-do": "[-]",
+      "blocked": "[!]",
     };
 
     const newCheckbox = checkboxMap[newStatus];
@@ -246,7 +247,7 @@ export class BoardWebviewPanel {
     const lines = text.split("\n");
     const lineIndex = card.lineNumber - 1;
     const oldLine = lines[lineIndex];
-    const newLine = oldLine.replace(/^(\s*-\s*)\[[x /-]\]/, `$1${newCheckbox}`);
+    const newLine = oldLine.replace(/^(\s*-\s*)\[[x /!-]\]/, `$1${newCheckbox}`);
 
     const edit = new vscode.WorkspaceEdit();
     const range = new vscode.Range(lineIndex, 0, lineIndex, oldLine.length);
@@ -387,7 +388,7 @@ export class BoardWebviewPanel {
         };
         const newCheckbox = checkboxMap[newStatus];
         if (newCheckbox) {
-          return line.replace(/^(\s*-\s*)\[[x /-]\]/, `$1${newCheckbox}`);
+          return line.replace(/^(\s*-\s*)\[[x /!-]\]/, `$1${newCheckbox}`);
         }
       }
       return line;
@@ -450,7 +451,7 @@ export class BoardWebviewPanel {
     card: { rawLine: string; title: string; project?: string; dueDate?: string; priority?: string; timeEstimate?: string },
     overrides: { title?: string; project?: string; dueDate?: string | null; priority?: string | null; timeEstimate?: string | null },
   ): string {
-    const prefixMatch = card.rawLine.match(/^(\s*-\s*\[[x /-]\]\s*)/);
+    const prefixMatch = card.rawLine.match(/^(\s*-\s*\[[x /!-]\]\s*)/);
     const prefix = prefixMatch ? prefixMatch[1] : "- [ ] ";
 
     const title = overrides.title !== undefined ? overrides.title : card.title;

@@ -7,7 +7,7 @@ export type ContextMenuAction =
   | { type: "editDueDate" }
   | { type: "editTimeEstimate" }
   | { type: "setPriority"; priority: "high" | "medium" | "low" | "none" }
-  | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" | "wont-do" }
+  | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" | "wont-do" | "blocked" }
   | { type: "moveToSection"; sectionHeading: string; boardHeading: string }
   | { type: "deleteTask" };
 
@@ -60,6 +60,7 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
         { label: "In Progress", action: { type: "changeState", newStatus: "in-progress" } },
         { label: "Done", action: { type: "changeState", newStatus: "done" } },
         { label: "Won't Do", action: { type: "changeState", newStatus: "wont-do" } },
+        { label: "Blocked", action: { type: "changeState", newStatus: "blocked" } },
       ],
     },
     { label: "", separator: true },

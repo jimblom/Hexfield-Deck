@@ -18,8 +18,8 @@ const DAY_NAMES = [
   "Sunday",
 ] as const;
 
-const CHECKBOX_RE = /^- \[([ x/-])\] (.+)$/;
-const INDENTED_CHECKBOX_RE = /^\s+- \[([ x/-])\] (.+)$/;
+const CHECKBOX_RE = /^- \[([ x/!-])\] (.+)$/;
+const INDENTED_CHECKBOX_RE = /^\s+- \[([ x/!-])\] (.+)$/;
 
 function checkboxToStatus(marker: string): TaskStatus {
   switch (marker) {
@@ -29,6 +29,8 @@ function checkboxToStatus(marker: string): TaskStatus {
       return "in-progress";
     case "-":
       return "wont-do";
+    case "!":
+      return "blocked";
     default:
       return "todo";
   }

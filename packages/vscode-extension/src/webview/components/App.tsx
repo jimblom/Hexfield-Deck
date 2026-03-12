@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, createContext, useCallback } from "react";
 import { Board } from "./Board.js";
-import { BacklogView } from "./BacklogView.js";
 import { SwimlaneView } from "./SwimlaneView.js";
+import { SlateSelector } from "./SlateSelector.js";
 import { ContextMenu } from "./ContextMenu.js";
 import type { ContextMenuAction } from "./ContextMenu.js";
 import { FilterDropdown } from "./FilterDropdown.js";
@@ -10,7 +10,7 @@ import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
 import { ProjectPanel } from "./ProjectPanel.js";
 import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
 
-type ViewMode = "standard" | "swimlane" | "backlog";
+type ViewMode = "standard" | "swimlane";
 
 export interface ProjectConfig {
   color?: string;
@@ -31,10 +31,18 @@ const vscode = acquireVsCodeApi();
 
 function getInitialViewMode(): ViewMode {
   const saved = vscode.getState();
-  if (saved && typeof saved.viewMode === "string") {
-    return saved.viewMode as ViewMode;
+  if (saved && (saved.viewMode === "standard" || saved.viewMode === "swimlane")) {
+    return saved.viewMode;
   }
   return "standard";
+}
+
+function getInitialSlateIndex(): number {
+  const saved = vscode.getState();
+  if (saved && typeof saved.slateIndex === "number") {
+    return saved.slateIndex;
+  }
+  return 0;
 }
 
 // Context for opening the context menu from any card
@@ -96,9 +104,11 @@ function matchesEstimateBucket(timeEstimate: string | undefined, buckets: Estima
 
 function filterCards(cards: Card[], f: FilterState): Card[] {
   const wontDoVisible = f.statuses.includes("wont-do" as TaskStatus);
+  const blockedVisible = f.statuses.includes("blocked" as TaskStatus);
   return cards.filter((card) => {
-    // wont-do is hidden by default; only visible when explicitly filtered in
+    // wont-do and blocked are hidden by default; only visible when explicitly filtered in
     if (card.status === "wont-do" && !wontDoVisible) return false;
+    if (card.status === "blocked" && !blockedVisible) return false;
     if (!isFilterActive(f)) return true;
     if (f.projects.length > 0 && (!card.project || !f.projects.includes(card.project)))
       return false;
@@ -132,6 +142,7 @@ export function App() {
   const [cards, setCards] = useState<Card[]>([]);
   const [isDirty, setIsDirty] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
+  const [activeSlateIndex, setActiveSlateIndex] = useState<number>(getInitialSlateIndex);
   const [contextMenu, setContextMenu] = useState<{ card: Card; x: number; y: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterState>(EMPTY_FILTER);
   const [projects, setProjects] = useState<Record<string, ProjectConfig>>({});
@@ -174,9 +185,8 @@ export function App() {
     };
   }, []);
 
-  // Filtered data — recomputed whenever cards, boardData, or the active filter changes.
+  // Filtered data — recomputed whenever boardData or the active filter changes.
   // `cards` (unfiltered) is still passed to FilterDropdown so it can enumerate all projects.
-  const filteredCards = useMemo(() => filterCards(cards, activeFilter), [cards, activeFilter]);
   const filteredBoardData = useMemo(
     () => (boardData ? filterBoardData(boardData, activeFilter) : null),
     [boardData, activeFilter]
@@ -195,6 +205,11 @@ export function App() {
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
     vscode.setState({ ...vscode.getState(), viewMode: mode });
+  };
+
+  const handleSlateChange = (index: number) => {
+    setActiveSlateIndex(index);
+    vscode.setState({ ...vscode.getState(), slateIndex: index });
   };
 
   const handleCardMove = (cardId: string, newStatus: string) => {
@@ -253,33 +268,21 @@ export function App() {
   const handleQuickAdd = () => {
     if (!boardData) return;
 
-    if (viewMode === "backlog") {
-      // Target first non-day row of the first board that has one
-      const firstBoard = boardData.boards.find((b) => b.rows.some((r) => !r.dayName));
-      const firstRow = firstBoard?.rows.find((r) => !r.dayName);
-      if (firstBoard && firstRow) {
-        vscode.postMessage({
-          type: "addTask",
-          sectionHeading: firstRow.heading,
-          boardHeading: firstBoard.heading,
-        });
-      }
-    } else {
-      const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
-      const allDayRows = boardData.boards.flatMap((b) =>
-        b.rows.filter((r) => r.dayName).map((r) => ({ ...r, boardHeading: b.heading }))
-      );
-      const todayRow = allDayRows.find(
-        (r) => r.dayName?.toLowerCase() === todayName.toLowerCase()
-      );
-      const targetRow = todayRow ?? allDayRows[0];
-      if (targetRow) {
-        vscode.postMessage({
-          type: "addTask",
-          sectionHeading: targetRow.heading,
-          boardHeading: targetRow.boardHeading,
-        });
-      }
+    const activeBoard = boardData.boards[activeSlateIndex] ?? boardData.boards[0];
+    if (!activeBoard) return;
+
+    // Prefer today's day row within the active slate; fall back to first day row, then first row
+    const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+    const dayRows = activeBoard.rows.filter((r) => r.dayName);
+    const todayRow = dayRows.find((r) => r.dayName?.toLowerCase() === todayName.toLowerCase());
+    const targetRow = todayRow ?? dayRows[0] ?? activeBoard.rows[0];
+
+    if (targetRow) {
+      vscode.postMessage({
+        type: "addTask",
+        sectionHeading: targetRow.heading,
+        boardHeading: activeBoard.heading,
+      });
     }
   };
 
@@ -291,12 +294,18 @@ export function App() {
     );
   }
 
+  // Clamp slate index to valid range (e.g. after a file reload with fewer boards)
+  const safeSlateIndex = Math.min(activeSlateIndex, filteredBoardData.boards.length - 1);
+  const activeSlate = filteredBoardData.boards[safeSlateIndex] ?? filteredBoardData.boards[0];
+  const slateCards = activeSlate?.rows.flatMap((r) => r.cards) ?? [];
+
   const renderView = () => {
+    if (!activeSlate) return null;
     switch (viewMode) {
       case "standard":
         return (
           <Board
-            cards={filteredCards}
+            cards={slateCards}
             onCardMove={handleCardMove}
             onToggleSubTask={handleToggleSubTask}
           />
@@ -304,22 +313,12 @@ export function App() {
       case "swimlane":
         return (
           <SwimlaneView
-            boardData={filteredBoardData}
+            board={activeSlate}
             onCardMove={handleCardMove}
             onCardMoveToSection={(cardId, sectionHeading, boardHeading, newStatus) =>
               handleCardMoveToSection(cardId, sectionHeading, boardHeading, newStatus)
             }
             onToggleSubTask={handleToggleSubTask}
-          />
-        );
-      case "backlog":
-        return (
-          <BacklogView
-            boardData={filteredBoardData}
-            onCardMove={handleCardMove}
-            onCardMoveToSection={(cardId, sectionHeading, boardHeading) =>
-              handleCardMoveToSection(cardId, sectionHeading, boardHeading)
-            }
           />
         );
     }
@@ -340,7 +339,11 @@ export function App() {
           </div>
           <div className="header-row">
             <div className="subtitle">
-              Week {boardData.frontmatter.week}, {boardData.frontmatter.year}
+              <SlateSelector
+                boards={boardData.boards}
+                activeIndex={safeSlateIndex}
+                onChange={handleSlateChange}
+              />
             </div>
             <div className="toolbar-right">
               <ProjectPanel
@@ -371,16 +374,9 @@ export function App() {
                 <button
                   className={`view-btn ${viewMode === "swimlane" ? "active" : ""}`}
                   onClick={() => handleViewChange("swimlane")}
-                  title="Swimlane view — grouped by row"
+                  title="Swimlane view — rows × status grid"
                 >
                   Swimlane
-                </button>
-                <button
-                  className={`view-btn ${viewMode === "backlog" ? "active" : ""}`}
-                  onClick={() => handleViewChange("backlog")}
-                  title="Backlog view — non-day rows"
-                >
-                  Backlog
                 </button>
               </div>
             </div>

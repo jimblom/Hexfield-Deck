@@ -8,8 +8,8 @@ export interface Frontmatter {
   endDate?: string;
 }
 
-/** Checkbox states. `wont-do` is hidden by default; filter-in via status filter. */
-export type TaskStatus = "todo" | "in-progress" | "done" | "wont-do";
+/** Checkbox states. `wont-do` and `blocked` are hidden by default; filter-in via status filter. */
+export type TaskStatus = "todo" | "in-progress" | "done" | "wont-do" | "blocked";
 
 /** Priority markers: !!! = high, !! = medium, ! = low. */
 export type Priority = "high" | "medium" | "low";

@@ -14,10 +14,10 @@ import {
 import { CardComponent } from "./Card.js";
 import { SortBar, sortCards } from "./SortBar.js";
 import type { SortKey } from "./SortBar.js";
-import type { BoardData, Card, TaskStatus } from "@hexfield-deck/core";
+import type { Board, Card, TaskStatus } from "@hexfield-deck/core";
 
 interface SwimlaneViewProps {
-  boardData: BoardData;
+  board: Board;
   onCardMove: (cardId: string, newStatus: string) => void;
   onCardMoveToSection: (
     cardId: string,
@@ -73,22 +73,16 @@ function MiniColumn({
   );
 }
 
-/** Every H2 row across every H1 board becomes a swimlane row. */
-function buildRows(boardData: BoardData): SwimlaneRow[] {
-  const result: SwimlaneRow[] = [];
-  for (const board of boardData.boards) {
-    for (const row of board.rows) {
-      result.push({
-        key: String(result.length), // stable numeric index
-        label: row.heading,
-        sectionHeading: row.heading,
-        boardHeading: board.heading,
-        dayName: row.dayName,
-        cards: row.cards,
-      });
-    }
-  }
-  return result;
+/** Every H2 row in the active slate becomes a swimlane row. */
+function buildRows(board: Board): SwimlaneRow[] {
+  return board.rows.map((row, i) => ({
+    key: String(i),
+    label: row.heading,
+    sectionHeading: row.heading,
+    boardHeading: board.heading,
+    dayName: row.dayName,
+    cards: row.cards,
+  }));
 }
 
 /** Parse a droppable ID like "3:in-progress" — splits on last colon. */
@@ -107,7 +101,7 @@ function parseDropId(
 }
 
 export function SwimlaneView({
-  boardData,
+  board,
   onCardMove,
   onCardMoveToSection,
   onToggleSubTask,
@@ -120,7 +114,7 @@ export function SwimlaneView({
     }),
   );
 
-  const rows = buildRows(boardData);
+  const rows = buildRows(board);
   const allCards = rows.flatMap((r) => r.cards);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {

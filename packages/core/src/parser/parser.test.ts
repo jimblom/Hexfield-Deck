@@ -358,4 +358,25 @@ tags: []
     expect(projects.rows[0].cards[0].boardHeading).toBe("Projects");
     expect(projects.rows[1].heading).toBe("Deep 13");
   });
+
+  it("handles [!] checkbox as blocked", () => {
+    const input = `---
+week: 1
+year: 2026
+tags: []
+---
+
+# Week 1
+
+## Monday, February 2, 2026
+
+- [!] Blocked on external dependency
+- [ ] Still todo
+`;
+    const board = parseBoard(input);
+    const cards = board.boards[0].rows[0].cards;
+    expect(cards[0].status).toBe("blocked");
+    expect(cards[0].title).toBe("Blocked on external dependency");
+    expect(cards[1].status).toBe("todo");
+  });
 });

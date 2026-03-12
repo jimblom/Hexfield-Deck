@@ -48,6 +48,7 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: "in-progress", label: "In Progress" },
   { value: "done", label: "Done" },
   { value: "wont-do", label: "Won't Do" },
+  { value: "blocked", label: "Blocked" },
 ];
 
 const ESTIMATE_OPTIONS: { value: EstimateBucket; label: string }[] = [
