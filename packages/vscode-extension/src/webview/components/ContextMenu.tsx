@@ -58,17 +58,28 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     { label: "", separator: true },
   ];
 
-  // One submenu per Slate (H1 board) — all H2 rows within it
-  for (const board of boardData.boards) {
-    if (board.rows.length === 0) continue;
+  // Flat "Move" submenu — all H2 rows across all Slates.
+  // Prefix row label with slate name when multiple slates exist (avoids ambiguity).
+  const multiBoard = boardData.boards.length > 1;
+  const allRows = boardData.boards.flatMap((b) =>
+    b.rows.map((r) => ({
+      label: multiBoard
+        ? `${b.heading || "Board"} — ${r.dayName ?? r.heading}`
+        : r.dayName ?? r.heading,
+      sectionHeading: r.heading,
+      boardHeading: b.heading,
+    }))
+  );
+
+  if (allRows.length > 0) {
     items.push({
-      label: `Move to ${board.heading || "Board"}`,
-      submenu: board.rows.map((r) => ({
-        label: r.dayName ?? r.heading,
+      label: "Move",
+      submenu: allRows.map((r) => ({
+        label: r.label,
         action: {
           type: "moveToSection" as const,
-          sectionHeading: r.heading,
-          boardHeading: board.heading,
+          sectionHeading: r.sectionHeading,
+          boardHeading: r.boardHeading,
         },
       })),
     });
