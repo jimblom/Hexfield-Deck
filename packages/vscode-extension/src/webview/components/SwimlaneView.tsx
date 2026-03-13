@@ -39,10 +39,15 @@ interface SwimlaneRow {
   cards: Card[];
 }
 
-const STATUS_COLUMNS: { id: TaskStatus; label: string }[] = [
+const BASE_STATUS_COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: "todo", label: "To Do" },
   { id: "in-progress", label: "In Progress" },
   { id: "done", label: "Done" },
+];
+
+const EXTRA_STATUS_COLUMNS: { id: TaskStatus; label: string }[] = [
+  { id: "blocked", label: "Blocked" },
+  { id: "wont-do", label: "Won't Do" },
 ];
 
 /** Droppable mini-column inside a swimlane row */
@@ -86,6 +91,8 @@ function buildRows(board: Board): SwimlaneRow[] {
   }));
 }
 
+const ALL_STATUSES = new Set<string>(["todo", "in-progress", "done", "blocked", "wont-do"]);
+
 /** Parse a droppable ID like "3:in-progress" — splits on last colon. */
 function parseDropId(
   id: string,
@@ -95,10 +102,10 @@ function parseDropId(
   if (lastColon === -1) return null;
   const rowKey = id.substring(0, lastColon);
   const status = id.substring(lastColon + 1);
-  if (status !== "todo" && status !== "in-progress" && status !== "done") return null;
+  if (!ALL_STATUSES.has(status)) return null;
   const row = rows.find((r) => r.key === rowKey);
   if (!row) return null;
-  return { row, status };
+  return { row, status: status as TaskStatus };
 }
 
 export function SwimlaneView({
@@ -117,6 +124,12 @@ export function SwimlaneView({
 
   const rows = buildRows(board);
   const allCards = rows.flatMap((r) => r.cards);
+
+  // Include Blocked / Won't Do columns only when cards with those statuses are present
+  const extraStatuses = EXTRA_STATUS_COLUMNS.filter((col) =>
+    allCards.some((c) => c.status === col.id)
+  );
+  const statusColumns = [...BASE_STATUS_COLUMNS, ...extraStatuses];
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
     // Collapse non-day rows by default
@@ -204,18 +217,21 @@ export function SwimlaneView({
         {/* Column headers */}
         <div className="swimlane-header">
           <div className="swimlane-label-cell" />
-          {STATUS_COLUMNS.map((col) => (
+          {statusColumns.map((col) => (
             <div key={col.id} className="swimlane-col-header">{col.label}</div>
           ))}
         </div>
 
-        {/* Rows — every H2 from every board */}
+        {/* Rows — every H2 in the active Slate */}
         {rows.map((row) => {
           const isCollapsed = collapsed[row.key] ?? false;
-          const todoCards = sortCards(row.cards.filter((c) => c.status === "todo"), sortKey);
-          const inProgressCards = sortCards(row.cards.filter((c) => c.status === "in-progress"), sortKey);
-          const doneCards = sortCards(row.cards.filter((c) => c.status === "done"), sortKey);
+          const cardsByStatus = (status: TaskStatus) =>
+            sortCards(row.cards.filter((c) => c.status === status), sortKey);
           const totalCards = row.cards.length;
+
+          const todoCards = cardsByStatus("todo");
+          const inProgressCards = cardsByStatus("in-progress");
+          const doneCards = cardsByStatus("done");
 
           return (
             <div key={row.key} className="swimlane-row">
@@ -230,25 +246,14 @@ export function SwimlaneView({
                 <span className="swimlane-label">{displayLabel(row.label)}</span>
                 <span className="swimlane-count">{totalCards}</span>
               </div>
-              {!isCollapsed && (
-                <>
-                  <MiniColumn
-                    droppableId={`${row.key}:todo`}
-                    cards={todoCards}
-                    onToggleSubTask={onToggleSubTask}
-                  />
-                  <MiniColumn
-                    droppableId={`${row.key}:in-progress`}
-                    cards={inProgressCards}
-                    onToggleSubTask={onToggleSubTask}
-                  />
-                  <MiniColumn
-                    droppableId={`${row.key}:done`}
-                    cards={doneCards}
-                    onToggleSubTask={onToggleSubTask}
-                  />
-                </>
-              )}
+              {!isCollapsed && statusColumns.map((col) => (
+                <MiniColumn
+                  key={col.id}
+                  droppableId={`${row.key}:${col.id}`}
+                  cards={cardsByStatus(col.id)}
+                  onToggleSubTask={onToggleSubTask}
+                />
+              ))}
               {isCollapsed && (
                 <div className="swimlane-collapsed-summary">
                   {todoCards.length} to do, {inProgressCards.length} in progress, {doneCards.length} done

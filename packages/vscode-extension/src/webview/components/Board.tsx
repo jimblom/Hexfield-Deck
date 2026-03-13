@@ -40,7 +40,7 @@ export function Board({ cards, onCardMove, onToggleSubTask }: BoardProps) {
     let newStatus: TaskStatus;
     const overId = over.id as string;
 
-    if (overId === "todo" || overId === "in-progress" || overId === "done") {
+    if (overId === "todo" || overId === "in-progress" || overId === "done" || overId === "blocked" || overId === "wont-do") {
       newStatus = overId as TaskStatus;
     } else {
       const targetCard = cards.find((c) => c.id === overId);
@@ -56,6 +56,8 @@ export function Board({ cards, onCardMove, onToggleSubTask }: BoardProps) {
   const todoCards = sortCards(cards.filter((c) => c.status === "todo"), sortKey);
   const inProgressCards = sortCards(cards.filter((c) => c.status === "in-progress"), sortKey);
   const doneCards = sortCards(cards.filter((c) => c.status === "done"), sortKey);
+  const blockedCards = sortCards(cards.filter((c) => c.status === "blocked"), sortKey);
+  const wontDoCards = sortCards(cards.filter((c) => c.status === "wont-do"), sortKey);
 
   return (
     <>
@@ -65,6 +67,12 @@ export function Board({ cards, onCardMove, onToggleSubTask }: BoardProps) {
           <Column id="todo" title="To Do" cards={todoCards} onToggleSubTask={onToggleSubTask} />
           <Column id="in-progress" title="In Progress" cards={inProgressCards} onToggleSubTask={onToggleSubTask} />
           <Column id="done" title="Done" cards={doneCards} onToggleSubTask={onToggleSubTask} />
+          {blockedCards.length > 0 && (
+            <Column id="blocked" title="Blocked" cards={blockedCards} onToggleSubTask={onToggleSubTask} />
+          )}
+          {wontDoCards.length > 0 && (
+            <Column id="wont-do" title="Won't Do" cards={wontDoCards} onToggleSubTask={onToggleSubTask} />
+          )}
         </div>
       </DndContext>
     </>
