@@ -5,5 +5,6 @@ export {
   extractDueDate,
   extractPriority,
   extractTimeEstimate,
+  extractComment,
   parseAllMetadata,
 } from "./metadata.js";

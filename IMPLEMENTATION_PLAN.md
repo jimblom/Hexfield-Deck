@@ -44,14 +44,13 @@ hexfield-deck/
 │   │   │   │   └── App.tsx        # Root component
 │   │   │   └── fileOperations/    # Markdown file manipulation
 │   │   └── package.json
-│   └── obsidian-plugin/           # Obsidian plugin (Phase 10)
+│   └── obsidian-plugin/           # Obsidian plugin (post-v1.0.0)
 │       ├── src/
 │       └── package.json
 ├── pnpm-workspace.yaml            # Monorepo configuration
 ├── package.json                   # Root package.json
 ├── tsconfig.json                  # Shared TypeScript config
-├── .eslintrc.js                   # Shared ESLint config
-└── .prettierrc                    # Shared Prettier config
+└── eslint.config.mjs              # Shared ESLint config
 ```
 
 ### Tech Stack
@@ -64,532 +63,264 @@ hexfield-deck/
 | **Markdown Parser** | Custom line-by-line | Zero-dep state machine; format is controlled (see ADR-0006) |
 | **Webview UI** | React + TypeScript | Community familiarity, reusable for Obsidian |
 | **Drag & Drop** | @dnd-kit | Modern, accessible, actively maintained |
-| **Date Utils** | date-fns | Industry standard, robust ISO week calculations |
 | **Testing** | Vitest | Fast, modern, better DX than Jest |
-| **Linting** | ESLint + Prettier | Industry standard code quality |
+| **Linting** | ESLint | Industry standard code quality |
 
 ### Shared Code Strategy
 
-The `core` package will contain 60-70% of shared code:
+The `core` package contains the shared foundation:
 - Markdown parsing (frontmatter, tasks, metadata extraction)
-- Data models (Card, BoardData, SubTask interfaces)
-- Business logic (week calculations, date utilities)
+- Data models (Card, BoardData, Section interfaces)
+- Business logic (date utilities, status resolution)
 - Markdown manipulation (checkbox toggling, metadata updates)
 
-Platform-specific packages (`vscode-extension`, `obsidian-plugin`) will:
-- Wrap the core parser with platform APIs
-- Implement platform-specific file I/O
-- Render the shared React UI components in webviews/views
+Platform-specific packages (`vscode-extension`, `obsidian-plugin`) wrap core with platform APIs and render the shared React UI.
 
 ---
 
-## Markdown File Structure
+## File Structure Convention (the published spec)
+
+Hexfield Deck follows the **H1=Slate / H2=Row model** (ADR-0009). The markdown structure IS the configuration.
 
 ### Heading Hierarchy
+
+| Level | Role |
+|---|---|
+| H1 (`#`) | **Slate** — a named group of rows; selectable in the header dropdown |
+| H2 (`##`) | **Row** — a swimlane lane with task cards |
+| H3+ | Ignored by the parser (no structural significance) |
+
+Files with no H1 produce a single implicit Slate — old-format files parse correctly.
+
+### Display Aliases
+
+Add `// comment` to an H2 heading to set a short display name:
+
+```markdown
+## Monday // February 9, 2026   ← displays as "Monday" in the swimlane
+```
+
+### Example File
 
 ```markdown
 ---
 type: hexfield-planner
-week: 1
+week: 7
 year: 2026
-tags: [planner, weekly]
-start_date: 2026-02-05
-end_date: 2026-02-11
 ---
 
-## Monday, February 5, 2026        ← Level 2: Day section
-- [ ] Task with inline project tag #hexfield-deck !!!
-- [ ] Another task #time-chaser [2026-02-10] est:2h
+# Week 7, 2026                        ← Slate
 
-**Work Section**                   ← IGNORED (visual organization only)
-- [ ] Work task #project-name
+## Monday // February 9, 2026         ← Row (day row; display name "Monday")
+- [ ] Morning standup #sol
+- [/] Ship parser v1 #hexfield !!!
 
-## Tuesday, February 6, 2026       ← Level 2: Day section
-- [ ] Task #project
+## Tuesday // February 10, 2026       ← Row
+- [ ] Review ADR-0009 #hexfield
 
-## Backlog                          ← Level 2: Backlog container
-### Now                             ← Level 3: Backlog subsection
-- [ ] Urgent backlog item #project
+# Backlog                             ← another Slate
 
-### Next 2 Weeks                    ← Level 3: Backlog subsection
-- [ ] Coming soon #project
+## Now                                ← Row within Backlog slate
+- [ ] Urgent item #hexfield !!
 
-### This Month                      ← Level 3: Backlog subsection
-- [ ] Monthly goal #project
+## This Quarter                       ← Row within Backlog slate
+- [ ] Q1 objective #hexfield !!!
 
-## This Quarter                     ← Level 2: Long-term backlog
-- [ ] Quarterly objective #project
-
-## This Year                        ← Level 2: Long-term backlog
-- [ ] Annual goal #project
-
-## Parking Lot                      ← Level 2: Long-term backlog
-- [ ] Someday/maybe #project
+## Parking Lot                        ← Row within Backlog slate
+- [ ] Someday/maybe
 ```
 
-### Key Parsing Rules
+### Task Status Markers
 
-1. **Frontmatter Detection:** Files with `type: hexfield-planner` are Hexfield Deck planners (primary signal); fall back to `week:` + `year:` + `tags:` heuristic for files created before this field was introduced
-2. **Day Sections:** Level 2 headings matching pattern `## {DayName}, {Month} {Day}, {Year}`
-3. **Project Tags:** Extracted from inline `#tag-name` in task text
-4. **Bold Text Ignored:** `**Section Name**` is ignored by parser (user's visual organization)
-5. **Backlog Container:** `## Backlog` groups near-term subsections (`### Now`, `### Next 2 Weeks`, etc.)
-6. **Long-term Sections:** `## This Quarter`, `## This Year`, `## Parking Lot` have no subsections
-7. **Task Metadata:** Inline markers for due dates (`[2026-02-15]`), priority (`!!!`), time estimates (`est:2h`)
+| Marker | Status | Default board visibility |
+|---|---|---|
+| `- [ ]` | To Do | ✅ Visible |
+| `- [/]` | In Progress | ✅ Visible |
+| `- [x]` | Done | ✅ Visible |
+| `- [-]` | Won't Do | ❌ Hidden (filter-in only) |
+| `- [!]` | Blocked | ❌ Hidden (filter-in only) |
 
----
+### Task Metadata (inline)
 
-## Week File Auto-Creation
-
-### Configuration
-
-Make auto-creation configurable with smart defaults:
-
-```json
-// VS Code settings.json
-{
-  "hexfield-deck.weekFilePattern": "{year}/week-{WW}/{year}-{WW}-weekly-plan.md",
-  "hexfield-deck.plannerRoot": "./planner"  // Relative to workspace root
-}
+```markdown
+- [ ] Task title #project-tag [2026-03-15] !!! est:2h // optional comment
 ```
 
-### Behavior
-
-- **Pattern Set:** Week navigation can auto-create files using the template
-- **Pattern Not Set:** Week navigation disabled, extension is filename/folder agnostic
-- **Default Template:** Generates frontmatter + day sections + backlog structure
-
-### Template Generation
-
-```typescript
-import { setISOWeek, setISOWeekYear, startOfISOWeek, addDays, format } from 'date-fns';
-
-function generateWeekTemplate(week: number, year: number): string {
-  // Calculate the Monday of the target ISO week
-  const startDate = startOfISOWeek(setISOWeek(setISOWeekYear(new Date(), year), week));
-  const endDate = addDays(startDate, 6);
-  const quarter = Math.ceil((startDate.getMonth() + 1) / 3);
-
-  // Helper to format day heading: "Monday, February 5, 2026"
-  const formatDayHeading = (date: Date) => format(date, 'EEEE, MMMM d, yyyy');
-  const formatISODate = (date: Date) => format(date, 'yyyy-MM-dd');
-
-  return `---
-type: hexfield-planner
-week: ${week}
-year: ${year}
-quarter: Q${quarter}
-start_date: ${formatISODate(startDate)}
-end_date: ${formatISODate(endDate)}
-tags: [planner, weekly]
----
-
-## ${formatDayHeading(startDate)}
-
-## ${formatDayHeading(addDays(startDate, 1))}
-
-## ${formatDayHeading(addDays(startDate, 2))}
-
-## ${formatDayHeading(addDays(startDate, 3))}
-
-## ${formatDayHeading(addDays(startDate, 4))}
-
-## Backlog
-
-### Now
-
-### Next 2 Weeks
-
-### This Month
-
-## This Quarter
-
-## This Year
-
-## Parking Lot
-`;
-}
-```
+| Token | Meaning |
+|---|---|
+| `#tag-name` | Project tag |
+| `[YYYY-MM-DD]` | Due date |
+| `!!!` / `!!` / `!` | Priority: High / Medium / Low |
+| `est:Xh` / `est:Xm` | Time estimate |
+| `// text` | Comment — stripped from title; content not parsed for metadata |
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: Core Foundation (Week 1-2) ✅
+### Phase 1: Core Foundation ✅
 **Goal:** Basic board viewing works
 
-**Tasks:**
-- [x] Initialize monorepo with pnpm workspaces
-- [x] Set up TypeScript configuration (shared + per-package)
-- [x] Set up ESLint + Prettier
-- [x] Core package: Frontmatter parser (YAML)
-- [x] Core package: Task parser (checkboxes, inline project tags)
-- [x] Core package: Metadata extractor (due dates, priority, time estimates)
-- [x] Core package: Data models (Card, BoardData, SubTask interfaces)
-- [x] VS Code extension: Basic activation (detect markdown files with frontmatter)
-- [x] VS Code extension: Register "Hexfield Deck: Open Board" command
-- [x] VS Code extension: Create webview panel
-- [x] VS Code extension: Simple hardcoded HTML rendering
-- [x] VS Code extension: Parse markdown → display cards in 3 columns (Todo/In Progress/Done)
-
-**Deliverable:** Open a planner markdown file, run command, see cards displayed in a basic 3-column board.
-
-**Acceptance Criteria:**
-- ✅ Command palette shows "Hexfield Deck: Open Board"
-- ✅ Opening a planner file displays webview with 3 columns
-- ✅ Tasks are parsed and appear in correct columns based on checkbox state
-- ✅ Inline project tags (`#project-name`) are recognized
-- ✅ Metadata (due dates, priority, time) is displayed with color-coded badges
-- ✅ Sub-task progress bars render correctly
-- ✅ Board updates live when markdown file is edited
+- [x] Monorepo with pnpm workspaces
+- [x] TypeScript, ESLint configuration
+- [x] Core: frontmatter, task, metadata parsers
+- [x] Core: Card, BoardData, SubTask data models
+- [x] VS Code extension: activation, command, webview panel
+- [x] 3-column board (Todo / In Progress / Done) from markdown
 
 ---
 
-### Phase 2: Drag & Drop + Real-Time Sync (Week 2-3) ✅
+### Phase 2: Drag & Drop + Real-Time Sync ✅
 **Goal:** Interactive board with markdown sync
 
-**Tasks:**
-- [x] Webview UI: Set up React + TypeScript build with esbuild
-- [x] Webview UI: Install and configure @dnd-kit/core and @dnd-kit/sortable
-- [x] Webview UI: Implement drag-and-drop between columns using @dnd-kit
-- [x] Webview UI: Send `moveCard` messages to extension
-- [x] Extension: Handle `moveCard` messages
-- [x] Extension: Update markdown file (toggle checkbox `[ ]` ↔ `[x]` ↔ `[/]`)
-- [x] Extension: Set up file watcher on current markdown document
-- [x] Extension: Live refresh on document changes (VS Code handles debouncing)
-- [x] Core: Parse `[/]` checkbox variant as in-progress status (done in Phase 1)
+- [x] React + TypeScript webview with esbuild
+- [x] @dnd-kit drag-and-drop between columns
+- [x] `moveCard` message → markdown checkbox toggle
+- [x] File watcher for live board refresh
 
-**Deliverable:** Drag cards between columns and see markdown file update in real-time. Edit markdown file and see board update automatically.
+---
+
+### Phase 3: Metadata & Sub-tasks ✅
+**Goal:** Full task metadata and sub-task support
+
+- [x] Due dates, priority, time estimate parsing
+- [x] Sub-task checkbox parsing and progress calculation
+- [x] Color-coded due date, priority, estimate badges
+- [x] Interactive sub-task checkboxes with markdown sync
+
+---
+
+### Phase 4: Views & Sorting ✅
+**Goal:** Standard, Swimlane, and Backlog views with sorting
+
+- [x] View switcher toolbar
+- [x] Standard view (3-column kanban, all tasks)
+- [x] Swimlane view (day rows × status columns, collapsible)
+- [x] Backlog view (priority bucket rows)
+- [x] Sort by file order, priority, status, project, estimate
+- [x] Cross-day and cross-bucket drag-and-drop
+
+---
+
+### Phase 5: Context Menu & CRUD ✅
+**Goal:** Full task management via right-click
+
+- [x] Right-click context menu with flyout submenus
+- [x] Edit title, due date, time estimate, priority, status
+- [x] Move to day, move to backlog section
+- [x] Delete with confirmation
+- [x] Quick Add (+) toolbar button
+- [x] `_rebuildTaskLine()` normalizes metadata order on all edits
+
+---
+
+### Phase 6: Inline Markdown Rendering ✅
+**Goal:** Bold, italic, links, code in card titles
+
+- [x] `marked` inline parser in `MarkdownTitle.tsx`
+- [x] Link interception → `vscode.env.openExternal()`
+- [x] Consistent rendering across all three views
+
+---
+
+### Phase 7: Metadata Filtering ✅
+**Goal:** Filter by project, status, priority, due date, estimate
+
+- [x] `FilterDropdown.tsx` with five filter dimensions
+- [x] AND across dimensions, OR within dimension
+- [x] Active filter count badge, "Clear all" button
+- [x] Filters apply across all views and persist on view switch
+
+---
+
+### Phase 8: Slates — H1/H2 Layout, Per-Slate Navigation ✅
+**Goal:** Replace the day/board/bucket type system with H1=Slate / H2=Row. Add Blocked status and `//` comment syntax.
+
+- [x] `BoardData` shape: `boards: Board[]` replaces `sections: Section[]`; `Board` groups `Row[]`
+- [x] Parser: H1 creates Board (Slate), H2 creates Row; H3+ ignored; `[!]` blocked marker; `// comment` stripping in headings and task lines
+- [x] `TaskStatus` gains `"wont-do"` and `"blocked"`; both hidden by default
+- [x] `displayLabel()` utility: strips ` // ...` from any heading for UI display
+- [x] `extractComment()` in metadata pipeline: runs before all other extractors; `Card.comment` stored
+- [x] `SlateSelector.tsx`: dropdown/label for H1 Slate navigation in header
+- [x] `App.tsx`: `activeSlateIndex` state; Standard and Swimlane views scoped to active Slate; Backlog view removed
+- [x] `SwimlaneView.tsx`: accepts single `Board` (active Slate) instead of full `BoardData`
+- [x] Context menu: **Move** (within Slate) + **Move to [Slate]** (cross-Slate) structure
+- [x] `FilterDropdown`: Blocked added to Status options
+- [x] `BoardWebviewPanel.ts`: `[!]` in checkbox maps; `_findSectionInsertionPoint` scopes H2 search within H1 block
+- [x] ADR-0009 written; ADR-0008 marked superseded
+- [x] `examples/weekly-planner.md` restructured to H1/H2 format with `//` comment demonstrations
+- [x] 51 tests passing
+
+---
+
+### Phase 9: Settings & Polish *(next)*
+**Goal:** UI cleanup, test coverage, settings documentation, Marketplace submission.
+
+**UI polish:**
+- [ ] Consistent spacing, typography, and icon usage across all views
+- [ ] Empty state illustrations (no tasks, no sections)
+- [ ] Loading/parsing state (avoid flash of empty board)
+- [ ] Extension icon and Marketplace banner image
+
+**Settings:**
+- [ ] `hexfield-deck.defaultView` (standard / swimlane / backlog)
+- [ ] `hexfield-deck.autoCollapseSections` (boolean)
+- [ ] Review and document all existing `hexfield-deck.*` settings in USER_GUIDE
+
+**Testing:**
+- [ ] Core package unit tests: >80% coverage
+- [ ] Parser tests cover all section types and edge cases
+- [ ] Integration tests for key extension commands
+
+**Documentation:**
+- [ ] USER_GUIDE updated with new section model, Won't Do, all views
+- [ ] README updated with current screenshots
+- [ ] File format spec documented (the published convention)
+
+**Marketplace:**
+- [ ] Extension passes VS Code Marketplace validation
+- [ ] `vsce package` clean (no warnings)
+- [ ] Marketplace listing copy written
+
+**Deliverable:** v1.0.0 published to VS Code Marketplace.
 
 **Acceptance Criteria:**
-- ✅ Drag card from Todo → In Progress changes `- [ ]` to `- [/]`
-- ✅ Drag card from In Progress → Done changes `- [/]` to `- [x]`
-- ✅ Drag card from Done → Todo changes `- [x]` to `- [ ]`
-- ✅ Drag card from In Progress → Todo changes `- [/]` to `- [ ]`
-- ✅ Drag card from Done → In Progress changes `- [x]` to `- [/]`
-- ✅ Editing markdown file refreshes board automatically
-- ✅ No excessive refreshes during rapid typing
+- [ ] Extension published and installable from Marketplace
+- [ ] Zero open critical bugs
+- [ ] Core package >80% test coverage
+- [ ] USER_GUIDE complete and accurate
+- [ ] All settings documented
 
 ---
 
-### Phase 3: Metadata & Sub-tasks (Week 3-4) ✅
-**Goal:** Full task feature parity with metadata and sub-task support
+### Post-v1.0.0 Backlog
 
-**Tasks:**
-- [x] Core: Parse due dates (multiple formats: `[2026-02-15]`, `due:2026-02-15`)
-- [x] Core: Parse priority (`!!!` = high, `!!` = medium, `!` = low)
-- [x] Core: Parse time estimates (`est:2h`, `⏱️ 30m`)
-- [x] Core: Parse sub-task checkboxes (indented `- [ ]` or `- [x]`)
-- [x] Core: Calculate sub-task progress (completed/total, percentage)
-- [x] Webview UI: Display metadata badges on cards
-- [x] Webview UI: Color-code due dates (overdue=red, today=orange, upcoming=yellow, future=gray)
-- [x] Webview UI: Display priority badges (HIGH=red, MED=yellow, LOW=green)
-- [x] Webview UI: Display time estimate badges (⏱️ 2h)
-- [x] Webview UI: Render sub-tasks with checkboxes
-- [x] Webview UI: Show progress bar for sub-tasks (e.g., "2/5 - 40%")
-- [x] Webview UI: Make sub-task checkboxes interactive
-- [x] Extension: Handle `toggleSubTask` messages
-- [x] Extension: Update markdown sub-task line (toggle `[ ]` ↔ `[x]`)
+Features intentionally descoped from v1.0.0:
 
-**Deliverable:** Cards display all metadata (due dates, priority, time estimates). Sub-tasks are interactive with progress tracking.
-
-**Acceptance Criteria:**
-- ✅ Due date badges show correct color based on date proximity
-- ✅ Priority badges display with correct color (high/medium/low)
-- ✅ Time estimates display as badges
-- ✅ Sub-tasks appear below main task with checkboxes
-- ✅ Clicking sub-task checkbox updates markdown file
-- ✅ Progress bar updates when sub-tasks are toggled
-
----
-
-### Phase 4: Views & Sorting (Week 4-5) ✅
-**Goal:** Multiple board views (Standard, Swimlane, Backlog) with sorting
-
-**Tasks:**
-- [x] Webview UI: Create view switcher toolbar (Standard / Swimlane / Backlog buttons)
-- [x] Webview UI: Implement Standard view (current 3-column layout, all tasks)
-- [x] Webview UI: Implement Swimlane view (group by day, each day has 3 columns, collapsible)
-- [x] Webview UI: Implement Backlog view (6 priority buckets: Now, Next 2 Weeks, This Month, This Quarter, This Year, Parking Lot)
-- [x] Webview UI: Add sort controls (by file order, priority, status, project, estimate) on all views
-- [x] Webview UI: Drag-and-drop between backlog priority buckets
-- [x] Webview UI: Cross-day drag-and-drop in Swimlane view
-- [x] Extension: Handle `moveCardToDay` messages (cut/paste card lines between day sections)
-- [x] Extension: Handle `moveCardToSection` messages (move cards between backlog buckets)
-- [x] Extension: Persist view preference via webview setState/getState
-
-**Deliverable:** Three distinct board views with sorting and cross-view drag-and-drop.
-
-**Acceptance Criteria:**
-- ✅ View switcher toggles between Standard/Swimlane/Backlog
-- ✅ Standard view shows all tasks in 3 columns
-- ✅ Swimlane view groups tasks by day, each with 3 columns
-- ✅ Swimlane days are collapsible/expandable
-- ✅ Backlog row in Swimlane, collapsed by default
-- ✅ Backlog view shows 6 priority buckets with drag between them
-- ✅ Cross-day drag-and-drop in Swimlane view moves card lines between sections
-- ✅ Sort options (5 keys) reorder cards correctly on all views
-- ✅ View preference persists when closing/reopening board
-
----
-
-### Phase 5: Context Menu & CRUD Operations (Week 5-6) ✅
-**Goal:** Full task management via right-click context menu
-
-**Tasks:**
-- [x] Webview UI: Implement right-click context menu on cards (`ContextMenu.tsx`, `ContextMenuContext`)
-- [x] Webview UI: Context menu items with flyout submenus, Escape/outside-click to close
-- [x] Extension: `openInMarkdown` - Jump to task line in markdown editor
-- [x] Extension: `editTitle` - Prompt for new title, update markdown
-- [x] Extension: `editDueDate` - Prompt for date (YYYY-MM-DD), validate, update markdown
-- [x] Extension: `editTimeEstimate` - Prompt for estimate (2h, 30m), validate, update markdown
-- [x] Extension: `setPriority` - Submenu (High/Medium/Low/None), update markdown
-- [x] Extension: `changeState` - Submenu (Todo/In Progress/Done), update markdown
-- [x] Extension: `moveToDay` - Submenu (list all days), move task to day section in markdown
-- [x] Extension: `moveToBacklogSection` - Submenu (Now/Next 2 Weeks/This Month/etc.), move task
-- [x] Extension: `deleteTask` - Show confirmation dialog, delete from markdown
-- [x] Extension: Quick add button (+ icon in toolbar)
-- [x] Extension: `_rebuildTaskLine()` normalizes metadata order on all edits
-
-**Deferred to Phase 8:**
-- [ ] Extension: `moveToNextWeek` - Move task to Monday of next week (grayed out in menu)
-- [ ] Extension: `moveToWeek` - Prompt for week number, move task (grayed out in menu)
-
-**Deliverable:** Complete CRUD operations from the board via context menu. Quick add button for new tasks.
-
-**Acceptance Criteria:**
-- ✅ Right-click on card shows context menu
-- ✅ "Open in Markdown" jumps to task line in editor
-- ✅ Edit dialogs validate input and update markdown correctly
-- ✅ Set Priority updates priority markers in markdown
-- ✅ Move to Day moves task to correct day section
-- ✅ Move to Backlog moves task to correct backlog bucket
-- ✅ Delete shows confirmation and removes task
-- ✅ Quick add (+) button creates new task in current day
-
----
-
-### Phase 6: Inline Markdown Rendering (Week 6) ✅
-**Goal:** Render bold, italic, links, and code in card titles across all views
-
-**Tasks:**
-- [x] Webview UI: Install `marked` library (inline parse mode only)
-- [x] Webview UI: Create `MarkdownTitle.tsx` shared component using `marked.parseInline()`
-- [x] Webview UI: Replace plain text title rendering in `Card.tsx` and `BacklogView.tsx`
-- [x] Webview UI: Global link click interceptor in `App.tsx` (event delegation via `.closest("a")`)
-- [x] Extension: Handle `openLink` message → `vscode.env.openExternal()`
-- [x] CSS: Add styles for `strong`, `em`, `a`, `code`, `del` scoped to `.card-title`
-
-**Deliverable:** Card titles render inline markdown in all three views. Links open in the browser.
-
-**Acceptance Criteria:**
-- ✅ `**bold**` and `*italic*` render correctly in Standard, Swimlane, and Backlog views
-- ✅ `` `code` `` renders in monospace with background
-- ✅ `[link text](url)` renders as a styled link; clicking opens the browser
-- ✅ Clicking a link does not trigger a card drag
-- ✅ Plain titles with no markdown are unaffected
-- ✅ Brackets without URL syntax (e.g. `[not a link]`) do not render as links
-
----
-
-### Phase 7: Metadata Filtering (Week 7) ✅
-**Goal:** Filter board cards by project, status, priority, due date, and time estimate
-
-**Tasks:**
-- [x] Webview UI: Create `FilterDropdown.tsx` component (project/status/priority/due-date/estimate sections)
-- [x] App.tsx: Export `FilterState`, `EMPTY_FILTER`, `isFilterActive` from `FilterDropdown.tsx`
-- [x] App.tsx: Implement `filterCards()` and `filterBoardData()` pure functions
-- [x] App.tsx: Derive `filteredCards` and `filteredBoardData` via `useMemo`; thread to all three views
-- [x] Webview UI: Filter button shows active count badge when any filter is on
-- [x] Webview UI: Click-outside closes the filter panel
-- [x] Webview UI: "Clear all filters" button visible when filter is active
-- [x] CSS: Filter dropdown styles using VS Code design variables
-
-**Deliverable:** [Filter ▾] button in toolbar opens a dropdown with five filter dimensions. Filters apply across all views and persist when switching views.
-
-**Acceptance Criteria:**
-- ✅ Filter button appears in toolbar; shows active count badge when filters are on
-- ✅ Project section derives unique project list from unfiltered card array (alphabetically sorted)
-- ✅ Status filter: To Do / In Progress / Done
-- ✅ Priority filter: High / Medium / Low
-- ✅ Due date filter: Overdue / Due Today / Due This Week / No Due Date
-- ✅ Time estimate filter: Short (≤30m) / Medium (30m–2h) / Long (2h+) / No Estimate
-- ✅ AND logic between filter dimensions; OR logic within each dimension
-- ✅ Filters apply to Standard, Swimlane, and Backlog views simultaneously
-- ✅ Filter state persists when switching between views
-- ✅ "Clear all filters" restores full board
-
----
-
-### Phase 8: Week Navigation (Week 8-9)
-**Goal:** Navigate between weeks, auto-create week files
-
-**Tasks:**
-- [ ] Extension: Parse `week` and `year` from frontmatter
-- [ ] Webview UI: Add week navigation toolbar (◀ Previous Week | Week N, YYYY | Next Week ▶)
-- [ ] Extension: Handle `navigateWeek` messages (direction: -1 or +1)
-- [ ] Core: Install date-fns library
-- [ ] Core: ISO 8601 week date calculations using date-fns (getISOWeek, startOfISOWeek, etc.)
-- [ ] Core: Handle year boundaries (week 52 → week 1, week 1 → week 52)
-- [ ] Extension: Read `hexfield-deck.weekFilePattern` setting
-- [ ] Extension: Read `hexfield-deck.plannerRoot` setting
-- [ ] Extension: Construct target file path from pattern
-- [ ] Extension: Check if target week file exists
-- [ ] Extension: If not exists, create directory + file from template
-- [ ] Core: Generate week template using date-fns for date calculations
-- [ ] Extension: Open target week file, update current file path, refresh board
-- [ ] Extension: Move task to next week (extract task, insert into next week's Monday)
-- [ ] Extension: Move task to specific week (prompt for week number)
-
-**Deliverable:** Navigate forward/backward through weeks. Auto-create week files from template. Move tasks between weeks.
-
-**Acceptance Criteria:**
-- [ ] Week navigation toolbar shows current week and year
-- [ ] Click "Next Week" navigates to next week
-- [ ] Click "Previous Week" navigates to previous week
-- [ ] If week file doesn't exist, it's created from template
-- [ ] Template includes correct dates for all weekdays
-- [ ] "Move to Next Week" moves task to Monday of next week
-- [ ] "Move to Week..." prompts for week number and moves task
-- [ ] Year boundaries handled correctly (week 52 → 1)
-
----
-
-### Phase 9: Polish & Production Ready (Week 9-10)
-**Goal:** Settings, testing, documentation for v1.0.0 release
-
-**Tasks:**
-- [ ] Settings: `hexfield-deck.projects` (project colors and links)
-- [ ] Settings: `hexfield-deck.defaultView` (standard/swimlane/backlog)
-- [ ] Settings: `hexfield-deck.showDayBadges` (boolean)
-- [ ] Settings: `hexfield-deck.showMetadataBadges` (boolean)
-- [ ] Settings: `hexfield-deck.autoCollapseSwimlaneDays` (boolean)
-- [ ] Webview UI: Apply project colors to card borders
-- [ ] Webview UI: Make project tags clickable (open link if configured)
-- [ ] Extension: Dirty file protection (warn if unsaved changes before modifying)
-- [ ] Extension: Show "Save Now" button in warning dialog
-- [ ] Testing: Unit tests for core parser (frontmatter, tasks, metadata)
-- [ ] Testing: Unit tests for date utilities (ISO week calculations)
-- [ ] Testing: Integration tests for extension commands
-- [ ] Documentation: Update USER_GUIDE.md with final screenshots
-- [ ] Documentation: Create README.md with installation and quick start
-- [ ] Documentation: Create CHANGELOG.md
-- [ ] Package: Create extension icon and banner
-- [ ] Package: Prepare for VS Code Marketplace publishing
-
-**Deliverable:** Production-ready v1.0.0 extension with full settings, tests, and documentation.
-
-**Acceptance Criteria:**
-- ✅ Settings UI in VS Code allows customizing all preferences
-- ✅ Project colors apply to card borders
-- ✅ Clicking project tag opens configured URL
-- ✅ Dirty file protection prevents data loss
-- ✅ Core package has >80% test coverage
-- ✅ All extension commands have integration tests
-- ✅ USER_GUIDE.md is complete and accurate
-- ✅ README.md has clear installation and usage instructions
-- ✅ Extension passes VS Code Marketplace validation
-
----
-
-### Phase 10: Obsidian Plugin (Future)
-**Goal:** Dual-platform support (VS Code + Obsidian)
-
-**Tasks:**
-- [ ] Create `obsidian-plugin` package in monorepo
-- [ ] Adapt extension to Obsidian plugin API
-- [ ] Reuse `core` package (parser, models, utilities)
-- [ ] Reuse webview UI components (React)
-- [ ] Implement Obsidian file I/O (Vault API)
-- [ ] Implement Obsidian settings UI
-- [ ] Test on Obsidian desktop
-- [ ] Test on Obsidian mobile (iOS/Android)
-- [ ] Create Obsidian plugin manifest
-- [ ] Submit to Obsidian community plugins
-
-**Deliverable:** Obsidian community plugin with feature parity to VS Code extension.
-
-**Acceptance Criteria:**
-- ✅ Plugin loads in Obsidian desktop and mobile
-- ✅ All features work identically to VS Code extension
-- ✅ Settings sync with Obsidian's settings system
-- ✅ Plugin passes Obsidian community review
-
----
-
-## Success Metrics
-
-### v1.0.0 Release (End of Phase 9)
-- [ ] Extension published to VS Code Marketplace
-- [ ] At least 3 distinct board views (Standard, Swimlane, Backlog)
-- [ ] Full CRUD operations (create, read, update, delete tasks)
-- [ ] Real-time sync between markdown and board (<500ms latency)
-- [ ] Week navigation with auto-creation
-- [ ] Settings for project colors, view preferences
-- [ ] >80% test coverage on core package
-- [ ] Complete USER_GUIDE.md documentation
-- [ ] Zero critical bugs in issue tracker
-
-### Community Adoption (Post-Release)
-- [ ] 100+ installs in first month
-- [ ] 10+ GitHub stars
-- [ ] 5+ community contributions (issues, PRs)
-- [ ] Positive feedback on VS Code Marketplace (>4.0 rating)
-
----
-
-## Risk Mitigation
-
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| **Markdown parsing edge cases** | High | Extensive unit tests, fuzzing with real-world planner files |
-| **Performance with large files** | Medium | Debounced refresh, virtualized rendering for 100+ tasks |
-| **File conflicts during drag-and-drop** | High | Dirty file protection, file system watchers, conflict detection |
-| **Week date calculations (ISO 8601)** | Medium | Use proven date library (date-fns), test across year boundaries |
-| **React bundle size for webview** | Low | Code splitting, tree shaking with esbuild |
-| **Platform API differences (VS Code vs Obsidian)** | Medium | Abstract file I/O and settings into platform adapters |
-
----
-
-## Timeline Summary
-
-| Phase | Duration | Cumulative | Key Milestone |
-|-------|----------|------------|---------------|
-| Phase 1 | 2 weeks | 2 weeks | Basic board viewing |
-| Phase 2 | 1 week | 3 weeks | Interactive drag & drop |
-| Phase 3 | 1 week | 4 weeks | Metadata & sub-tasks |
-| Phase 4 | 1 week | 5 weeks | Multiple views & sorting |
-| Phase 5 | 1 week | 6 weeks | Context menu CRUD |
-| Phase 6 | 1 week | 7 weeks | Inline markdown rendering |
-| Phase 7 | 1 week | 8 weeks | Metadata filtering |
-| Phase 8 | 1 week | 9 weeks | Week navigation |
-| Phase 9 | 1 week | 10 weeks | **v1.0.0 Release** |
-| Phase 10 | TBD | Future | Obsidian plugin |
-
-**Total Time to v1.0.0:** ~10 weeks
-
----
-
-## Next Steps
-
-1. ~~**Review this plan** - User feedback and approval~~ ✅
-2. ~~**Set up development environment** - pnpm, TypeScript, ESLint, Prettier~~ ✅
-3. ~~**Initialize monorepo** - Create package structure, configure workspaces~~ ✅
-4. ~~**Phases 1–7** - Core board, drag-and-drop, metadata, views, CRUD, markdown rendering, filtering~~ ✅
-5. **Phase 8** - Week navigation with auto-file creation and cross-week task movement
+| Feature | Notes |
+|---|---|
+| **Week navigation** (◀/▶ buttons, auto-create week files) | Less relevant with Slate model; revisit as workflow plugin. |
+| **Obsidian plugin** | Adapt platform layer after v1.0.0 stabilizes. |
+| **Card comment display** | `Card.comment` is parsed and stored; rendering (tooltip, inline note) is post-v1.0.0. |
+| **PTO / day blackout** | Workflow feature; post-v1.0.0. |
+| **Browser preview** | Separate surface; post-v1.0.0. |
+| **Filter UX improvements** (issue #11) | Refinement; post-v1.0.0. |
 
 ---
 
 ## Decisions Made
 
-1. ✅ **Heading structure:** No "Daily Planner" wrapper, keep "## Backlog" as container
-2. ✅ **Project specification:** Inline `#tags` only, bold text headers ignored by parser
-3. ✅ **In-progress marker:** Use `- [/] Task` checkbox variant ONLY (no `#wip` tag to avoid conflicts)
-4. ✅ **Date library:** Use `date-fns` (industry standard, 14M+ weekly downloads, robust ISO week calculations)
-5. ✅ **Drag-and-drop library:** Use `@dnd-kit` (modern, actively maintained, better a11y and performance than react-beautiful-dnd)
-6. ✅ **Parser approach:** Line-by-line state machine, zero deps (see ADR-0006)
+1. ✅ **Heading structure:** H2 headings are the structural unit; section type inferred by convention (ADR-0008)
+2. ✅ **Project specification:** Inline `#tags` only; bold text headers ignored by parser
+3. ✅ **In-progress marker:** `- [/]` only
+4. ✅ **Won't Do marker:** `- [-]`; hidden by default, filter-in only (issue #20)
+5. ✅ **Parser approach:** Line-by-line state machine, zero deps (ADR-0006)
+6. ✅ **Drag-and-drop library:** @dnd-kit
+7. ✅ **Configuration namespace:** `hexfield.colors.*` owned by Hexfield Text (ADR-0007)
+8. ✅ **Week navigation:** Descoped to post-v1.0.0
+9. ✅ **No frontmatter section declarations:** Convention is the spec (ADR-0008)
 
 ---
 
-**Last Updated:** 2026-02-20
-**Status:** ✅ Phase 7 complete — Metadata Filtering | 🚀 Phase 8 next (Week Navigation)
+**Last Updated:** 2026-03-07
+**Status:** ✅ Phases 1–7 complete | 🚀 Phase 8 next — Generic Section Model

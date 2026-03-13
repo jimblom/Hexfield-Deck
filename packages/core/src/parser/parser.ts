@@ -1,15 +1,13 @@
 import type {
   BoardData,
+  Board,
+  Row,
   Card,
   TaskStatus,
-  DaySection,
-  BacklogBucket,
-  BacklogSection,
 } from "../models/types.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { parseAllMetadata } from "./metadata.js";
 
-// Day names for detecting day headings
 const DAY_NAMES = [
   "Monday",
   "Tuesday",
@@ -20,23 +18,8 @@ const DAY_NAMES = [
   "Sunday",
 ] as const;
 
-// Backlog bucket heading → key mapping
-const BACKLOG_BUCKETS: Record<string, BacklogSection> = {
-  now: "now",
-  "next 2 weeks": "next-2-weeks",
-  "this month": "this-month",
-};
-
-type SectionType =
-  | "none"
-  | "day"
-  | "backlog"
-  | "this-quarter"
-  | "this-year"
-  | "parking-lot";
-
-const CHECKBOX_RE = /^- \[([ x/])\] (.+)$/;
-const INDENTED_CHECKBOX_RE = /^\s+- \[([ x/])\] (.+)$/;
+const CHECKBOX_RE = /^- \[([ x/!-])\] (.+)$/;
+const INDENTED_CHECKBOX_RE = /^\s+- \[([ x/!-])\] (.+)$/;
 
 function checkboxToStatus(marker: string): TaskStatus {
   switch (marker) {
@@ -44,6 +27,10 @@ function checkboxToStatus(marker: string): TaskStatus {
       return "done";
     case "/":
       return "in-progress";
+    case "-":
+      return "wont-do";
+    case "!":
+      return "blocked";
     default:
       return "todo";
   }
@@ -51,10 +38,7 @@ function checkboxToStatus(marker: string): TaskStatus {
 
 /** Try to parse an ISO date from a day heading like "Monday, February 5, 2026". */
 function parseDayDate(heading: string): string | undefined {
-  // Extract "Month Day, Year" portion
-  const match = heading.match(
-    /(\w+)\s+(\d{1,2}),?\s+(\d{4})/,
-  );
+  const match = heading.match(/(\w+)\s+(\d{1,2}),?\s+(\d{4})/);
   if (!match) return undefined;
   const [, monthName, dayStr, yearStr] = match;
   const months: Record<string, number> = {
@@ -74,116 +58,63 @@ function parseDayDate(heading: string): string | undefined {
 /** Parse a full planner markdown file into BoardData. */
 export function parseBoard(input: string): BoardData {
   const lines = input.split(/\r?\n/);
-
   const { frontmatter, bodyStartLine } = parseFrontmatter(lines);
 
-  const days: DaySection[] = [];
-  const backlog: BacklogBucket[] = [];
-  const thisQuarter: Card[] = [];
-  const thisYear: Card[] = [];
-  const parkingLot: Card[] = [];
-
-  let sectionType: SectionType = "none";
-  let currentDay: DaySection | null = null;
-  let currentBucket: BacklogBucket | null = null;
-
-  /** Where to push completed cards. */
-  function currentCardTarget(): Card[] | null {
-    switch (sectionType) {
-      case "day":
-        return currentDay?.cards ?? null;
-      case "backlog":
-        return currentBucket?.cards ?? null;
-      case "this-quarter":
-        return thisQuarter;
-      case "this-year":
-        return thisYear;
-      case "parking-lot":
-        return parkingLot;
-      default:
-        return null;
-    }
-  }
-
-  // Current card being built (multi-line collection)
+  const boards: Board[] = [];
+  let currentBoard: Board | null = null;
+  let currentRow: Row | null = null;
   let pendingCard: Card | null = null;
 
   function flushCard(): void {
-    if (!pendingCard) return;
-    const target = currentCardTarget();
-    if (target) target.push(pendingCard);
+    if (!pendingCard || !currentRow) return;
+    currentRow.cards.push(pendingCard);
     pendingCard = null;
+  }
+
+  /** Ensure an implicit board exists when an H2 appears with no preceding H1. */
+  function ensureBoard(lineNumber: number): Board {
+    if (!currentBoard) {
+      currentBoard = { heading: "", rows: [], lineNumber };
+      boards.push(currentBoard);
+    }
+    return currentBoard;
   }
 
   for (let i = bodyStartLine; i < lines.length; i++) {
     const line = lines[i];
-    const lineNumber = i + 1; // 1-based
+    const lineNumber = i + 1;
 
-    // --- Heading detection ---
+    // --- H1 heading: new board ---
+    const h1Match = line.match(/^# (.+)$/);
+    if (h1Match) {
+      flushCard();
+      const heading = h1Match[1].trim();
+      currentRow = null;
+      currentBoard = { heading, rows: [], lineNumber };
+      boards.push(currentBoard);
+      continue;
+    }
+
+    // --- H2 heading: new row ---
     const h2Match = line.match(/^## (.+)$/);
     if (h2Match) {
       flushCard();
       const heading = h2Match[1].trim();
-
-      // Check for day heading
+      const board = ensureBoard(lineNumber);
       const dayName = DAY_NAMES.find((d) => heading.startsWith(d));
-      if (dayName) {
-        sectionType = "day";
-        currentDay = {
-          heading,
-          dayName,
-          date: parseDayDate(heading),
-          cards: [],
-          lineNumber,
-        };
-        days.push(currentDay);
-        currentBucket = null;
-        continue;
-      }
-
-      // Check for named sections
-      const lower = heading.toLowerCase();
-      if (lower === "backlog") {
-        sectionType = "backlog";
-        currentDay = null;
-        currentBucket = null;
-        continue;
-      }
-      if (lower === "this quarter") {
-        sectionType = "this-quarter";
-        currentDay = null;
-        currentBucket = null;
-        continue;
-      }
-      if (lower === "this year") {
-        sectionType = "this-year";
-        currentDay = null;
-        currentBucket = null;
-        continue;
-      }
-      if (lower === "parking lot") {
-        sectionType = "parking-lot";
-        currentDay = null;
-        currentBucket = null;
-        continue;
-      }
-
-      // Any other ## exits current section
-      sectionType = "none";
-      currentDay = null;
-      currentBucket = null;
+      currentRow = {
+        heading,
+        ...(dayName ? { dayName, date: parseDayDate(heading) } : {}),
+        cards: [],
+        lineNumber,
+      };
+      board.rows.push(currentRow);
       continue;
     }
 
-    const h3Match = line.match(/^### (.+)$/);
-    if (h3Match && sectionType === "backlog") {
+    // --- H3+: no structural significance — flush pending card and skip ---
+    if (/^#{3,}/.test(line)) {
       flushCard();
-      const label = h3Match[1].trim();
-      const key = BACKLOG_BUCKETS[label.toLowerCase()];
-      if (key) {
-        currentBucket = { label, key, cards: [], lineNumber };
-        backlog.push(currentBucket);
-      }
       continue;
     }
 
@@ -208,26 +139,19 @@ export function parseBoard(input: string): BoardData {
         lineNumber,
         body: [],
         subTasks: [],
+        sectionHeading: currentRow?.heading ?? "",
+        boardHeading: currentBoard?.heading ?? "",
+        ...(meta.comment !== undefined ? { comment: meta.comment } : {}),
         ...(meta.project !== undefined ? { project: meta.project } : {}),
         ...(meta.dueDate !== undefined ? { dueDate: meta.dueDate } : {}),
         ...(meta.priority !== undefined ? { priority: meta.priority } : {}),
-        ...(meta.timeEstimate !== undefined
-          ? { timeEstimate: meta.timeEstimate }
-          : {}),
-        ...(sectionType === "day" && currentDay
-          ? { day: currentDay.dayName }
-          : {}),
-        ...(sectionType === "backlog" && currentBucket
-          ? { section: currentBucket.key }
-          : {}),
-        ...(sectionType === "this-quarter" ? { section: "this-quarter" } : {}),
-        ...(sectionType === "this-year" ? { section: "this-year" } : {}),
-        ...(sectionType === "parking-lot" ? { section: "parking-lot" } : {}),
+        ...(meta.timeEstimate !== undefined ? { timeEstimate: meta.timeEstimate } : {}),
+        ...(currentRow?.dayName ? { day: currentRow.dayName } : {}),
       };
       continue;
     }
 
-    // --- Indented content (belongs to current card) ---
+    // --- Indented content (sub-tasks and body) ---
     if (pendingCard && /^\s+/.test(line)) {
       const subMatch = line.match(INDENTED_CHECKBOX_RE);
       if (subMatch) {
@@ -242,30 +166,19 @@ export function parseBoard(input: string): BoardData {
       continue;
     }
 
-    // --- Blank line or non-indented non-checkbox → flush card ---
+    // --- Blank line or non-indented non-checkbox: flush ---
     if (pendingCard && !line.match(CHECKBOX_RE)) {
-      // Only flush if line is blank or non-indented
       if (line.trim() === "") {
-        // Keep collecting — blank lines between indented blocks are OK
         continue;
       }
       flushCard();
     }
   }
 
-  // Flush any trailing card
   flushCard();
 
   return {
-    frontmatter: frontmatter ?? {
-      week: 0,
-      year: 0,
-      tags: [],
-    },
-    days,
-    backlog,
-    thisQuarter,
-    thisYear,
-    parkingLot,
+    frontmatter: frontmatter ?? { week: 0, year: 0, tags: [] },
+    boards,
   };
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { displayLabel } from "@hexfield-deck/core";
 import type { Card, BoardData } from "@hexfield-deck/core";
 
 export type ContextMenuAction =
@@ -7,9 +8,8 @@ export type ContextMenuAction =
   | { type: "editDueDate" }
   | { type: "editTimeEstimate" }
   | { type: "setPriority"; priority: "high" | "medium" | "low" | "none" }
-  | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" }
-  | { type: "moveToDay"; targetDay: string; newStatus: string }
-  | { type: "moveToBacklog"; targetSection: string }
+  | { type: "changeState"; newStatus: "todo" | "in-progress" | "done" | "wont-do" | "blocked" }
+  | { type: "moveToSection"; sectionHeading: string; boardHeading: string }
   | { type: "deleteTask" };
 
 interface ContextMenuProps {
@@ -30,16 +30,6 @@ interface MenuItem {
 }
 
 function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
-  const dayNames = boardData.days.map((d) => d.dayName);
-  const backlogSections = [
-    { label: "Now", key: "now" },
-    { label: "Next 2 Weeks", key: "next-2-weeks" },
-    { label: "This Month", key: "this-month" },
-    { label: "This Quarter", key: "this-quarter" },
-    { label: "This Year", key: "this-year" },
-    { label: "Parking Lot", key: "parking-lot" },
-  ];
-
   const items: MenuItem[] = [
     { label: "Open in Markdown", action: { type: "openInMarkdown" } },
     { label: "", separator: true },
@@ -62,33 +52,46 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
         { label: "To Do", action: { type: "changeState", newStatus: "todo" } },
         { label: "In Progress", action: { type: "changeState", newStatus: "in-progress" } },
         { label: "Done", action: { type: "changeState", newStatus: "done" } },
+        { label: "Won't Do", action: { type: "changeState", newStatus: "wont-do" } },
+        { label: "Blocked", action: { type: "changeState", newStatus: "blocked" } },
       ],
     },
     { label: "", separator: true },
   ];
 
-  if (dayNames.length > 0) {
+  // "Move" — rows within the card's own Slate
+  const homeBoard = boardData.boards.find((b) => b.heading === card.boardHeading);
+  if (homeBoard && homeBoard.rows.length > 0) {
     items.push({
-      label: "Move to Day",
-      submenu: dayNames.map((day) => ({
-        label: day,
-        action: { type: "moveToDay" as const, targetDay: day, newStatus: card.status },
+      label: "Move",
+      submenu: homeBoard.rows.map((r) => ({
+        label: displayLabel(r.heading),
+        action: {
+          type: "moveToSection" as const,
+          sectionHeading: r.heading,
+          boardHeading: homeBoard.heading,
+        },
       })),
     });
   }
 
-  items.push({
-    label: "Move to Backlog",
-    submenu: backlogSections.map((s) => ({
-      label: s.label,
-      action: { type: "moveToBacklog" as const, targetSection: s.key },
-    })),
-  });
+  // "Move to [Slate]" — one submenu per other Slate
+  for (const board of boardData.boards) {
+    if (board.heading === card.boardHeading || board.rows.length === 0) continue;
+    items.push({
+      label: `Move to ${board.heading || "Board"}`,
+      submenu: board.rows.map((r) => ({
+        label: displayLabel(r.heading),
+        action: {
+          type: "moveToSection" as const,
+          sectionHeading: r.heading,
+          boardHeading: board.heading,
+        },
+      })),
+    });
+  }
 
   items.push(
-    { label: "", separator: true },
-    { label: "Move to Next Week", disabled: true },
-    { label: "Move to Week...", disabled: true },
     { label: "", separator: true },
     { label: "Delete Task...", action: { type: "deleteTask" } },
   );

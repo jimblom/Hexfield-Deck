@@ -4,6 +4,7 @@ import {
   extractDueDate,
   extractPriority,
   extractTimeEstimate,
+  extractComment,
   parseAllMetadata,
 } from "./metadata.js";
 
@@ -146,5 +147,34 @@ describe("parseAllMetadata", () => {
     expect(result.priority).toBe("medium");
     expect(result.dueDate).toBeUndefined();
     expect(result.timeEstimate).toBeUndefined();
+  });
+
+  it("strips comment before parsing other metadata", () => {
+    const result = parseAllMetadata("Fix bug #hexfield [2026-02-10] // waiting on upstream #ignore");
+    expect(result.cleanTitle).toBe("Fix bug");
+    expect(result.comment).toBe("waiting on upstream #ignore");
+    expect(result.project).toBe("hexfield");
+    expect(result.dueDate).toBe("2026-02-10");
+  });
+});
+
+describe("extractComment", () => {
+  it("extracts a trailing comment", () => {
+    const { comment, cleanText } = extractComment("Fix bug // waiting on upstream");
+    expect(comment).toBe("waiting on upstream");
+    expect(cleanText).toBe("Fix bug");
+  });
+
+  it("returns undefined when no comment", () => {
+    const { comment, cleanText } = extractComment("Fix bug #hexfield");
+    expect(comment).toBeUndefined();
+    expect(cleanText).toBe("Fix bug #hexfield");
+  });
+
+  it("requires space before //", () => {
+    // URL-like patterns should not trigger comment extraction
+    const { comment, cleanText } = extractComment("See https://example.com for details");
+    expect(comment).toBeUndefined();
+    expect(cleanText).toBe("See https://example.com for details");
   });
 });

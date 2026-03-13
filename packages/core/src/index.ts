@@ -6,18 +6,17 @@ export {
   extractDueDate,
   extractPriority,
   extractTimeEstimate,
+  extractComment,
   parseAllMetadata,
 } from "./parser/index.js";
-export { allCards } from "./models/types.js";
+export { allCards, displayLabel } from "./models/types.js";
 export type {
   Frontmatter,
   TaskStatus,
   Priority,
-  BacklogSection,
-  LongTermSection,
+  Row,
+  Board,
   SubTask,
   Card,
-  DaySection,
-  BacklogBucket,
   BoardData,
 } from "./models/types.js";

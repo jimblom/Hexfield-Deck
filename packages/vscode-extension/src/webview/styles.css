@@ -58,6 +58,27 @@ body {
   color: var(--vscode-descriptionForeground);
 }
 
+.slate-title {
+  font-size: 14px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.slate-selector {
+  font-size: 14px;
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  max-width: 280px;
+}
+
+.slate-selector:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
 .view-switcher {
   display: flex;
   gap: 2px;

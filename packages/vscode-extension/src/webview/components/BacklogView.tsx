@@ -21,34 +21,37 @@ import type { BoardData, Card } from "@hexfield-deck/core";
 interface BacklogViewProps {
   boardData: BoardData;
   onCardMove: (cardId: string, newStatus: string) => void;
-  onCardMoveToSection: (cardId: string, targetSection: string) => void;
+  onCardMoveToSection: (
+    cardId: string,
+    sectionHeading: string,
+    boardHeading: string,
+  ) => void;
 }
 
-interface Bucket {
+interface BucketItem {
   id: string;
   title: string;
-  sectionKey: string;
+  sectionHeading: string;
+  boardHeading: string;
   cards: Card[];
 }
 
-function getBuckets(boardData: BoardData): Bucket[] {
-  const buckets: Bucket[] = [];
-
-  for (const b of boardData.backlog) {
-    buckets.push({ id: `backlog-${b.key}`, title: b.label, sectionKey: b.key, cards: b.cards });
+/** All non-day rows across all boards become backlog buckets. */
+function getBuckets(boardData: BoardData): BucketItem[] {
+  const items: BucketItem[] = [];
+  for (const board of boardData.boards) {
+    for (const row of board.rows) {
+      if (row.dayName) continue; // skip day rows
+      items.push({
+        id: `${board.heading}::${row.heading}`,
+        title: row.heading,
+        sectionHeading: row.heading,
+        boardHeading: board.heading,
+        cards: row.cards,
+      });
+    }
   }
-
-  if (boardData.thisQuarter.length > 0) {
-    buckets.push({ id: "backlog-this-quarter", title: "This Quarter", sectionKey: "this-quarter", cards: boardData.thisQuarter });
-  }
-  if (boardData.thisYear.length > 0) {
-    buckets.push({ id: "backlog-this-year", title: "This Year", sectionKey: "this-year", cards: boardData.thisYear });
-  }
-  if (boardData.parkingLot.length > 0) {
-    buckets.push({ id: "backlog-parking-lot", title: "Parking Lot", sectionKey: "parking-lot", cards: boardData.parkingLot });
-  }
-
-  return buckets;
+  return items;
 }
 
 function getPriorityColor(priority: string): string {
@@ -65,7 +68,7 @@ function DroppableBucket({
   cards,
   onStatusClick,
 }: {
-  bucket: Bucket;
+  bucket: BucketItem;
   cards: Card[];
   onStatusClick: (card: Card) => void;
 }) {
@@ -192,7 +195,7 @@ export function BacklogView({ boardData, onCardMove, onCardMoveToSection }: Back
     if (targetBucket) {
       const sourceBucket = buckets.find((b) => b.cards.some((c) => c.id === cardId));
       if (sourceBucket && sourceBucket.id !== targetBucket.id) {
-        onCardMoveToSection(cardId, targetBucket.sectionKey);
+        onCardMoveToSection(cardId, targetBucket.sectionHeading, targetBucket.boardHeading);
       }
       return;
     }
@@ -205,7 +208,7 @@ export function BacklogView({ boardData, onCardMove, onCardMoveToSection }: Back
     const destBucket = buckets.find((b) => b.cards.some((c) => c.id === overId));
 
     if (sourceBucket && destBucket && sourceBucket.id !== destBucket.id) {
-      onCardMoveToSection(cardId, destBucket.sectionKey);
+      onCardMoveToSection(cardId, destBucket.sectionHeading, destBucket.boardHeading);
     }
   };
 
