@@ -112,7 +112,7 @@ function filterCards(cards: Card[], f: FilterState): Card[] {
     if (!isFilterActive(f)) return true;
     if (f.projects.length > 0 && (!card.project || !f.projects.includes(card.project)))
       return false;
-    if (f.statuses.length > 0 && !f.statuses.includes(card.status as TaskStatus))
+    if (!f.statuses.includes(card.status as TaskStatus))
       return false;
     if (f.priorities.length > 0 && (!card.priority || !f.priorities.includes(card.priority as Priority)))
       return false;
