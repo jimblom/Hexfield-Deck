@@ -12,20 +12,29 @@ export interface FilterState {
   estimates: EstimateBucket[];
 }
 
+const DEFAULT_STATUSES: TaskStatus[] = ["todo", "in-progress", "done"];
+
 export const EMPTY_FILTER: FilterState = {
   projects: [],
   priorities: [],
   dueDates: [],
-  statuses: [],
+  statuses: DEFAULT_STATUSES,
   estimates: [],
 };
+
+function statusesMatchDefault(statuses: TaskStatus[]): boolean {
+  return (
+    statuses.length === DEFAULT_STATUSES.length &&
+    DEFAULT_STATUSES.every((s) => statuses.includes(s))
+  );
+}
 
 export function isFilterActive(f: FilterState): boolean {
   return (
     f.projects.length > 0 ||
     f.priorities.length > 0 ||
     f.dueDates.length > 0 ||
-    f.statuses.length > 0 ||
+    !statusesMatchDefault(f.statuses) ||
     f.estimates.length > 0
   );
 }
@@ -73,11 +82,12 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
   const ref = useRef<HTMLDivElement>(null);
 
   const projects = [...new Set(cards.map((c) => c.project).filter((p): p is string => !!p))].sort();
+  const statusDeviations = statusesMatchDefault(filter.statuses) ? 0 : 1;
   const activeCount = (
     filter.projects.length +
     filter.priorities.length +
     filter.dueDates.length +
-    filter.statuses.length +
+    statusDeviations +
     filter.estimates.length
   );
 
