@@ -1,12 +1,12 @@
 # Hexfield Deck User Guide
 
-Complete reference for markdown file format and features supported by Hexfield Deck.
+Complete reference for the markdown file format and features supported by Hexfield Deck.
 
 ---
 
 ## Quick Start
 
-Hexfield Deck displays your markdown tasks as a Kanban board. Here's the minimal format:
+Hexfield Deck turns structured markdown files into interactive kanban boards. Here's the minimal format:
 
 ```markdown
 ---
@@ -16,14 +16,16 @@ year: 2026
 tags: [planner, weekly]
 ---
 
-## Monday, February 5, 2026
+# Week 1, 2026
+
+## Monday, February 2, 2026
 
 - [ ] My first task #project-1
-- [ ] Another task #project2
-- [x] Completed task #another_project
+- [/] Task in progress #project2
+- [x] Completed task #another-project
 ```
 
-Open this file in VS Code, run **Hexfield Deck: Open Board**, and see your tasks as cards!
+Open this file in VS Code, run **Hexfield Deck: Open Board**, and see your tasks as cards.
 
 ---
 
@@ -39,357 +41,249 @@ type: hexfield-planner          # Hexfield product identifier (required)
 week: 1                         # Week number (required)
 year: 2026                      # Year (required)
 tags: [planner, weekly]         # Tags array (required)
-start_date: 2026-02-05          # Optional: Week start date
-end_date: 2026-02-09            # Optional: Week end date
+startDate: 2026-02-05           # Optional: Slate start date
+endDate: 2026-02-09             # Optional: Slate end date
 ---
 ```
 
 **Required fields:** `type`, `week`, `year`, `tags`
 
-### Heading Hierarchy
+### Heading Hierarchy — Slates and Rows
 
-Hexfield Deck expects this structure:
+Hexfield Deck uses two structural primitives:
 
-```markdown
-## Monday, February 5, 2026   ← Level 2: Day grouping
-- [ ] Task #project-tag       ← Checkbox: Individual task
-```
+| Element | Role |
+|---------|------|
+| `# Heading` | **Slate** — a named group of rows (e.g. `# Week 7`, `# Backlog`) |
+| `## Heading` | **Row** — a swimlane lane with task cards (e.g. `## Monday`, `## Now`) |
 
-**Rules:**
-- Tasks under a set day appear in Standard and Swimlane views
-- Day headings format: `## {DayName}, {Month} {Day}, {Year}`
-
-### Projects
-
-Use a hashtag (#)-prefaced tag to group tasks by project:
+H3+ headings have no structural significance and are ignored by the parser.
 
 ```markdown
-## Monday, February 5, 2026
+# Week 7, 2026          ← Slate: selectable in the header dropdown
 
-- [ ] Task belongs to Time Chaser activity tracker #time-chaser
-- [ ] Another Time Chaser task #time-chaser
+## Monday               ← Row: appears as a swimlane lane
+- [ ] Task A
 
-- [ ] Task belongs to Deep 13 home lab #deep-13
+## Tuesday              ← Row: another swimlane lane
+- [ ] Task B
+
+# Backlog               ← Another Slate
+
+## Now                  ← Row within the Backlog slate
+- [ ] Urgent item
+
+## This Quarter         ← Row within the Backlog slate
+- [ ] Quarterly goal
 ```
 
-**Important:** The `#` must be preceded by a space (or be at the start of the title). A `#` inside a URL — such as `https://example.com/page#section` — is treated as a URL fragment, not a project tag.
+**Files with no H1 heading** produce a single implicit Slate. Old-format files continue to parse correctly.
 
-Projects are used for:
-- Color coding cards
-- Visual grouping
-- Project headers move with tasks when reorganizing
+### Display Aliases with `//`
+
+Add a `//` comment to an H2 heading to set a short display name for the swimlane label:
+
+```markdown
+## Monday // February 9, 2026
+```
+
+The swimlane shows **"Monday"**; the full date is preserved in the markdown source. Without `//`, the full heading text is used as-is.
 
 ---
 
-## Tasks & Columns
+## Tasks
 
-### Basic Syntax
+### Checkbox States
 
-```markdown
-- [ ] Unchecked task → Shows in Todo or In Progress
-- [x] Checked task   → Shows in Done
-- [/] Checked task   → Shows in Progress
-```
+All five states are recognized:
 
-**Important:** Use `- [ ]` with a space in brackets, not `- []` or `-[]`
+| Markdown | Status | Display |
+|----------|--------|---------|
+| `- [ ]` | **To Do** | Default unchecked state |
+| `- [/]` | **In Progress** | Actively being worked on |
+| `- [x]` | **Done** | Completed |
+| `- [-]` | **Won't Do** | Cancelled — hidden by default |
+| `- [!]` | **Blocked** | Waiting on something — hidden by default |
 
-### Three-Column Layout
+**Won't Do and Blocked** are hidden from the board by default. Use the Status filter to make them visible.
 
-Hexfield Deck has three columns:
+**Important:** Use `- [ ]` with a space inside the brackets, not `- []` or `-[]`.
 
-| Column | Markdown | Display |
-|--------|----------|---------|
-| **Todo** | `- [ ] Task` | Default for unchecked tasks |
-| **In Progress** | `- [/] Task` | Tasks you're actively working on |
-| **Done** | `- [x] Task` | Completed tasks |
+### Task Body and Sub-Tasks
 
-### Drag & Drop Behavior
-
-When you drag a card between columns:
-
-| From | To | Markdown Change |
-|------|----|-----------------|
-| Todo | In Progress | Adds `[/]` |
-| In Progress | Todo | Removes `[/]` |
-| In Progress | Done | Removes `[/]`, marks as `[x]` |
-| Done | Todo | Unchecks `[x]`, removes tags |
-| Done | In Progress | Unchecks `[x]`, adds `[/]` |
-
-**The markdown file is the source of truth** - all changes sync immediately.
-
----
-
-## Task Details
-
-### Task Body (Sub-bullets)
-
-Add details by indenting lines below a task:
+Add details by indenting content below a task:
 
 ```markdown
-- [ ] Main task title #project
-  - Sub-bullet detail 1
-  - Sub-bullet detail 2
-  - More information
-```
-
-**Rules:**
-- Indent with 2+ spaces or 1 tab
-- Displayed as a bulleted list on the card
-
-### Sub-Task Checkboxes
-
-Indented checkboxes become interactive sub-tasks with progress tracking:
-
-```markdown
-- [ ] Main task with sub-tasks #project
+- [ ] Main task #project
+  Freeform note line — displayed as body text on the card
   - [ ] Sub-task 1
   - [x] Sub-task 2 (completed)
   - [ ] Sub-task 3
 ```
 
-**Features:**
-- Click sub-task checkboxes directly on the card to toggle completion
-- Progress bar shows completion percentage (e.g., "1/3 tasks - 33%")
-- Sub-tasks can have their own metadata (priority, due date, time estimate)
+- **Body lines:** Plain indented text displayed as a note on the card
+- **Sub-task checkboxes:** Clickable — toggle through To Do → In Progress → Done directly on the card
+- **Progress tracking:** Sub-task completion shown as a count (e.g. "1/3 subtasks")
+
+### Comments
+
+Add a `//` comment to any task line to annotate it without affecting the title display:
+
+```markdown
+- [ ] Fix the escape pod hatch #sol !! est:1h // keeps jamming since the Pumaman screening
+- [!] Restock supplies // waiting on shuttle from Gizmonic
+```
+
+The comment text (after ` // `) is stripped from the displayed card title and stored separately. Tags, dates, and other metadata inside a comment are **not** parsed — `// #tag` inside a comment does not create a project tag.
+
+**URL safety:** The separator requires a leading space (` // `), so `https://example.com` is never accidentally treated as a comment.
 
 ### Metadata
 
-Enhance tasks with inline metadata for due dates, priority, and time estimates.
+Enhance tasks with inline metadata. Metadata can appear in any order after the title.
 
 #### Due Dates
 
-Track deadlines with visual indicators:
-
 ```markdown
-- [ ] Task with due date due:2026-02-15
 - [ ] Task with due date [2026-02-15]
+- [ ] Task with due date due:2026-02-15
 ```
 
 **Format:** `YYYY-MM-DD` (ISO 8601)
-**Position:** Anywhere in task title
-**Display:** Badge showing "Feb 15" with color-coded status:
+
+**Display:** Color-coded badge:
 - Overdue: Red
 - Today: Orange
-- Due within 3 days: Yellow
+- Due within 7 days: Yellow
 - Future: Gray
 
 #### Priority
 
-Mark task importance with visual badges:
-
 ```markdown
 - [ ] High priority task !!!
-
 - [ ] Medium priority task !!
-
 - [ ] Low priority task !
 ```
 
-**Display:** Colored badge (HIGH - red, MED - yellow, LOW - green)
+**Display:** Colored badge — HIGH (red), MED (yellow), LOW (green)
 
 #### Time Estimates
 
-Track how long tasks should take:
-
 ```markdown
-- [ ] Task with estimate est:30m
+- [ ] Task with estimate est:2h
+- [ ] Short task est:30m
 ```
 
-**Formats:** Hours (`2h`, `1.5h`) or minutes (`30m`, `90m`)
-**Display:** Badge showing ⏱️ 2h
+**Display:** Badge showing the estimate (e.g. `2h`)
 
-### Combining Everything
-
-You can combine all features in one task:
+#### Project Tags
 
 ```markdown
-- [/] Review documentation [2026-02-10] !!! ⏱️ est:2h #time-chaser
-  - [ ] Check for outdated sections
-  - [x] Update screenshots
-  - [ ] Get feedback from team
+- [ ] Task belongs to Hexfield project #hexfield
+- [ ] Task belongs to Deep 13 lab #deep13
 ```
 
-**This task has:**
-- Project: Time Chaser (colored border)
-- Status: In Progress
-- Due date: Feb 10, 2026
-- Priority: High (red badge)
-- Time estimate: 2 hours
-- Sub-tasks: 3 items with progress tracking (1/3 = 33%)
+The `#` must be preceded by a space. A `#` inside a URL (`https://example.com/page#section`) is treated as a URL fragment, not a project tag.
+
+#### Combining Metadata
+
+All metadata can be combined in one line:
+
+```markdown
+- [/] Ship **parser v1** #hexfield [2026-02-10] !!! est:4h // nearly there
+  - [/] Write frontmatter tests
+  - [x] Wire up barrel exports
+  - [ ] Final review
+```
+
+**This task has:** project (hexfield), due date (Feb 10), high priority, 4h estimate, a comment, and three sub-tasks.
 
 ### Inline Markdown Formatting
 
-Card titles and sub-task titles support inline markdown. Formatting renders directly on the board — no need to open the file to see the result.
+Card and sub-task titles support inline markdown:
 
-| Syntax | Renders as | Example |
-|--------|-----------|---------|
-| `**text**` or `__text__` | **Bold** | `**Fix this today**` |
-| `*text*` or `_text_` | *Italic* | `*nice to have*` |
-| `~~text~~` | ~~Strikethrough~~ | `~~cancelled task~~` |
-| `` `text` `` | `Code span` | `` Review `npm test` output `` |
-| `[label](url)` | Clickable link | `[Design doc](https://notion.so/...)` |
-
-**Links:** Clicking a link on the board opens it in your default browser. Clicking anywhere else on the card still works normally for drag-and-drop.
-
-**Sub-tasks:** Inline markdown works in sub-task lines too. Clicking a link in a sub-task opens the browser without toggling the checkbox.
-
-```markdown
-- [ ] Ship **v0.4.0** release #hexfield [2026-02-15] !!!
-  - [ ] Update [CHANGELOG](https://github.com/jimblom/Hexfield-Deck)
-  - [ ] Run `pnpm test` and confirm green
-  - [x] ~~Write placeholder copy~~ (done)
-  - [ ] Deploy to *production*
-```
+| Syntax | Renders as |
+|--------|-----------|
+| `**text**` or `__text__` | **Bold** |
+| `*text*` or `_text_` | *Italic* |
+| `~~text~~` | ~~Strikethrough~~ |
+| `` `text` `` | `Code span` |
+| `[label](url)` | Clickable link (opens in browser) |
 
 ---
 
-## Backlog Sections
+## Views
 
-### Structure
+The board header shows a **Slate selector** dropdown (when the file has multiple H1 sections) and two view buttons: **Standard** and **Swimlane**. The active Slate and view are persisted across panel reloads.
 
-Hexfield Deck supports backlog sections for longer-term planning:
+### Slate Selector
 
-```markdown
-## Backlog
-### Now
-- [ ] Urgent task that needs attention
-
-### Next 2 Weeks
-- [ ] Coming up soon
-
-### This Month
-- [ ] Monthly goal
-
-## This Quarter
-- [ ] Quarterly objective
-
-## This Year
-- [ ] Annual goal
-
-## Parking Lot
-- [ ] Someday/maybe items
-```
-
-### Priority Buckets
-
-The Backlog view organizes tasks into user-defined priority buckets. The below is an example:
-
-| Bucket | Heading | Purpose |
-|--------|---------|---------|
-| Now (Immediate) | `## Backlog` → `### Now` | Tasks to do this week |
-| Next 2 Weeks | `## Backlog` → `### Next 2 Weeks` | Short-term planning |
-| This Month | `## Backlog` → `### This Month` | Monthly goals |
-| This Quarter | `## This Quarter` | Quarterly objectives |
-| This Year | `## This Year` | Annual goals |
-| Parking Lot | `## Parking Lot` | Someday/maybe items |
-
-### Moving Between Buckets
-
-- **Drag and drop** cards between buckets in Backlog view
-- **Right-click** → "Move to Backlog" submenu to change priority
-- **Right-click** → "Move to Day" to schedule a backlog item for a specific day
-
----
-
-## Board Views
+Navigate between H1 Slates using the dropdown in the header. Each Slate shows only its own H2 rows in the view. The dropdown is replaced by a plain label when there is only one Slate in the file.
 
 ### Standard View
 
-Shows all tasks across the week in three columns:
+All task cards from the active Slate across three columns:
 
 ```
 ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│    Todo     │  │ In Progress │  │    Done     │
+│   To Do     │  │ In Progress │  │    Done     │
 │             │  │             │  │             │
-│  All week   │  │  All week   │  │  All week   │
+│  All rows   │  │  All rows   │  │  All rows   │
 └─────────────┘  └─────────────┘  └─────────────┘
 ```
 
 ### Swimlane View
 
-Shows tasks organized by day, each with its own three columns:
+Each H2 row in the active Slate becomes a horizontal lane with its own To Do / In Progress / Done columns:
 
 ```
 ▼ Monday (5 tasks)
   ┌─────────┐  ┌─────────────┐  ┌──────┐
-  │  Todo   │  │ In Progress │  │ Done │
+  │  To Do  │  │ In Progress │  │ Done │
   └─────────┘  └─────────────┘  └──────┘
 
-▼ Tuesday (3 tasks)
-  ┌─────────┐  ┌─────────────┐  ┌──────┐
-  │  Todo   │  │ In Progress │  │ Done │
-  └─────────┘  └─────────────┘  └──────┘
+▶ Tuesday (3 tasks)   ← collapsed
 ```
 
-### Backlog View
-
-Shows backlog tasks in priority buckets for grooming:
-
-```
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│   Now            │  │   Next 2 Weeks   │  │   This Month     │
-│                  │  │                  │  │                  │
-└──────────────────┘  └──────────────────┘  └──────────────────┘
-
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│   This Quarter   │  │  ️ This Year      │  │  ️ Parking Lot    │
-│                  │  │                  │  │                  │
-└──────────────────┘  └──────────────────┘  └──────────────────┘
-```
-
-Switch views using the toolbar buttons at the top of the board.
+- **Day rows** (headings that start with a day name) are expanded by default
+- **Non-day rows** are collapsed by default
+- Click the triangle to toggle any row
 
 ---
 
-## Week Navigation
+## Drag & Drop
 
-### Navigating Between Weeks
+### Standard View
 
-Use the navigation arrows in the toolbar to move between weeks:
-- **◀** Previous week
-- **▶** Next week
+Drag a card between columns to update its status:
 
-### Auto-Create Week Files
+| From → To | Markdown change |
+|-----------|----------------|
+| To Do → In Progress | `[ ]` → `[/]` |
+| In Progress → Done | `[/]` → `[x]` |
+| Done → To Do | `[x]` → `[ ]` |
 
-When navigating to a week that doesn't exist:
-- Hexfield Deck automatically creates the week file
-- Uses a template with proper frontmatter and day sections
-- File path pattern: `{year}/week-{WW}/{year}-{WW}-weekly-plan.md`
+### Swimlane View
 
-### Moving Tasks to Different Weeks
-
-For backlog items, right-click and choose:
-- **Move to Next Week** - Moves task to Monday of the following week
-- **Move to Week...** - Prompts for specific week number
+Drag within a row to change status, or drag to a different row to move the card to that section and optionally change status simultaneously.
 
 ---
 
 ## Context Menu
 
-Right-click on any card to access these options:
-
-### All Cards
+Right-click any card:
 
 | Option | Description |
 |--------|-------------|
-| **Open in Markdown** | Jump to task location in the markdown file |
+| **Open in Markdown** | Jump to the task's source line in the file |
 | **Edit Title...** | Change the task title |
-| **Edit Due Date...** | Set or modify due date |
-| **Edit Time Estimate...** | Set or modify time estimate |
-| **Edit Description...** | Edit the task body/sub-bullets |
+| **Edit Due Date...** | Set or clear due date |
+| **Edit Time Estimate...** | Set or clear time estimate |
 | **Set Priority** | Submenu: High, Medium, Low, None |
-| **Change Project...** | Move task to different project |
-| **Change State** | Submenu: Todo, In Progress, Done |
-| **Move to Day** | Submenu: Move to any day of the week |
-| **Delete Task...** | Remove the task (with confirmation) |
-
-### Backlog Cards Only
-
-| Option | Description |
-|--------|-------------|
-| **Move to Backlog** | Submenu: Move between priority buckets |
-| **Move to Next Week** | Schedule for Monday of next week |
-| **Move to Week...** | Schedule for specific week |
+| **Change State** | Submenu: To Do, In Progress, Done, Won't Do, Blocked |
+| **Move** | Move to any row within the same Slate |
+| **Move to [Slate]** | Move to a row in a different Slate (one submenu per other Slate) |
+| **Delete Task...** | Remove the task from the markdown file |
 
 ---
 
@@ -397,116 +291,47 @@ Right-click on any card to access these options:
 
 ### Metadata Filtering
 
-Click the **Filter** button in the toolbar to open the filter panel. Filter across five dimensions simultaneously — conditions are AND'd between dimensions and OR'd within each dimension (e.g. "hexfield OR sol" AND "High priority").
+Click the **Filter** button in the toolbar. Conditions are AND'd between dimensions and OR'd within each dimension.
 
-![Filter panel](docs/screenshots/phase-7-filtering.png)
+| Dimension | Options |
+|-----------|---------|
+| **Project** | Any project tag present in the file (multi-select) |
+| **Status** | To Do, In Progress, Done, Won't Do, Blocked |
+| **Priority** | High, Medium, Low |
+| **Due Date** | Overdue, Due Today, Due This Week, No Due Date |
+| **Time Estimate** | Short (≤30m), Medium (30m–2h), Long (2h+), No Estimate |
 
-| Dimension | Options | Notes |
-|-----------|---------|-------|
-| **Project** | Any project present in the file | Multi-select; list is built from all cards in the current file |
-| **Status** | To Do, In Progress, Done | Useful in Swimlane and Backlog views |
-| **Priority** | High, Medium, Low | Cards with no priority are excluded when any priority is selected |
-| **Due Date** | Overdue, Due Today, Due This Week, No Due Date | Buckets based on today's date |
-| **Time Estimate** | Short (≤30m), Medium (30m–2h), Long (2h+), No Estimate | "No Estimate" finds all unestimated cards |
-
-**Active filter indicator:** The Filter button shows a count badge (e.g. **Filter 2**) when filters are active, and its border highlights.
-
-**Clear all:** A **Clear all filters** button appears at the bottom of the panel when any filter is active. Switching views (Standard → Swimlane → Backlog) does not reset the active filter.
+The Filter button shows a count badge when filters are active. **Won't Do** and **Blocked** cards are hidden by default and only appear when explicitly selected in the Status filter.
 
 ### Sort Options
 
-The sort bar appears below the header in all views:
+Available in all views via the sort bar:
 
-- **File order** — Default; preserves order from the markdown file
+- **File order** — Default; preserves markdown file order
 - **Priority** — High → Medium → Low → None
 - **Status** — In Progress → To Do → Done
-- **Project** — Alphabetical by project name
+- **Project** — Alphabetical
 - **Estimate** — Longest first
 
 ---
 
-## Commands & Features
+## Quick Add
 
-### Available Commands
+Click the **+** button in the toolbar to insert a new task:
 
-Access commands via Command Palette (Ctrl+Shift+P):
-
-- **Hexfield Deck: Open Board** - Open Kanban board for current markdown file
-- **Hexfield Deck: Refresh Board** - Manually refresh the board
-
-### Quick Add
-
-Click the "+" button in the toolbar to quickly add a new task to the current day.
-
-### Auto-Refresh
-
-The board automatically refreshes in **real-time** as you edit the markdown file. Changes appear on the board within half a second of typing - no need to save!
-
-**Real-Time Updates:**
-- Watches the markdown document for any changes
-- Automatically refreshes the board 500ms after you stop typing
-- Works for all edits: checking boxes, adding in progress markers, changing priorities, etc.
-- Debounced to avoid excessive refreshes
-
-### Dirty File Protection
-
-If you have unsaved changes in the markdown editor, Hexfield Deck will:
-- Show a warning before making changes
-- Offer a "Save Now" button
-- Block the operation until you save
-
-This prevents accidental data loss from conflicting edits between the text editor and the board.
+- If the active Slate contains today's day row, the task is added there
+- Otherwise, the first day row in the active Slate is used
+- If no day rows exist, the first row of the active Slate is used
 
 ---
 
-## Configuration
+## Live Sync
 
-### Project Colors & Links
+The board automatically refreshes as you edit the markdown file — no manual save required. Changes appear within 500ms of typing.
 
-Customize project appearance in VS Code settings:
+**The markdown file is the source of truth.** All board operations (drag, move, edit) write back to the file immediately.
 
-```json
-{
-  "hexfield-deck.projects": {
-    "Time Chaser": {
-      "color": "#FF6B6B",
-      "link": "https://gitlab.com/jimblom/Time_Chaser"
-    },
-    "Deep 13": {
-      "color": "#4ECDC4",
-      "link": "https://gitlab.com/jimblom/Deep_13"
-    }
-  }
-}
-```
-
-**Settings:**
-- `color`: Hex color code (e.g., `#FF6B6B`)
-- `link`: URL to open when clicking project tag (optional)
-
-### Board Preferences
-
-Control default board behavior:
-
-```json
-{
-  "hexfield-deck.defaultView": "standard",
-  "hexfield-deck.showDayBadges": true,
-  "hexfield-deck.showMetadataBadges": true,
-  "hexfield-deck.autoCollapseSwimlaneDays": false
-}
-```
-
-**Settings:**
-- `defaultView`: Default view when opening board (`"standard"`, `"swimlane"`, or `"backlog"`)
-- `showDayBadges`: Show day badges (Mon, Tue, etc.) on cards (default: `true`)
-- `showMetadataBadges`: Show metadata badges (priority, due date, time) on cards (default: `true`)
-- `autoCollapseSwimlaneDays`: Auto-collapse all days in swimlane view on load (default: `false`)
-
-**Access settings:**
-1. Open VS Code Settings (Ctrl+,)
-2. Search for "hexfield-deck"
-3. Adjust preferences
+**Dirty file indicator:** If the file has unsaved changes, a `● Unsaved changes` label appears in the header.
 
 ---
 
@@ -515,52 +340,42 @@ Control default board behavior:
 ```markdown
 ---
 type: hexfield-planner
-week: 1
+week: 7
 year: 2026
 tags: [planner, weekly]
-start_date: 2026-02-05
-end_date: 2026-02-09
+startDate: 2026-02-09
+endDate: 2026-02-15
 ---
 
-## Monday, February 5, 2026
+# Week 7, 2026
 
-- [ ] Review documentation [2026-02-10] !! est:2h #time-chaser
-  - [ ] Check for outdated sections
-  - [ ] Update screenshots
-- [/] Update test suite #deep-13
-- [x] Submit weekly report #pumaman
+## Monday // February 9, 2026
 
-- [ ] Debug loading issue !!! [2026-02-06] est:3h #deep-13
-  - [x] Check voltage levels
-  - [ ] Review timing diagrams
-- [ ] Schedule team meeting est:️30m
+- [x] Morning standup #deep13
+- [/] Fix viewscreen glitch #hexfield [2026-02-09] !! est:2h // viewport calc was off
+  - [x] Reproduce the issue
+  - [ ] Write regression test
+- [!] Coordinate with Gizmonic #deep13 // waiting on Dr. Forrester's approval
 
-## Tuesday, February 6, 2026
+## Tuesday // February 10, 2026
 
-- [ ] Code review for PR 13 [2026-02-06] #time-chaser
-- [ ] Write unit tests est:1h
+- [ ] Ship parser v1 #hexfield [2026-02-10] !!! est:4h
+- [x] File expense report due:2026-02-10
 
-## Backlog
+# Backlog
 
-### Now
-- [ ] Update user guide #hexfield-deck !!!
+## Now
 
-### Next 2 Weeks
-- [ ] Plan H1 roadmap #hexfield-deck
-
-### This Month
-- [ ] Research new testing framework #deep-13
+- [ ] Fix escape pod hatch #sol !! est:1h // keeps jamming
+- [ ] Add Obsidian plugin scaffold #hexfield
 
 ## This Quarter
-- [ ] Marathon 1 #time-chaser [2026-05-13]
-- [ ] Build out our program plan #gpc
 
-## This Year
-- [ ] Migrate Deep 13 projects off of GitLab #deep-13
-- [ ] Marathon 2 #time-chaser
+- [ ] Launch Hexfield Deck v1.0 #hexfield [2026-03-31] !!!
 
 ## Parking Lot
-- [ ] Investigate alternative CI/CD options #deep-13
+
+- [-] Rewrite everything in Rust // not happening
 ```
 
 ---
@@ -569,55 +384,36 @@ end_date: 2026-02-09
 
 ### What Gets Parsed
 
-✅ **Day Sections (Standard/Swimlane views):**
-- Tasks within `## {Day}` sections (e.g., `## Monday, February 5, 2026`)
-- Project groupings from inline tag (`#project-name`)
+- **Any H1 heading** → creates a Slate
+- **Any H2 heading** → creates a Row within the current Slate
+- **H3+ headings** → ignored (no structural significance)
+- **Files without H1** → all H2 rows go into a single implicit Slate
 
-✅ **Backlog (Backlog view):**
-- Tasks under `## Backlog` with subsections (Now, Next 2 Weeks, This Month)
-- Tasks under `## This Quarter`
-- Tasks under `## This Year`
-- Tasks under `## Parking Lot`
+### Metadata Parsing Order
 
-❌ **Ignored:**
-- Other custom sections not listed above
-- Tasks without proper heading hierarchy
+Comment is stripped first, then metadata is extracted from the remainder:
 
-### Metadata Parsing
-
-**Order independent:** Metadata can appear in any order
 ```markdown
-- [ ] Task #project [2026-02-10] !!! est:2h    ← Works
-- [ ] Task !!! est:2h [2026-02-10] #project    ← Also works
+- [ ] Task #hexfield [2026-02-10] !!!   ← works
+- [ ] Task !!! [2026-02-10] #hexfield   ← also works (order-independent)
+- [ ] Task #hexfield // #ignore-me      ← #ignore-me is inside the comment, not a tag
 ```
 
-**Multiple matches:** First one wins
-```markdown
-- [ ] Task [2026-02-10] [2026-02-15] #project   ← Uses Feb 10
-```
-
-**Stripped from display:** Metadata is removed from card titles
-```markdown
-- [ ] Review docs #project [2026-02-10] !!!
-```
-Displays as: **"Review docs"** (metadata shows as badges)
+First match wins for each field (e.g. first date found is used if two dates appear).
 
 ### File Modifications
 
-**Hexfield Deck minimally modifies your markdown:**
-
-| Action | Markdown Change |
-|--------|----------------|
-| Drag to Done | Changes `- [ ]` to `- [x]`, removes `- [/]` |
-| Drag to In Progress | Changes `- [x]` to `- [ ]` (if needed), adds `- [/]` |
-| Drag to Todo | Changes `- [x]` to `- [ ]` (if needed), removes `- [/]` |
-| Toggle sub-task | Changes `- [ ]` to `- [x]` or vice versa |
-| Move to Day | Moves task line(s) to target day section |
-| Move to Backlog | Moves task line(s) to target backlog section |
-| Edit metadata | Updates priority/due date/time estimate in task line |
-| Quick Add card | Inserts new `- [ ] Task` in current day section |
-
-**Project headers are preserved** - when moving a task that's the only one under a project, the project header moves with it.
+| Board action | Markdown change |
+|--------------|----------------|
+| Drag to Done | `[ ]` or `[/]` → `[x]` |
+| Drag to In Progress | `[ ]` or `[x]` → `[/]` |
+| Drag to To Do | `[x]` or `[/]` → `[ ]` |
+| Change State → Won't Do | any → `[-]` |
+| Change State → Blocked | any → `[!]` |
+| Toggle sub-task | cycles `[ ]` → `[/]` → `[x]` → `[ ]` |
+| Move to row | Moves task block to target H2 section |
+| Edit metadata | Updates the task line in place |
+| Quick Add | Inserts `- [ ] New Task` at end of target row |
 
 ---
 
@@ -625,33 +421,26 @@ Displays as: **"Review docs"** (metadata shows as badges)
 
 ### Cards not appearing?
 
-✅ Check frontmatter has `week`, `year`, `tags`
-✅ Verify tasks are under day sections (e.g., `## Monday, February 5, 2026`) or backlog sections
-✅ Checkbox format is `- [ ]` with space
+✅ Frontmatter has `week`, `year`, `tags`
+✅ Tasks are under an H2 heading
+✅ Checkbox format is `- [ ]` with a space
+
+### Won't Do / Blocked cards invisible?
+
+✅ These statuses are hidden by default — open **Filter → Status** and check **Won't Do** or **Blocked**
 
 ### Metadata not showing?
 
-✅ Date format is `YYYY-MM-DD` (not `MM/DD/YYYY`)
-✅ Priority uses `!!!`, `!!`, or `!` (exclamation marks)
-✅ Time format is `2h` or `30m` (not `2 hours`)
-
-### Context menu not appearing?
-
-✅ Refresh the board (click refresh icon or Ctrl+R in Extension Host)
-✅ Check VS Code Developer Tools console for JavaScript errors
-✅ Try reloading the Extension Development Host
+✅ Date format is `YYYY-MM-DD`
+✅ Priority uses `!!!`, `!!`, or `!`
+✅ Estimate format is `2h` or `30m`
+✅ Check that metadata isn't inside a `// comment`
 
 ### Drag & drop not working?
 
-✅ Refresh the board (click refresh icon)
+✅ Refresh the board
 ✅ Check VS Code file watcher isn't disabled
-✅ Ensure file isn't read-only
-
-### Changes being overwritten?
-
-✅ Save the markdown file before using the board
-✅ The "dirty file" warning will appear if you have unsaved changes
-✅ Click "Save Now" or manually save before making board changes
+✅ Ensure the file isn't read-only
 
 ---
 
@@ -659,8 +448,10 @@ Displays as: **"Review docs"** (metadata shows as badges)
 
 | Version | Highlights |
 |---------|-----------|
-| **v0.5.0** | Metadata filtering — project (multi-select), status, priority, due date, time estimate |
-| **v0.4.0** | Inline markdown rendering in card and sub-task titles (bold, italic, strikethrough, code, links) |
+| **v0.7.0** | H1=Slate / H2=Row layout (ADR-0009); per-Slate navigation dropdown; Blocked status (`[!]`); `//` comment syntax for headings and tasks |
+| **v0.6.0** | Project color selector panel; Hexfield Text compatibility for badge colors |
+| **v0.5.0** | Metadata filtering — project, status, priority, due date, time estimate |
+| **v0.4.0** | Inline markdown rendering in card and sub-task titles |
 | **v0.3.0** | Right-click context menu, CRUD editing, Quick Add button |
 | **v0.2.x** | Multiple views (Swimlane, Backlog), card sorting, view persistence |
 | **v0.1.x** | Core parser, 3-column board, drag-and-drop, sub-task checkboxes |
@@ -669,4 +460,5 @@ Displays as: **"Review docs"** (metadata shows as badges)
 
 ## Related Documentation
 
-- [CLAUDE.md](../CLAUDE.md) - CLAUDE Code development guidance for working with the extension
+- [README.md](README.md) — Project overview and quick start
+- [Architecture Decisions](docs/decisions/) — Technical ADRs

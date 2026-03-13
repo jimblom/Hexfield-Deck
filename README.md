@@ -6,9 +6,9 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 ![Hexfield Deck — Standard View](docs/screenshots/phase-6-standard.png)
 
-| Swimlane View | Backlog View |
+| Swimlane View | Standard View |
 |:---:|:---:|
-| ![Swimlane View](docs/screenshots/phase-6-swimlane.png) | ![Backlog View](docs/screenshots/phase-6-backlog.png) |
+| ![Swimlane View](docs/screenshots/phase-6-swimlane.png) | ![Standard View](docs/screenshots/phase-6-standard.png) |
 
 ![Filtering](docs/screenshots/phase-7-filtering.png)
 
@@ -16,35 +16,33 @@ Hexfield Deck transforms your markdown weekly planner files into interactive kan
 
 ## ✨ Features
 
-### Current (v0.6.0)
+### Current (v0.7.0)
 
 - ✅ **3-column kanban board** (To Do / In Progress / Done)
-- ✅ **Drag-and-drop editing** — Move cards between columns to update checkbox states
+- ✅ **Slates & Rows** — H1 headings define named Slates; every H2 is a swimlane Row
+- ✅ **Per-Slate navigation** — Header dropdown switches between H1 Slates; each Slate has Standard and Swimlane views
+- ✅ **Five task statuses** — `[ ]` To Do, `[/]` In Progress, `[x]` Done, `[-]` Won't Do, `[!]` Blocked
+- ✅ **`//` comment syntax** — Annotate headings (`## Monday // Feb 9`) and tasks (`- [ ] Fix bug // waiting on Joel`) without affecting display or metadata parsing
+- ✅ **Drag-and-drop editing** — Move cards between columns or swimlane rows to update status and section
 - ✅ **Interactive sub-task checkboxes** — Click to cycle through To Do → In Progress → Done
-- ✅ **Live markdown sync** — Edit the file, board updates automatically
+- ✅ **Live markdown sync** — Board updates automatically as you edit the file
 - ✅ **Rich metadata badges** — Project tags, due dates, priorities, time estimates
 - ✅ **Color-coded due dates** — Overdue (red), today (orange), upcoming (yellow), future (gray)
-- ✅ **Sub-task progress tracking** — Progress bars and checklist visualization
-- ✅ **Context menu integration** — Right-click any `.md` file to open as a board
-- ✅ **Unsaved changes indicator** — Visual feedback when the board has pending changes
-- ✅ **Native VS Code theming** — Matches your editor's color scheme
-- ✅ **Swimlane view** — Day-of-week rows × status columns with cross-day drag-and-drop
-- ✅ **Backlog view** — Priority buckets (Now, Next 2 Weeks, This Month, etc.) with drag between sections
-- ✅ **Card sorting** — Sort by file order, priority, status, project, or estimate across all views
-- ✅ **View persistence** — Selected view remembered across panel show/hide
-- ✅ **Right-click context menu** — Edit title, due date, time estimate, priority, state, or delete any task
-- ✅ **Quick Add** — `+` button in toolbar inserts a new task into today's section
+- ✅ **Sub-task progress tracking** — Completion count shown on card
+- ✅ **Right-click context menu** — Edit title, due date, estimate, priority, state; Move within or across Slates; Delete
+- ✅ **Quick Add** — `+` button inserts a task into the active Slate's current day row
 - ✅ **Open in Markdown** — Jump directly to any task's source line from the board
-- ✅ **Inline markdown rendering** — Bold, italic, strikethrough, code spans, and links render in card and sub-task titles; links open in the browser
-- ✅ **Metadata filtering** — Filter by project (multi-select), status, priority, due date, and time estimate; active filter count shown in toolbar
-- ✅ **Project color configuration** — "Projects" toolbar panel to set per-project card colors (border stripe, fill tint, or both), styles, and URL links without touching settings JSON
-- ✅ **Configurable badge colors** — All metadata badge colors follow `hexfield.colors.*` settings, shared with the Hexfield Text companion extension
+- ✅ **Inline markdown rendering** — Bold, italic, strikethrough, code spans, and links render in card titles; links open in the browser
+- ✅ **Metadata filtering** — Filter by project, status, priority, due date, and time estimate; Won't Do and Blocked hidden by default
+- ✅ **Card sorting** — File order, priority, status, project, or estimate
+- ✅ **Project color configuration** — Per-project card colors, styles, and URL links from the Projects toolbar panel
+- ✅ **Configurable badge colors** — Badge colors follow `hexfield.colors.*` settings, shared with Hexfield Text
 - ✅ **Hexfield Text compatibility** — Works alongside the [Hexfield Text](https://github.com/jimblom/hexfield-text) companion extension for editor syntax highlighting
 
 ### Coming Soon
 
-- 🗓️ **Week navigation** — Browse weeks with auto-file creation
 - 🔌 **Obsidian plugin** — Full feature parity for Obsidian users
+- 🗓️ **Week navigation** — Browse weeks with auto-file creation
 
 ---
 
@@ -91,41 +89,48 @@ year: 2026
 tags: [planner, weekly]
 ---
 
-## Monday, February 9, 2026
+# Week 7, 2026
 
-- [ ] Fix rendering glitch #hexfield [2026-02-09] !!
-    - [x] Reproduce on the bridge
-    - [ ] Check viewport calculations
+## Monday // February 9, 2026
+
+- [ ] Fix rendering glitch #hexfield [2026-02-09] !! // viewport calc was off
+  - [x] Reproduce on the bridge
+  - [ ] Write regression test
 - [/] Rewire nacelle couplings #deep13 est:3h
-- [ ] Review submission !!!
+- [!] Coordinate with Gizmonic // waiting on Dr. Forrester
 
-## Tuesday, February 10, 2026
+## Tuesday // February 10, 2026
 
 - [ ] Ship parser v1 #hexfield [2026-02-10] !!! est:4h
 
-## Backlog
+# Backlog
 
-### Now
+## Now
 
-- [ ] Urgent item #project
+- [ ] Fix escape pod hatch #sol !! est:1h
 
-### Next 2 Weeks
+## This Quarter
 
-- [ ] Coming soon #project
+- [ ] Launch Hexfield Deck v1.0 #hexfield [2026-03-31] !!!
 ```
 
-**Checkbox States:**
+**Checkbox states:**
 
-- `[ ]` → To Do
-- `[/]` → In Progress
-- `[x]` → Done
+| Marker | Status | Notes |
+|--------|--------|-------|
+| `[ ]` | To Do | Default |
+| `[/]` | In Progress | |
+| `[x]` | Done | |
+| `[-]` | Won't Do | Hidden by default |
+| `[!]` | Blocked | Hidden by default |
 
-**Metadata Syntax:**
+**Metadata syntax:**
 
-- `#project-name` → Project tag (blue badge) — must have a space before `#`
+- `#project-name` → Project tag — must have a space before `#`
 - `[2026-02-15]` → Due date (color-coded by proximity)
-- `!!!` / `!!` / `!` → Priority (high/medium/low)
+- `!!!` / `!!` / `!` → Priority (high / medium / low)
 - `est:2h` → Time estimate
+- `// comment text` → Comment — stripped from title display; tags inside are not parsed
 
 **Inline Markdown in Titles:**
 
@@ -194,20 +199,18 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full technical plan
 
 ## 🎯 Roadmap
 
-| Phase       | Status      | Description                       |
-| ----------- | ----------- | --------------------------------- |
-| **Phase 1** | ✅ Complete | Core parser + basic webview board |
-| **Phase 2** | ✅ Complete | Drag-and-drop + real-time sync    |
-| **Phase 3** | ✅ Complete | Interactive sub-task checkboxes   |
-| **Phase 4** | ✅ Complete | Multiple views & sorting          |
-| **Phase 5** | ✅ Complete | Context menu CRUD operations      |
-| **Phase 6** | ✅ Complete | Inline markdown rendering         |
-| **Phase 7** | ✅ Complete | Metadata filtering                |
-| **Phase 8** | 🔜 Next     | Week navigation                   |
-| **Phase 9** | 📋 Planned  | Settings & production polish      |
-| **Phase 10** | 🔮 Future  | Obsidian plugin                   |
-
-**Target:** v1.0.0 release in ~8 weeks from start
+| Phase       | Status      | Description                                          |
+| ----------- | ----------- | ---------------------------------------------------- |
+| **Phase 1** | ✅ Complete | Core parser + basic webview board                    |
+| **Phase 2** | ✅ Complete | Drag-and-drop + real-time sync                       |
+| **Phase 3** | ✅ Complete | Interactive sub-task checkboxes                      |
+| **Phase 4** | ✅ Complete | Multiple views & sorting                             |
+| **Phase 5** | ✅ Complete | Context menu CRUD operations                         |
+| **Phase 6** | ✅ Complete | Inline markdown rendering                            |
+| **Phase 7** | ✅ Complete | Metadata filtering                                   |
+| **Phase 8** | ✅ Complete | Slates (H1/H2 layout), per-Slate nav, Blocked, `//` |
+| **Phase 9** | 🔜 Next     | Settings & production polish                         |
+| **Phase 10** | 🔮 Future  | Obsidian plugin                                      |
 
 See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for detailed phase breakdowns.
 

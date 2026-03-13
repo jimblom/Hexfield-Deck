@@ -80,23 +80,25 @@ Platform-specific packages (`vscode-extension`, `obsidian-plugin`) wrap core wit
 
 ## File Structure Convention (the published spec)
 
-Hexfield Deck follows a **convention-based section model** (see ADR-0008). The markdown structure IS the configuration. No complex frontmatter is required beyond `type: hexfield-planner`.
+Hexfield Deck follows the **H1=Slate / H2=Row model** (ADR-0009). The markdown structure IS the configuration.
 
 ### Heading Hierarchy
 
-| Level | Role | Parser behavior |
-|---|---|---|
-| H1 (`#`) | File/planner title | Ignored by parser |
-| H2 (`##`) | Section boundary | Classified by convention |
-| H3 (`###`) | Sub-section | Bucket label within a bucket-type section |
+| Level | Role |
+|---|---|
+| H1 (`#`) | **Slate** — a named group of rows; selectable in the header dropdown |
+| H2 (`##`) | **Row** — a swimlane lane with task cards |
+| H3+ | Ignored by the parser (no structural significance) |
 
-### Section Types (inferred from structure)
+Files with no H1 produce a single implicit Slate — old-format files parse correctly.
 
-| H2 pattern | Type | Renders as |
-|---|---|---|
-| `## {DayName}, ...` | `day` | Row in Swimlane view |
-| H2 with H3 sub-headings + tasks | `bucket` | Bucket list (Backlog view) |
-| Any other H2 with tasks | `board` | Kanban columns (Standard view) |
+### Display Aliases
+
+Add `// comment` to an H2 heading to set a short display name:
+
+```markdown
+## Monday // February 9, 2026   ← displays as "Monday" in the swimlane
+```
 
 ### Example File
 
@@ -107,27 +109,24 @@ week: 7
 year: 2026
 ---
 
-## Monday, February 9, 2026          ← day section (swimlane row)
+# Week 7, 2026                        ← Slate
+
+## Monday // February 9, 2026         ← Row (day row; display name "Monday")
 - [ ] Morning standup #sol
 - [/] Ship parser v1 #hexfield !!!
 
-## Tuesday, February 10, 2026        ← day section
-- [ ] Review ADR-0008 #hexfield
+## Tuesday // February 10, 2026       ← Row
+- [ ] Review ADR-0009 #hexfield
 
-## Backlog                            ← bucket section (H3 sub-headings)
-### Now
+# Backlog                             ← another Slate
+
+## Now                                ← Row within Backlog slate
 - [ ] Urgent item #hexfield !!
 
-### Next 2 Weeks
-- [ ] Coming soon
-
-### This Month
-- [ ] Monthly goal
-
-## This Quarter                       ← board section (flat task list)
+## This Quarter                       ← Row within Backlog slate
 - [ ] Q1 objective #hexfield !!!
 
-## Parking Lot                        ← board section
+## Parking Lot                        ← Row within Backlog slate
 - [ ] Someday/maybe
 ```
 
@@ -139,11 +138,12 @@ year: 2026
 | `- [/]` | In Progress | ✅ Visible |
 | `- [x]` | Done | ✅ Visible |
 | `- [-]` | Won't Do | ❌ Hidden (filter-in only) |
+| `- [!]` | Blocked | ❌ Hidden (filter-in only) |
 
 ### Task Metadata (inline)
 
 ```markdown
-- [ ] Task title #project-tag [2026-03-15] !!! est:2h
+- [ ] Task title #project-tag [2026-03-15] !!! est:2h // optional comment
 ```
 
 | Token | Meaning |
@@ -152,6 +152,7 @@ year: 2026
 | `[YYYY-MM-DD]` | Due date |
 | `!!!` / `!!` / `!` | Priority: High / Medium / Low |
 | `est:Xh` / `est:Xm` | Time estimate |
+| `// text` | Comment — stripped from title; content not parsed for metadata |
 
 ---
 
@@ -232,70 +233,28 @@ year: 2026
 
 ---
 
-### Phase 8: Generic Section Model *(next)*
-**Goal:** Refactor `BoardData` and parser to a convention-based, generic section model (ADR-0008). Foundation for all v1.0.0 features.
+### Phase 8: Slates — H1/H2 Layout, Per-Slate Navigation ✅
+**Goal:** Replace the day/board/bucket type system with H1=Slate / H2=Row. Add Blocked status and `//` comment syntax.
 
-**Core changes:**
-
-- [ ] Redefine `BoardData` — replace named fields (`days`, `backlog`, `thisQuarter`, etc.) with `sections: Section[]`
-- [ ] New `Section` type with `type: 'day' | 'board' | 'bucket'`, `heading`, `cards`, and optional `buckets`
-- [ ] Refactor parser to classify H2 sections by convention (day name pattern → `day`; H3 sub-sections present → `bucket`; else → `board`)
-- [ ] Add `[-]` as fourth status (`wont-do`) in the checkbox map and `TaskStatus` type
-- [ ] Update `allCards()` utility and all core exports
-- [ ] Update all parser unit tests to new shape
-- [ ] Confirm existing planner files parse identically under the new model
-
-**Deliverable:** `packages/core` produces a generic `BoardData` with `sections[]`. Parser tests pass. Existing weekly planner files parse correctly with no behavior change visible to the user.
-
-**Acceptance Criteria:**
-- [ ] `BoardData.days`, `backlog`, `thisQuarter`, `thisYear`, `parkingLot` removed; replaced by `sections[]`
-- [ ] Weekly planner example file parses to correct section types (`day`, `bucket`, `board`)
-- [ ] `- [-]` checkbox parses to `status: 'wont-do'`
-- [ ] All existing core tests pass (updated to new shape)
-- [ ] No regressions in the VS Code extension (views may temporarily consume an adapter layer)
+- [x] `BoardData` shape: `boards: Board[]` replaces `sections: Section[]`; `Board` groups `Row[]`
+- [x] Parser: H1 creates Board (Slate), H2 creates Row; H3+ ignored; `[!]` blocked marker; `// comment` stripping in headings and task lines
+- [x] `TaskStatus` gains `"wont-do"` and `"blocked"`; both hidden by default
+- [x] `displayLabel()` utility: strips ` // ...` from any heading for UI display
+- [x] `extractComment()` in metadata pipeline: runs before all other extractors; `Card.comment` stored
+- [x] `SlateSelector.tsx`: dropdown/label for H1 Slate navigation in header
+- [x] `App.tsx`: `activeSlateIndex` state; Standard and Swimlane views scoped to active Slate; Backlog view removed
+- [x] `SwimlaneView.tsx`: accepts single `Board` (active Slate) instead of full `BoardData`
+- [x] Context menu: **Move** (within Slate) + **Move to [Slate]** (cross-Slate) structure
+- [x] `FilterDropdown`: Blocked added to Status options
+- [x] `BoardWebviewPanel.ts`: `[!]` in checkbox maps; `_findSectionInsertionPoint` scopes H2 search within H1 block
+- [x] ADR-0009 written; ADR-0008 marked superseded
+- [x] `examples/weekly-planner.md` restructured to H1/H2 format with `//` comment demonstrations
+- [x] 51 tests passing
 
 ---
 
-### Phase 9: Flexible Views
-**Goal:** All three views consume the generic section model. Swimlane rows and board columns are no longer hardcoded.
-
-**Standard view:**
-- [ ] Columns = one per active status (currently 3; extensible to N)
-- [ ] All `board` and `day` section cards displayed together across columns
-
-**Swimlane view:**
-- [ ] Rows = all sections (any H2), not just day-name headings
-- [ ] Each row gets status columns
-- [ ] Row label = section heading (day name, "Backlog", "Sprint 1", whatever)
-- [ ] Collapsible rows retained
-
-**Backlog view:**
-- [ ] Driven by `bucket`-type sections and their H3 sub-buckets
-- [ ] Any `bucket` section (not just `## Backlog`) renders here
-- [ ] Falls back gracefully when no bucket sections exist
-
-**Won't Do:**
-- [ ] `wont-do` cards hidden from all views by default
-- [ ] Status filter gains "Won't Do" option to surface them (dimmed, strikethrough title)
-- [ ] Context menu "Change State" submenu includes Won't Do
-
-**Drag & drop:**
-- [ ] Cross-section drag in Swimlane updates the markdown section correctly for arbitrary sections (not just day names)
-
-**Deliverable:** All three views work correctly with the generic section model. Won't Do is fully wired.
-
-**Acceptance Criteria:**
-- [ ] Standard view shows all active cards across columns
-- [ ] Swimlane view renders a row for every H2 section in the file
-- [ ] Backlog view renders any `bucket`-type section, not just `## Backlog`
-- [ ] Won't Do cards are hidden by default; surfaced via Status filter
-- [ ] Drag-and-drop works correctly across arbitrary sections
-- [ ] Existing weekly planner files behave identically to pre-refactor (no regressions)
-
----
-
-### Phase 10: Polish & v1.0.0
-**Goal:** UI cleanup, test coverage, documentation, Marketplace submission.
+### Phase 9: Settings & Polish *(next)*
+**Goal:** UI cleanup, test coverage, settings documentation, Marketplace submission.
 
 **UI polish:**
 - [ ] Consistent spacing, typography, and icon usage across all views
@@ -340,12 +299,11 @@ Features intentionally descoped from v1.0.0:
 
 | Feature | Notes |
 |---|---|
-| **Week navigation** (◀/▶ buttons, auto-create week files) | PR #13 on hold. Less relevant with generic section model; revisit as workflow plugin. |
-| **Obsidian plugin** | Requires generic model (Phase 8) first; then adapt platform layer. |
-| **Multi-planner files** (H1 as planner boundary) | H2 is the unit for v1.0.0; H1 boundary is a natural extension. |
-| **PTO / day blackout** (issue #16) | Workflow feature; post-v1.0.0. |
-| **Plan title standard** (issue #15) | Nice-to-have; post-v1.0.0. |
-| **Browser preview** (issue #9) | Separate surface; post-v1.0.0. |
+| **Week navigation** (◀/▶ buttons, auto-create week files) | Less relevant with Slate model; revisit as workflow plugin. |
+| **Obsidian plugin** | Adapt platform layer after v1.0.0 stabilizes. |
+| **Card comment display** | `Card.comment` is parsed and stored; rendering (tooltip, inline note) is post-v1.0.0. |
+| **PTO / day blackout** | Workflow feature; post-v1.0.0. |
+| **Browser preview** | Separate surface; post-v1.0.0. |
 | **Filter UX improvements** (issue #11) | Refinement; post-v1.0.0. |
 
 ---

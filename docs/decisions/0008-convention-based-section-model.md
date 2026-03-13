@@ -1,6 +1,6 @@
 # ADR-0008: Convention-Based Section Model (H2 as Structural Unit)
 
-**Status:** Accepted
+**Status:** Superseded by ADR-0009
 **Date:** 2026-03-07
 **Deciders:** Jim Lindblom
 
