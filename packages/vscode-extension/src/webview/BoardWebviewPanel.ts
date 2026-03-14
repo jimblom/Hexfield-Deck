@@ -10,6 +10,7 @@ export class BoardWebviewPanel {
   private readonly _extensionUri: vscode.Uri;
   private _document: vscode.TextDocument;
   private _disposables: vscode.Disposable[] = [];
+  private _statusBarItem: vscode.StatusBarItem | undefined;
 
   private constructor(
     panel: vscode.WebviewPanel,
@@ -109,6 +110,21 @@ export class BoardWebviewPanel {
     );
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+    this._statusBarItem = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Right,
+      100,
+    );
+    this._statusBarItem.command = "hexfield-deck.openBoard";
+    this._updateStatusBar();
+    this._statusBarItem.show();
+  }
+
+  private _updateStatusBar(): void {
+    if (!this._statusBarItem) return;
+    const filename = this._document.uri.path.split("/").pop() ?? "Hexfield Deck";
+    this._statusBarItem.text = `$(symbol-misc) ${filename}`;
+    this._statusBarItem.tooltip = `Hexfield Deck — ${this._document.uri.fsPath}`;
   }
 
   public static createOrShow(
@@ -123,6 +139,7 @@ export class BoardWebviewPanel {
         document.uri.toString()
       ) {
         BoardWebviewPanel.currentPanel._document = document;
+        BoardWebviewPanel.currentPanel._updateStatusBar();
         BoardWebviewPanel.currentPanel._update();
       }
       return;
@@ -640,6 +657,9 @@ export class BoardWebviewPanel {
 
   public dispose(): void {
     BoardWebviewPanel.currentPanel = undefined;
+
+    this._statusBarItem?.dispose();
+    this._statusBarItem = undefined;
 
     this._panel.dispose();
 
