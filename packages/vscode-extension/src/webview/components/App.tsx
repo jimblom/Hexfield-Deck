@@ -299,8 +299,40 @@ export function App() {
   const activeSlate = filteredBoardData.boards[safeSlateIndex] ?? filteredBoardData.boards[0];
   const slateCards = activeSlate?.rows.flatMap((r) => r.cards) ?? [];
 
+  // Empty state detection — use unfiltered slate to distinguish "no tasks" from "filtered out"
+  const unfilteredSlate = boardData.boards[safeSlateIndex] ?? boardData.boards[0];
+  const allSlateCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
+  const genuinelyEmpty = allSlateCards.length === 0;
+  const noCardsAfterFilter = !genuinelyEmpty && slateCards.length === 0;
+
   const renderView = () => {
     if (!activeSlate) return null;
+    if (genuinelyEmpty) {
+      return (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <div className="empty-state-title">This slate has no tasks</div>
+          <div className="empty-state-body">
+            Add a task with the <strong>+</strong> button, or open the markdown file to write tasks directly.
+          </div>
+        </div>
+      );
+    }
+    if (noCardsAfterFilter) {
+      return (
+        <div className="empty-state">
+          <div className="empty-state-icon">🔍</div>
+          <div className="empty-state-title">No cards match the current filters</div>
+          <div className="empty-state-body">
+            Try adjusting your filters, or{" "}
+            <button className="empty-state-link" onClick={() => setActiveFilter(EMPTY_FILTER)}>
+              clear all filters
+            </button>{" "}
+            to see everything.
+          </div>
+        </div>
+      );
+    }
     switch (viewMode) {
       case "standard":
         return (

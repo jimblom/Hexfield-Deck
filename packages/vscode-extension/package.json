@@ -12,9 +12,22 @@
     "engines": {
         "vscode": "^1.85.0"
     },
+    "icon": "icon.png",
     "categories": [
+        "Productivity",
         "Other"
     ],
+    "keywords": [
+        "kanban",
+        "markdown",
+        "task board",
+        "planner",
+        "productivity"
+    ],
+    "galleryBanner": {
+        "color": "#1e1e1e",
+        "theme": "dark"
+    },
     "activationEvents": [],
     "main": "./dist/extension.js",
     "contributes": {
