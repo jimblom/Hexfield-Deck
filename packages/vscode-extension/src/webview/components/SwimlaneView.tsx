@@ -132,10 +132,13 @@ export function SwimlaneView({
   const statusColumns = [...BASE_STATUS_COLUMNS, ...extraStatuses];
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
-    // Collapse non-day rows by default
+    // Expand today's day row; collapse all others
+    const todayISO = new Date().toISOString().slice(0, 10);
     const initial: Record<string, boolean> = {};
     for (const row of rows) {
-      if (!row.dayName) initial[row.key] = true;
+      if (!row.dayName || (row.date && row.date !== todayISO)) {
+        initial[row.key] = true;
+      }
     }
     return initial;
   });

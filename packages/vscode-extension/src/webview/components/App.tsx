@@ -49,6 +49,10 @@ function getInitialSlateIndex(): number {
 export type ContextMenuHandler = (card: Card, pos: { x: number; y: number }) => void;
 export const ContextMenuContext = createContext<ContextMenuHandler>(() => {});
 
+// Context for jumping to a card's source line in the markdown file
+export type JumpToSourceHandler = (cardId: string) => void;
+export const JumpToSourceContext = createContext<JumpToSourceHandler>(() => {});
+
 // Context for per-project config (color, url)
 export const ProjectContext = createContext<Record<string, ProjectConfig>>({});
 
@@ -233,6 +237,10 @@ export function App() {
     setContextMenu({ card, x: pos.x, y: pos.y });
   }, []);
 
+  const handleJumpToSource: JumpToSourceHandler = useCallback((cardId: string) => {
+    vscode.postMessage({ type: "openInMarkdown", cardId });
+  }, []);
+
   const handleContextMenuAction = (action: ContextMenuAction) => {
     if (!contextMenu) return;
     const { card } = contextMenu;
@@ -326,6 +334,7 @@ export function App() {
 
   return (
     <ProjectContext.Provider value={projects}>
+    <JumpToSourceContext.Provider value={handleJumpToSource}>
     <ContextMenuContext.Provider value={openContextMenu}>
       <div className="app">
         <div className="header">
@@ -395,6 +404,7 @@ export function App() {
         )}
       </div>
     </ContextMenuContext.Provider>
+    </JumpToSourceContext.Provider>
     </ProjectContext.Provider>
   );
 }

@@ -177,6 +177,19 @@ body {
   border-color: var(--vscode-focusBorder);
 }
 
+.card-overdue {
+  border-top: 2px solid var(--hx-due-overdue, #F44747);
+}
+
+.card-comment {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  overflow-wrap: break-word;
+}
+
 .card-title {
   font-size: 14px;
   font-weight: 500;
