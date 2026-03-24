@@ -4,6 +4,36 @@ All notable changes to Hexfield Deck are documented here.
 
 ---
 
+## [0.8.0] — 2026-03-24
+
+### Added
+
+- **Click card → jump to source** — Clicking a card body opens the markdown file and places the cursor on that task's line. Right-click still opens the context menu without navigating.
+
+- **Today row auto-expand** — In Swimlane view, today's day row opens automatically on load. All other day rows start collapsed. Non-day rows (e.g. `## Now`, `## Backlog`) are unaffected.
+
+- **Overdue card border** — Cards with a past due date show a red top border in addition to the existing red date badge, making overdue work visible at a glance without reading badge text.
+
+- **Comment display** — Task comments (the ` // note` suffix) now appear as a small italic line beneath the card title on the board. Previously comments were parsed and stored but never shown.
+
+- **Search bar** — A text input in the toolbar filters cards by title substring in real time. Applies on top of any active metadata filters. Clears when switching Slates.
+
+- **Slate progress indicator** — The header shows `X / Y done` and a progress bar for the active Slate. Won't Do and Blocked cards are excluded from the count.
+
+- **Column card counts** — Standard view column headers now show a card count badge (e.g. `To Do (8)`).
+
+- **Status bar item** — While a board is open, the VS Code status bar shows the active filename (`tasks.md — Hexfield Deck`). Disappears when the panel closes.
+
+- **Empty states** — Two cases that previously showed a blank board now show helpful prompts:
+  - *No tasks in this Slate* — prompt to add a task with `+` or open the file
+  - *Filters hide all cards* — prompt with a "clear all filters" link
+
+### Fixed
+
+- **Swimlane grid with Blocked / Won't Do columns** — The swimlane CSS grid template was hardcoded to 3 status columns. When Blocked or Won't Do cards were present, the additional columns broke the layout. The grid is now computed from the actual column count.
+
+---
+
 ## [0.6.1] — 2026-03-07
 
 ### Fixed
