@@ -1,5 +1,11 @@
 import * as vscode from "vscode";
-import { parseBoard, allCards } from "@hexfield-deck/core";
+import {
+  parseBoard,
+  allCards,
+  getCardLineRange,
+  findSectionInsertionPoint,
+  rebuildTaskLine,
+} from "@hexfield-deck/core";
 // @ts-expect-error — esbuild bundles CSS as a text string via --loader:.css=text
 import stylesContent from "./styles.css";
 
@@ -272,109 +278,7 @@ export class BoardWebviewPanel {
     await vscode.workspace.applyEdit(edit);
   }
 
-  /**
-   * Get the full line range of a card (title line + indented children/body).
-   * Returns [startIndex, endIndex) in 0-based line indices.
-   */
-  private _getCardLineRange(lines: string[], cardLineIndex: number): [number, number] {
-    const start = cardLineIndex;
-    let end = start + 1;
-
-    const titleIndent = lines[start].match(/^(\s*)/)?.[1].length ?? 0;
-
-    while (end < lines.length) {
-      const line = lines[end];
-      if (line.trim() === "") {
-        if (end + 1 < lines.length) {
-          const nextIndent = lines[end + 1].match(/^(\s*)/)?.[1].length ?? 0;
-          if (nextIndent > titleIndent) {
-            end++;
-            continue;
-          }
-        }
-        break;
-      }
-      const lineIndent = line.match(/^(\s*)/)?.[1].length ?? 0;
-      if (lineIndent <= titleIndent) break;
-      end++;
-    }
-
-    return [start, end];
-  }
-
-  /**
-   * Find the insertion point at the end of a heading block.
-   * headingIndex: 0-based line index of the heading line.
-   * boundaryPattern: pattern that signals the end of this block.
-   * limit: upper bound on line index to search (default: end of file).
-   */
-  private _findEndOfBlock(
-    lines: string[],
-    headingIndex: number,
-    boundaryPattern: RegExp,
-    limit: number = lines.length,
-  ): number {
-    let insertAt = headingIndex + 1;
-
-    for (let j = headingIndex + 1; j < limit; j++) {
-      if (boundaryPattern.test(lines[j])) break;
-      insertAt = j + 1;
-    }
-
-    // Back up past trailing blank lines
-    while (insertAt > headingIndex + 1 && lines[insertAt - 1].trim() === "") {
-      insertAt--;
-    }
-
-    return insertAt;
-  }
-
-  /**
-   * Find the 0-based insertion point for a card in a target row.
-   *
-   * sectionHeading: the H2 row heading to target.
-   * boardHeading:   the H1 board heading to scope the search (optional but recommended
-   *                 when the same H2 heading might appear in multiple boards).
-   */
-  private _findSectionInsertionPoint(
-    lines: string[],
-    sectionHeading: string,
-    boardHeading?: string,
-  ): number | null {
-    const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-    let searchStart = 0;
-    let searchEnd = lines.length;
-
-    // If a board heading is provided, narrow the search to within that H1 block
-    if (boardHeading) {
-      const h1Pattern = new RegExp(`^#\\s+${escapeRe(boardHeading)}\\s*$`, "i");
-      for (let i = 0; i < lines.length; i++) {
-        if (!h1Pattern.test(lines[i])) continue;
-        searchStart = i + 1;
-        // Find end of this H1 block (before the next # heading)
-        for (let j = i + 1; j < lines.length; j++) {
-          if (/^#\s/.test(lines[j])) {
-            searchEnd = j;
-            break;
-          }
-        }
-        break;
-      }
-    }
-
-    const h2Pattern = new RegExp(`^##\\s+${escapeRe(sectionHeading)}\\s*$`, "i");
-
-    for (let i = searchStart; i < searchEnd; i++) {
-      if (!h2Pattern.test(lines[i])) continue;
-      // Found the H2 — insert at end of this row block (before next # or ## heading)
-      return this._findEndOfBlock(lines, i, /^#{1,2}\s/, searchEnd);
-    }
-
-    return null;
-  }
-
-  private async _handleMoveCardToSection(
+private async _handleMoveCardToSection(
     cardId: string,
     sectionHeading: string,
     boardHeading: string,
@@ -392,7 +296,7 @@ export class BoardWebviewPanel {
 
     const lines = text.split("\n");
     const cardLineIndex = card.lineNumber - 1;
-    const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
+    const [rangeStart, rangeEnd] = getCardLineRange(lines, cardLineIndex);
 
     // Extract card lines, optionally updating the checkbox status
     const cardLines = lines.slice(rangeStart, rangeEnd).map((line, i) => {
@@ -411,7 +315,7 @@ export class BoardWebviewPanel {
       return line;
     });
 
-    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, boardHeading);
+    const insertAt = findSectionInsertionPoint(lines, sectionHeading, boardHeading);
     if (insertAt === null) {
       vscode.window.showErrorMessage(`Section not found: ${sectionHeading}`);
       return;
@@ -460,34 +364,6 @@ export class BoardWebviewPanel {
     await vscode.workspace.applyEdit(edit);
   }
 
-  /**
-   * Reconstruct a task line from card fields + optional overrides.
-   * Normalizes metadata order: title #project [date] !!! est:Xh
-   */
-  private _rebuildTaskLine(
-    card: { rawLine: string; title: string; project?: string; dueDate?: string; priority?: string; timeEstimate?: string },
-    overrides: { title?: string; project?: string; dueDate?: string | null; priority?: string | null; timeEstimate?: string | null },
-  ): string {
-    const prefixMatch = card.rawLine.match(/^(\s*-\s*\[[x /!-]\]\s*)/);
-    const prefix = prefixMatch ? prefixMatch[1] : "- [ ] ";
-
-    const title = overrides.title !== undefined ? overrides.title : card.title;
-    const project = overrides.project !== undefined ? overrides.project : card.project;
-    const dueDate = overrides.dueDate !== undefined ? overrides.dueDate : card.dueDate;
-    const priority = overrides.priority !== undefined ? overrides.priority : card.priority;
-    const timeEstimate = overrides.timeEstimate !== undefined ? overrides.timeEstimate : card.timeEstimate;
-
-    const priorityMap: Record<string, string> = { high: "!!!", medium: "!!", low: "!" };
-
-    let line = prefix + title;
-    if (project) line += ` #${project}`;
-    if (dueDate) line += ` [${dueDate}]`;
-    if (priority && priorityMap[priority]) line += ` ${priorityMap[priority]}`;
-    if (timeEstimate) line += ` est:${timeEstimate}`;
-
-    return line;
-  }
-
   private async _handleOpenInMarkdown(cardId: string): Promise<void> {
     const text = this._document.getText();
     const board = parseBoard(text);
@@ -521,7 +397,7 @@ export class BoardWebviewPanel {
 
     const lines = text.split("\n");
     const lineIndex = card.lineNumber - 1;
-    const newLine = this._rebuildTaskLine(card, { title: newTitle });
+    const newLine = rebuildTaskLine(card, { title: newTitle });
 
     const edit = new vscode.WorkspaceEdit();
     edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
@@ -549,7 +425,7 @@ export class BoardWebviewPanel {
 
     const lines = text.split("\n");
     const lineIndex = card.lineNumber - 1;
-    const newLine = this._rebuildTaskLine(card, { dueDate: newDate || null });
+    const newLine = rebuildTaskLine(card, { dueDate: newDate || null });
 
     const edit = new vscode.WorkspaceEdit();
     edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
@@ -572,7 +448,7 @@ export class BoardWebviewPanel {
 
     const lines = text.split("\n");
     const lineIndex = card.lineNumber - 1;
-    const newLine = this._rebuildTaskLine(card, { timeEstimate: newEst || null });
+    const newLine = rebuildTaskLine(card, { timeEstimate: newEst || null });
 
     const edit = new vscode.WorkspaceEdit();
     edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
@@ -589,7 +465,7 @@ export class BoardWebviewPanel {
     const lines = text.split("\n");
     const lineIndex = card.lineNumber - 1;
     const newPriority = priority === "none" ? null : priority;
-    const newLine = this._rebuildTaskLine(card, { priority: newPriority });
+    const newLine = rebuildTaskLine(card, { priority: newPriority });
 
     const edit = new vscode.WorkspaceEdit();
     edit.replace(this._document.uri, new vscode.Range(lineIndex, 0, lineIndex, lines[lineIndex].length), newLine);
@@ -612,7 +488,7 @@ export class BoardWebviewPanel {
 
     const lines = text.split("\n");
     const cardLineIndex = card.lineNumber - 1;
-    const [rangeStart, rangeEnd] = this._getCardLineRange(lines, cardLineIndex);
+    const [rangeStart, rangeEnd] = getCardLineRange(lines, cardLineIndex);
 
     const edit = new vscode.WorkspaceEdit();
     const startPos = new vscode.Position(rangeStart, 0);
@@ -643,7 +519,7 @@ export class BoardWebviewPanel {
     const lines = text.split("\n");
     const newTaskLine = `- [ ] ${title}`;
 
-    const insertAt = this._findSectionInsertionPoint(lines, sectionHeading, boardHeading);
+    const insertAt = findSectionInsertionPoint(lines, sectionHeading, boardHeading);
     if (insertAt === null) {
       vscode.window.showErrorMessage(`Section not found: ${sectionHeading}`);
       return;
