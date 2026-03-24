@@ -19,7 +19,10 @@ export function Column({ id, title, cards, onToggleSubTask }: ColumnProps) {
 
   return (
     <div className="column" ref={setNodeRef}>
-      <h2 className="column-title">{title}</h2>
+      <div className="column-header">
+        <h2 className="column-title">{title}</h2>
+        <span className="column-count">{cards.length}</span>
+      </div>
       <div className="cards">
         <SortableContext
           items={cards.map((c) => c.id)}

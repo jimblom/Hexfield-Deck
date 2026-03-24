@@ -8,6 +8,7 @@ import { FilterDropdown } from "./FilterDropdown.js";
 import type { FilterState, DueDateBucket, EstimateBucket } from "./FilterDropdown.js";
 import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
 import { ProjectPanel } from "./ProjectPanel.js";
+import { SearchBar } from "./SearchBar.js";
 import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
 
 type ViewMode = "standard" | "swimlane";
@@ -150,6 +151,7 @@ export function App() {
   const [contextMenu, setContextMenu] = useState<{ card: Card; x: number; y: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterState>(EMPTY_FILTER);
   const [projects, setProjects] = useState<Record<string, ProjectConfig>>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     // Listen for messages from extension
@@ -213,6 +215,7 @@ export function App() {
 
   const handleSlateChange = (index: number) => {
     setActiveSlateIndex(index);
+    setSearchQuery("");
     vscode.setState({ ...vscode.getState(), slateIndex: index });
   };
 
@@ -305,10 +308,33 @@ export function App() {
   // Clamp slate index to valid range (e.g. after a file reload with fewer boards)
   const safeSlateIndex = Math.min(activeSlateIndex, filteredBoardData.boards.length - 1);
   const activeSlate = filteredBoardData.boards[safeSlateIndex] ?? filteredBoardData.boards[0];
-  const slateCards = activeSlate?.rows.flatMap((r) => r.cards) ?? [];
+
+  // Apply search query on top of the status/project/etc filters
+  const matchesSearch = (c: { title: string }) =>
+    !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase());
+
+  const searchFilteredSlate = activeSlate
+    ? {
+        ...activeSlate,
+        rows: activeSlate.rows.map((row) => ({
+          ...row,
+          cards: row.cards.filter(matchesSearch),
+        })),
+      }
+    : activeSlate;
+
+  const slateCards = searchFilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
+
+  // Progress: count done vs total (excluding wont-do and blocked)
+  const unfilteredSlate = boardData.boards[safeSlateIndex] ?? boardData.boards[0];
+  const progressCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
+  const progressTotal = progressCards.filter(
+    (c) => c.status !== "wont-do" && c.status !== "blocked"
+  ).length;
+  const progressDone = progressCards.filter((c) => c.status === "done").length;
 
   const renderView = () => {
-    if (!activeSlate) return null;
+    if (!searchFilteredSlate) return null;
     switch (viewMode) {
       case "standard":
         return (
@@ -321,7 +347,7 @@ export function App() {
       case "swimlane":
         return (
           <SwimlaneView
-            board={activeSlate}
+            board={searchFilteredSlate}
             onCardMove={handleCardMove}
             onCardMoveToSection={(cardId, sectionHeading, boardHeading, newStatus) =>
               handleCardMoveToSection(cardId, sectionHeading, boardHeading, newStatus)
@@ -353,8 +379,12 @@ export function App() {
                 activeIndex={safeSlateIndex}
                 onChange={handleSlateChange}
               />
+              {progressTotal > 0 && (
+                <span className="slate-progress">{progressDone} / {progressTotal} done</span>
+              )}
             </div>
             <div className="toolbar-right">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
               <ProjectPanel
                 projects={discoveredProjects}
                 config={projects}

@@ -216,7 +216,7 @@ export function SwimlaneView({
     <>
     <SortBar sortKey={sortKey} onSortChange={setSortKey} />
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="swimlane-view">
+      <div className="swimlane-view" style={{ gridTemplateColumns: `140px repeat(${statusColumns.length}, 1fr)` }}>
         {/* Column headers */}
         <div className="swimlane-header">
           <div className="swimlane-label-cell" />
