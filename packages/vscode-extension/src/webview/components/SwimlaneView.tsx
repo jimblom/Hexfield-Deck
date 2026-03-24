@@ -36,6 +36,7 @@ interface SwimlaneRow {
   sectionHeading: string;
   boardHeading: string;
   dayName?: string;
+  date?: string;
   cards: Card[];
 }
 
@@ -87,6 +88,7 @@ function buildRows(board: Board): SwimlaneRow[] {
     sectionHeading: row.heading,
     boardHeading: board.heading,
     dayName: row.dayName,
+    date: row.date,
     cards: row.cards,
   }));
 }
