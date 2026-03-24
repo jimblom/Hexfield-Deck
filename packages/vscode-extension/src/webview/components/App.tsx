@@ -334,7 +334,6 @@ export function App() {
   const progressDone = progressCards.filter((c) => c.status === "done").length;
 
   // Empty state detection — use unfiltered slate to distinguish "no tasks" from "filtered out"
-  const unfilteredSlate = boardData.boards[safeSlateIndex] ?? boardData.boards[0];
   const allSlateCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
   const genuinelyEmpty = allSlateCards.length === 0;
   const noCardsAfterFilter = !genuinelyEmpty && slateCards.length === 0;
