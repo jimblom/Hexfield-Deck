@@ -134,7 +134,7 @@ Add a `//` comment to any task line to annotate it without affecting the title d
 - [!] Restock supplies // waiting on shuttle from Gizmonic
 ```
 
-The comment text (after ` // `) is stripped from the displayed card title and stored separately. Tags, dates, and other metadata inside a comment are **not** parsed — `// #tag` inside a comment does not create a project tag.
+The comment text (after ` // `) is stripped from the displayed card title and shown as a small italic note beneath the title on the card. Tags, dates, and other metadata inside a comment are **not** parsed — `// #tag` inside a comment does not create a project tag.
 
 **URL safety:** The separator requires a leading space (` // `), so `https://example.com` is never accidentally treated as a comment.
 
@@ -151,8 +151,8 @@ Enhance tasks with inline metadata. Metadata can appear in any order after the t
 
 **Format:** `YYYY-MM-DD` (ISO 8601)
 
-**Display:** Color-coded badge:
-- Overdue: Red
+**Display:** Color-coded badge, and overdue cards additionally show a red top border on the card itself:
+- Overdue: Red badge + red card border
 - Today: Orange
 - Due within 7 days: Yellow
 - Future: Gray
@@ -214,7 +214,9 @@ Card and sub-task titles support inline markdown:
 
 ## Views
 
-The board header shows a **Slate selector** dropdown (when the file has multiple H1 sections) and two view buttons: **Standard** and **Swimlane**. The active Slate and view are persisted across panel reloads.
+The board header shows a **Slate selector** dropdown (when the file has multiple H1 sections), a **progress indicator**, and two view buttons: **Standard** and **Swimlane**. The active Slate and view are persisted across panel reloads.
+
+When a Slate has no tasks, or when active filters hide all cards, the board shows a contextual empty state with a prompt to add tasks or clear filters.
 
 ### Slate Selector
 
@@ -222,14 +224,14 @@ Navigate between H1 Slates using the dropdown in the header. Each Slate shows on
 
 ### Standard View
 
-All task cards from the active Slate across three columns:
+All task cards from the active Slate across three columns. Each column header shows a card count:
 
 ```
-┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│   To Do     │  │ In Progress │  │    Done     │
-│             │  │             │  │             │
-│  All rows   │  │  All rows   │  │  All rows   │
-└─────────────┘  └─────────────┘  └─────────────┘
+┌──────────────┐  ┌─────────────┐  ┌─────────────┐
+│  To Do  (8)  │  │ In Progress │  │  Done  (12) │
+│              │  │    (3)      │  │             │
+│  All rows    │  │  All rows   │  │  All rows   │
+└──────────────┘  └─────────────┘  └─────────────┘
 ```
 
 ### Swimlane View
@@ -237,16 +239,17 @@ All task cards from the active Slate across three columns:
 Each H2 row in the active Slate becomes a horizontal lane with its own To Do / In Progress / Done columns:
 
 ```
-▼ Monday (5 tasks)
+▼ Monday (5 tasks)       ← today: auto-expanded
   ┌─────────┐  ┌─────────────┐  ┌──────┐
   │  To Do  │  │ In Progress │  │ Done │
   └─────────┘  └─────────────┘  └──────┘
 
-▶ Tuesday (3 tasks)   ← collapsed
+▶ Tuesday (3 tasks)      ← collapsed
+▶ Wednesday (2 tasks)    ← collapsed
 ```
 
-- **Day rows** (headings that start with a day name) are expanded by default
-- **Non-day rows** are collapsed by default
+- **Today's day row** is automatically expanded on load; all other day rows start collapsed
+- **Non-day rows** (e.g. `## Now`, `## Backlog`) are always collapsed by default
 - Click the triangle to toggle any row
 
 ---
@@ -269,6 +272,14 @@ Drag within a row to change status, or drag to a different row to move the card 
 
 ---
 
+## Jump to Source
+
+Click any card to jump directly to its source line in the markdown file. The editor opens the file, places the cursor on the task, and centers the view.
+
+To click without jumping (e.g. when using the context menu), right-click instead.
+
+---
+
 ## Context Menu
 
 Right-click any card:
@@ -284,6 +295,27 @@ Right-click any card:
 | **Move** | Move to any row within the same Slate |
 | **Move to [Slate]** | Move to a row in a different Slate (one submenu per other Slate) |
 | **Delete Task...** | Remove the task from the markdown file |
+
+---
+
+## Search
+
+A search bar in the toolbar lets you filter cards by title text. Type any substring to narrow the board to matching cards across all rows. The search clears when you switch Slates.
+
+- Click **✕** (or clear the input) to restore all cards
+- Search runs after any active metadata filters — both are applied together
+
+---
+
+## Slate Progress
+
+The header shows completion progress for the active Slate next to the Slate selector:
+
+```
+[Week 7, 2026 ▼]    7 / 23 done  ████░░░░░░
+```
+
+The fraction and bar count cards with **Done** status against all active cards. Won't Do and Blocked cards are excluded from both numerator and denominator — they don't count as remaining work.
 
 ---
 
@@ -322,6 +354,18 @@ Click the **+** button in the toolbar to insert a new task:
 - If the active Slate contains today's day row, the task is added there
 - Otherwise, the first day row in the active Slate is used
 - If no day rows exist, the first row of the active Slate is used
+
+---
+
+## Status Bar
+
+While a Hexfield Deck board is open, the VS Code status bar shows the active file:
+
+```
+$(symbol-misc) tasks.md — Hexfield Deck
+```
+
+The item disappears when the board panel is closed.
 
 ---
 
@@ -448,6 +492,7 @@ First match wins for each field (e.g. first date found is used if two dates appe
 
 | Version | Highlights |
 |---------|-----------|
+| **v0.8.0** | Click card to jump to source; today row auto-expand in Swimlane; overdue card border; comment display on cards; search bar; Slate progress indicator; column card counts; status bar item; empty states |
 | **v0.7.0** | H1=Slate / H2=Row layout (ADR-0009); per-Slate navigation dropdown; Blocked status (`[!]`); `//` comment syntax for headings and tasks |
 | **v0.6.0** | Project color selector panel; Hexfield Text compatibility for badge colors |
 | **v0.5.0** | Metadata filtering — project, status, priority, due date, time estimate |

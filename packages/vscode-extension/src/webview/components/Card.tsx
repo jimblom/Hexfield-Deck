@@ -3,7 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { marked } from "marked";
 import type { Card, SubTask } from "@hexfield-deck/core";
-import { ContextMenuContext, ProjectContext } from "./App.js";
+import { ContextMenuContext, ProjectContext, JumpToSourceContext } from "./App.js";
 import type { ProjectConfig } from "./App.js";
 import { MarkdownTitle } from "./MarkdownTitle.js";
 
@@ -33,6 +33,15 @@ function getDueDateColor(dueDate: string): string {
   if (diffDays === 0) return "var(--hx-due-today, #CE9178)";
   if (diffDays >= 1 && diffDays <= 3) return "var(--hx-due-soon, #CCA700)";
   return "var(--hx-due-future, #858585)";
+}
+
+function isOverdue(dueDate?: string): boolean {
+  if (!dueDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
+  return due.getTime() < today.getTime();
 }
 
 function getPriorityColor(priority: string): string {
@@ -107,6 +116,7 @@ function SubTaskProgress({
 
 export function CardComponent({ card, onToggleSubTask }: CardProps) {
   const openContextMenu = useContext(ContextMenuContext);
+  const jumpToSource = useContext(JumpToSourceContext);
   const projectsConfig = useContext(ProjectContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -131,13 +141,17 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="card"
+      className={`card${isOverdue(card.dueDate) ? " card-overdue" : ""}`}
+      onClick={() => jumpToSource(card.id)}
       onContextMenu={(e) => {
         e.preventDefault();
         openContextMenu(card, { x: e.clientX, y: e.clientY });
       }}
     >
       <MarkdownTitle title={card.title} />
+      {card.comment && (
+        <div className="card-comment">{card.comment}</div>
+      )}
       {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
         <div className="card-badges">
           {card.project && (

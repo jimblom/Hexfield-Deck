@@ -8,6 +8,7 @@ import { FilterDropdown } from "./FilterDropdown.js";
 import type { FilterState, DueDateBucket, EstimateBucket } from "./FilterDropdown.js";
 import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
 import { ProjectPanel } from "./ProjectPanel.js";
+import { SearchBar } from "./SearchBar.js";
 import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
 
 type ViewMode = "standard" | "swimlane";
@@ -48,6 +49,10 @@ function getInitialSlateIndex(): number {
 // Context for opening the context menu from any card
 export type ContextMenuHandler = (card: Card, pos: { x: number; y: number }) => void;
 export const ContextMenuContext = createContext<ContextMenuHandler>(() => {});
+
+// Context for jumping to a card's source line in the markdown file
+export type JumpToSourceHandler = (cardId: string) => void;
+export const JumpToSourceContext = createContext<JumpToSourceHandler>(() => {});
 
 // Context for per-project config (color, url)
 export const ProjectContext = createContext<Record<string, ProjectConfig>>({});
@@ -146,6 +151,7 @@ export function App() {
   const [contextMenu, setContextMenu] = useState<{ card: Card; x: number; y: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterState>(EMPTY_FILTER);
   const [projects, setProjects] = useState<Record<string, ProjectConfig>>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     // Listen for messages from extension
@@ -209,6 +215,7 @@ export function App() {
 
   const handleSlateChange = (index: number) => {
     setActiveSlateIndex(index);
+    setSearchQuery("");
     vscode.setState({ ...vscode.getState(), slateIndex: index });
   };
 
@@ -231,6 +238,10 @@ export function App() {
 
   const openContextMenu: ContextMenuHandler = useCallback((card, pos) => {
     setContextMenu({ card, x: pos.x, y: pos.y });
+  }, []);
+
+  const handleJumpToSource: JumpToSourceHandler = useCallback((cardId: string) => {
+    vscode.postMessage({ type: "openInMarkdown", cardId });
   }, []);
 
   const handleContextMenuAction = (action: ContextMenuAction) => {
@@ -297,10 +308,64 @@ export function App() {
   // Clamp slate index to valid range (e.g. after a file reload with fewer boards)
   const safeSlateIndex = Math.min(activeSlateIndex, filteredBoardData.boards.length - 1);
   const activeSlate = filteredBoardData.boards[safeSlateIndex] ?? filteredBoardData.boards[0];
-  const slateCards = activeSlate?.rows.flatMap((r) => r.cards) ?? [];
+
+  // Apply search query on top of the status/project/etc filters
+  const matchesSearch = (c: { title: string }) =>
+    !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase());
+
+  const searchFilteredSlate = activeSlate
+    ? {
+        ...activeSlate,
+        rows: activeSlate.rows.map((row) => ({
+          ...row,
+          cards: row.cards.filter(matchesSearch),
+        })),
+      }
+    : activeSlate;
+
+  const slateCards = searchFilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
+
+  // Progress: count done vs total (excluding wont-do and blocked)
+  const unfilteredSlate = boardData.boards[safeSlateIndex] ?? boardData.boards[0];
+  const progressCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
+  const progressTotal = progressCards.filter(
+    (c) => c.status !== "wont-do" && c.status !== "blocked"
+  ).length;
+  const progressDone = progressCards.filter((c) => c.status === "done").length;
+
+  // Empty state detection — use unfiltered slate to distinguish "no tasks" from "filtered out"
+  const allSlateCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
+  const genuinelyEmpty = allSlateCards.length === 0;
+  const noCardsAfterFilter = !genuinelyEmpty && slateCards.length === 0;
 
   const renderView = () => {
-    if (!activeSlate) return null;
+    if (!searchFilteredSlate) return null;
+    if (genuinelyEmpty) {
+      return (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <div className="empty-state-title">This slate has no tasks</div>
+          <div className="empty-state-body">
+            Add a task with the <strong>+</strong> button, or open the markdown file to write tasks directly.
+          </div>
+        </div>
+      );
+    }
+    if (noCardsAfterFilter) {
+      return (
+        <div className="empty-state">
+          <div className="empty-state-icon">🔍</div>
+          <div className="empty-state-title">No cards match the current filters</div>
+          <div className="empty-state-body">
+            Try adjusting your filters, or{" "}
+            <button className="empty-state-link" onClick={() => setActiveFilter(EMPTY_FILTER)}>
+              clear all filters
+            </button>{" "}
+            to see everything.
+          </div>
+        </div>
+      );
+    }
     switch (viewMode) {
       case "standard":
         return (
@@ -313,7 +378,7 @@ export function App() {
       case "swimlane":
         return (
           <SwimlaneView
-            board={activeSlate}
+            board={searchFilteredSlate}
             onCardMove={handleCardMove}
             onCardMoveToSection={(cardId, sectionHeading, boardHeading, newStatus) =>
               handleCardMoveToSection(cardId, sectionHeading, boardHeading, newStatus)
@@ -326,6 +391,7 @@ export function App() {
 
   return (
     <ProjectContext.Provider value={projects}>
+    <JumpToSourceContext.Provider value={handleJumpToSource}>
     <ContextMenuContext.Provider value={openContextMenu}>
       <div className="app">
         <div className="header">
@@ -344,8 +410,12 @@ export function App() {
                 activeIndex={safeSlateIndex}
                 onChange={handleSlateChange}
               />
+              {progressTotal > 0 && (
+                <span className="slate-progress">{progressDone} / {progressTotal} done</span>
+              )}
             </div>
             <div className="toolbar-right">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
               <ProjectPanel
                 projects={discoveredProjects}
                 config={projects}
@@ -395,6 +465,7 @@ export function App() {
         )}
       </div>
     </ContextMenuContext.Provider>
+    </JumpToSourceContext.Provider>
     </ProjectContext.Provider>
   );
 }

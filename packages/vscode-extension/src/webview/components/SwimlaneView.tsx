@@ -36,6 +36,7 @@ interface SwimlaneRow {
   sectionHeading: string;
   boardHeading: string;
   dayName?: string;
+  date?: string;
   cards: Card[];
 }
 
@@ -87,6 +88,7 @@ function buildRows(board: Board): SwimlaneRow[] {
     sectionHeading: row.heading,
     boardHeading: board.heading,
     dayName: row.dayName,
+    date: row.date,
     cards: row.cards,
   }));
 }
@@ -132,10 +134,13 @@ export function SwimlaneView({
   const statusColumns = [...BASE_STATUS_COLUMNS, ...extraStatuses];
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
-    // Collapse non-day rows by default
+    // Expand today's day row; collapse all others
+    const todayISO = new Date().toISOString().slice(0, 10);
     const initial: Record<string, boolean> = {};
     for (const row of rows) {
-      if (!row.dayName) initial[row.key] = true;
+      if (!row.dayName || (row.date && row.date !== todayISO)) {
+        initial[row.key] = true;
+      }
     }
     return initial;
   });
@@ -213,7 +218,7 @@ export function SwimlaneView({
     <>
     <SortBar sortKey={sortKey} onSortChange={setSortKey} />
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="swimlane-view">
+      <div className="swimlane-view" style={{ gridTemplateColumns: `140px repeat(${statusColumns.length}, 1fr)` }}>
         {/* Column headers */}
         <div className="swimlane-header">
           <div className="swimlane-label-cell" />
