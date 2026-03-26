@@ -32,6 +32,34 @@ importers:
 
   packages/vscode-extension:
     dependencies:
+      '@hexfield-deck/core':
+        specifier: workspace:*
+        version: link:../core
+      '@hexfield-deck/webview-ui':
+        specifier: workspace:*
+        version: link:../webview-ui
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@types/vscode':
+        specifier: 1.85.0
+        version: 1.85.0
+      '@vscode/vsce':
+        specifier: 3.7.1
+        version: 3.7.1
+      esbuild:
+        specifier: 0.24.2
+        version: 0.24.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/webview-ui:
+    dependencies:
       '@dnd-kit/core':
         specifier: 6.3.1
         version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -60,15 +88,6 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.14)
-      '@types/vscode':
-        specifier: 1.85.0
-        version: 1.85.0
-      '@vscode/vsce':
-        specifier: 3.7.1
-        version: 3.7.1
-      esbuild:
-        specifier: 0.24.2
-        version: 0.24.2
       typescript:
         specifier: 5.7.3
         version: 5.7.3

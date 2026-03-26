@@ -10,41 +10,13 @@ import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
 import { ProjectPanel } from "./ProjectPanel.js";
 import { SearchBar } from "./SearchBar.js";
 import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
+import type { HostBridge, ProjectConfig } from "../HostBridge.js";
+
+// Re-export ProjectConfig so existing imports from "./App.js" keep working
+export type { ProjectConfig } from "../HostBridge.js";
 
 type ViewMode = "standard" | "swimlane";
-
-export interface ProjectConfig {
-  color?: string;
-  url?: string;
-  style?: "border" | "fill" | "both";
-}
-
 type ColorConfig = Record<string, string>;
-
-// VS Code API type
-declare const acquireVsCodeApi: () => {
-  postMessage(message: unknown): void;
-  getState(): Record<string, unknown> | null;
-  setState(state: Record<string, unknown>): void;
-};
-
-const vscode = acquireVsCodeApi();
-
-function getInitialViewMode(): ViewMode {
-  const saved = vscode.getState();
-  if (saved && (saved.viewMode === "standard" || saved.viewMode === "swimlane")) {
-    return saved.viewMode;
-  }
-  return "standard";
-}
-
-function getInitialSlateIndex(): number {
-  const saved = vscode.getState();
-  if (saved && typeof saved.slateIndex === "number") {
-    return saved.slateIndex;
-  }
-  return 0;
-}
 
 // Context for opening the context menu from any card
 export type ContextMenuHandler = (card: Card, pos: { x: number; y: number }) => void;
@@ -111,7 +83,6 @@ function filterCards(cards: Card[], f: FilterState): Card[] {
   const wontDoVisible = f.statuses.includes("wont-do" as TaskStatus);
   const blockedVisible = f.statuses.includes("blocked" as TaskStatus);
   return cards.filter((card) => {
-    // wont-do and blocked are hidden by default; only visible when explicitly filtered in
     if (card.status === "wont-do" && !wontDoVisible) return false;
     if (card.status === "blocked" && !blockedVisible) return false;
     if (!isFilterActive(f)) return true;
@@ -142,33 +113,35 @@ function filterBoardData(boardData: BoardData, f: FilterState): BoardData {
 
 // ---------------------------------------------------------------------------
 
-export function App() {
+export function App({ bridge }: { bridge: HostBridge }) {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
   const [isDirty, setIsDirty] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
-  const [activeSlateIndex, setActiveSlateIndex] = useState<number>(getInitialSlateIndex);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = bridge.getState();
+    if (saved && (saved.viewMode === "standard" || saved.viewMode === "swimlane")) {
+      return saved.viewMode as ViewMode;
+    }
+    return "standard";
+  });
+  const [activeSlateIndex, setActiveSlateIndex] = useState<number>(() => {
+    const saved = bridge.getState();
+    if (saved && typeof saved.slateIndex === "number") return saved.slateIndex;
+    return 0;
+  });
   const [contextMenu, setContextMenu] = useState<{ card: Card; x: number; y: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterState>(EMPTY_FILTER);
   const [projects, setProjects] = useState<Record<string, ProjectConfig>>({});
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    // Listen for messages from extension
-    const messageHandler = (event: MessageEvent) => {
-      const message = event.data;
-      switch (message.type) {
-        case "update":
-          setBoardData(message.boardData);
-          setCards(message.cards);
-          setIsDirty(message.isDirty ?? false);
-          if (message.colors) applyColorVars(message.colors);
-          if (message.projects) setProjects(message.projects);
-          break;
-      }
-    };
-
-    window.addEventListener("message", messageHandler);
+    const unsubscribe = bridge.onUpdate((payload) => {
+      setBoardData(payload.boardData);
+      setCards(payload.cards);
+      setIsDirty(payload.isDirty ?? false);
+      if (payload.colors) applyColorVars(payload.colors);
+      if (payload.projects) setProjects(payload.projects);
+    });
 
     // Intercept link clicks from rendered markdown — event delegation avoids
     // per-card handlers and works with dangerouslySetInnerHTML content.
@@ -178,21 +151,19 @@ export function App() {
       const href = target.getAttribute("href");
       if (!href) return;
       event.preventDefault();
-      vscode.postMessage({ type: "openLink", url: href });
+      bridge.send({ type: "openLink", url: href });
     };
     document.addEventListener("click", linkClickHandler);
 
-    // Signal to extension that webview is ready
-    vscode.postMessage({ type: "ready" });
+    // Signal to host that the UI is ready to receive data
+    bridge.send({ type: "ready" });
 
     return () => {
-      window.removeEventListener("message", messageHandler);
+      unsubscribe();
       document.removeEventListener("click", linkClickHandler);
     };
-  }, []);
+  }, [bridge]);
 
-  // Filtered data — recomputed whenever boardData or the active filter changes.
-  // `cards` (unfiltered) is still passed to FilterDropdown so it can enumerate all projects.
   const filteredBoardData = useMemo(
     () => (boardData ? filterBoardData(boardData, activeFilter) : null),
     [boardData, activeFilter]
@@ -205,22 +176,22 @@ export function App() {
 
   const handleProjectConfigChange = useCallback((newConfig: Record<string, ProjectConfig>) => {
     setProjects(newConfig);
-    vscode.postMessage({ type: "updateProjectConfig", projects: newConfig });
-  }, []);
+    bridge.send({ type: "updateProjectConfig", projects: newConfig });
+  }, [bridge]);
 
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
-    vscode.setState({ ...vscode.getState(), viewMode: mode });
+    bridge.setState({ ...bridge.getState(), viewMode: mode });
   };
 
   const handleSlateChange = (index: number) => {
     setActiveSlateIndex(index);
     setSearchQuery("");
-    vscode.setState({ ...vscode.getState(), slateIndex: index });
+    bridge.setState({ ...bridge.getState(), slateIndex: index });
   };
 
   const handleCardMove = (cardId: string, newStatus: string) => {
-    vscode.postMessage({ type: "moveCard", cardId, newStatus });
+    bridge.send({ type: "moveCard", cardId, newStatus });
   };
 
   const handleCardMoveToSection = (
@@ -229,11 +200,11 @@ export function App() {
     boardHeading: string,
     newStatus?: string,
   ) => {
-    vscode.postMessage({ type: "moveCardToSection", cardId, sectionHeading, boardHeading, newStatus });
+    bridge.send({ type: "moveCardToSection", cardId, sectionHeading, boardHeading, newStatus });
   };
 
   const handleToggleSubTask = (lineNumber: number) => {
-    vscode.postMessage({ type: "toggleSubTask", lineNumber });
+    bridge.send({ type: "toggleSubTask", lineNumber });
   };
 
   const openContextMenu: ContextMenuHandler = useCallback((card, pos) => {
@@ -241,8 +212,8 @@ export function App() {
   }, []);
 
   const handleJumpToSource: JumpToSourceHandler = useCallback((cardId: string) => {
-    vscode.postMessage({ type: "openInMarkdown", cardId });
-  }, []);
+    bridge.send({ type: "openInMarkdown", cardId });
+  }, [bridge]);
 
   const handleContextMenuAction = (action: ContextMenuAction) => {
     if (!contextMenu) return;
@@ -250,19 +221,19 @@ export function App() {
 
     switch (action.type) {
       case "openInMarkdown":
-        vscode.postMessage({ type: "openInMarkdown", cardId: card.id });
+        bridge.send({ type: "openInMarkdown", cardId: card.id });
         break;
       case "editTitle":
-        vscode.postMessage({ type: "editTitle", cardId: card.id });
+        bridge.send({ type: "editTitle", cardId: card.id });
         break;
       case "editDueDate":
-        vscode.postMessage({ type: "editDueDate", cardId: card.id });
+        bridge.send({ type: "editDueDate", cardId: card.id });
         break;
       case "editTimeEstimate":
-        vscode.postMessage({ type: "editTimeEstimate", cardId: card.id });
+        bridge.send({ type: "editTimeEstimate", cardId: card.id });
         break;
       case "setPriority":
-        vscode.postMessage({ type: "setPriority", cardId: card.id, priority: action.priority });
+        bridge.send({ type: "setPriority", cardId: card.id, priority: action.priority });
         break;
       case "changeState":
         handleCardMove(card.id, action.newStatus);
@@ -271,25 +242,21 @@ export function App() {
         handleCardMoveToSection(card.id, action.sectionHeading, action.boardHeading);
         break;
       case "deleteTask":
-        vscode.postMessage({ type: "deleteTask", cardId: card.id });
+        bridge.send({ type: "deleteTask", cardId: card.id });
         break;
     }
   };
 
   const handleQuickAdd = () => {
     if (!boardData) return;
-
     const activeBoard = boardData.boards[activeSlateIndex] ?? boardData.boards[0];
     if (!activeBoard) return;
-
-    // Prefer today's day row within the active slate; fall back to first day row, then first row
     const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
     const dayRows = activeBoard.rows.filter((r) => r.dayName);
     const todayRow = dayRows.find((r) => r.dayName?.toLowerCase() === todayName.toLowerCase());
     const targetRow = todayRow ?? dayRows[0] ?? activeBoard.rows[0];
-
     if (targetRow) {
-      vscode.postMessage({
+      bridge.send({
         type: "addTask",
         sectionHeading: targetRow.heading,
         boardHeading: activeBoard.heading,
@@ -305,11 +272,9 @@ export function App() {
     );
   }
 
-  // Clamp slate index to valid range (e.g. after a file reload with fewer boards)
   const safeSlateIndex = Math.min(activeSlateIndex, filteredBoardData.boards.length - 1);
   const activeSlate = filteredBoardData.boards[safeSlateIndex] ?? filteredBoardData.boards[0];
 
-  // Apply search query on top of the status/project/etc filters
   const matchesSearch = (c: { title: string }) =>
     !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -325,7 +290,6 @@ export function App() {
 
   const slateCards = searchFilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
 
-  // Progress: count done vs total (excluding wont-do and blocked)
   const unfilteredSlate = boardData.boards[safeSlateIndex] ?? boardData.boards[0];
   const progressCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
   const progressTotal = progressCards.filter(
@@ -333,7 +297,6 @@ export function App() {
   ).length;
   const progressDone = progressCards.filter((c) => c.status === "done").length;
 
-  // Empty state detection — use unfiltered slate to distinguish "no tasks" from "filtered out"
   const allSlateCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
   const genuinelyEmpty = allSlateCards.length === 0;
   const noCardsAfterFilter = !genuinelyEmpty && slateCards.length === 0;

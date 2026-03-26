@@ -7,7 +7,7 @@ import {
   rebuildTaskLine,
 } from "@hexfield-deck/core";
 // @ts-expect-error — esbuild bundles CSS as a text string via --loader:.css=text
-import stylesContent from "./styles.css";
+import stylesContent from "@hexfield-deck/webview-ui/styles.css";
 
 export class BoardWebviewPanel {
   public static currentPanel: BoardWebviewPanel | undefined;
