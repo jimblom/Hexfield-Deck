@@ -1,0 +1,15 @@
+/* Obsidian-specific layout overrides for Hexfield Deck.
+   Component styles are injected at runtime from @hexfield-deck/webview-ui. */
+
+.hexfield-deck-root {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hexfield-deck-root .app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
