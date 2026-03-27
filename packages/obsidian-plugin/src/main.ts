@@ -3,7 +3,7 @@ import { HexfieldDeckView, VIEW_TYPE } from "./HexfieldDeckView.js";
 
 export default class HexfieldDeckPlugin extends Plugin {
   async onload(): Promise<void> {
-    this.registerView(VIEW_TYPE, (leaf) => new HexfieldDeckView(leaf));
+    this.registerView(VIEW_TYPE, (leaf) => new HexfieldDeckView(leaf, this));
 
     this.addCommand({
       id: "open-board",

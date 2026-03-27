@@ -4,6 +4,7 @@ import { createRoot, Root } from "react-dom/client";
 import { App } from "@hexfield-deck/webview-ui";
 import { parseBoard, allCards } from "@hexfield-deck/core";
 import { ObsidianBridge } from "./ObsidianBridge.js";
+import type HexfieldDeckPlugin from "./main.js";
 // @ts-expect-error — esbuild bundles CSS as a text string via --loader:.css=text
 import stylesContent from "@hexfield-deck/webview-ui/styles.css";
 
@@ -14,9 +15,14 @@ export class HexfieldDeckView extends ItemView {
   private _root: Root | null = null;
   private _file: TFile | null = null;
 
-  constructor(leaf: WorkspaceLeaf) {
+  constructor(leaf: WorkspaceLeaf, private readonly plugin: HexfieldDeckPlugin) {
     super(leaf);
-    this._bridge = new ObsidianBridge();
+    this._bridge = new ObsidianBridge({
+      obsApp: this.app,
+      plugin,
+      getFile: () => this._file,
+      reload: () => this._load(),
+    });
   }
 
   get file(): TFile | null {
@@ -56,7 +62,7 @@ export class HexfieldDeckView extends ItemView {
     this.registerEvent(
       this.app.vault.on("modify", async (file) => {
         if (file === this._file) await this._load();
-      })
+      }),
     );
   }
 
@@ -84,12 +90,13 @@ export class HexfieldDeckView extends ItemView {
     if (this._root) await this._load();
   }
 
-  private async _load(): Promise<void> {
+  async _load(): Promise<void> {
     if (!this._file) return;
     const content = await this.app.vault.read(this._file);
-    const lines = content.split("\n");
-    const boardData = parseBoard(lines);
+    const boardData = parseBoard(content);
     const cards = allCards(boardData);
-    this._bridge.pushUpdate({ boardData, cards });
+    const storedData = (await this.plugin.loadData()) ?? {};
+    const projects = (storedData.projects as Record<string, unknown>) ?? {};
+    this._bridge.pushUpdate({ boardData, cards, projects });
   }
 }
