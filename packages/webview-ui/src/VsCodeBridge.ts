@@ -6,13 +6,15 @@ declare const acquireVsCodeApi: () => {
   setState(state: HostState): void;
 };
 
-// Acquired once at module level — VS Code requires this.
-const vsCodeApi = acquireVsCodeApi();
-
 /** HostBridge implementation for VS Code webviews. */
 export class VsCodeBridge implements HostBridge {
+  // Acquired in the constructor so this module has no top-level side effects.
+  // Obsidian bundles webview-ui too; a module-level acquireVsCodeApi() call
+  // would blow up immediately since that global doesn't exist there.
+  private readonly _api = acquireVsCodeApi();
+
   send(message: OutboundMessage): void {
-    vsCodeApi.postMessage(message);
+    this._api.postMessage(message);
   }
 
   onUpdate(handler: (payload: UpdatePayload) => void): () => void {
@@ -26,10 +28,10 @@ export class VsCodeBridge implements HostBridge {
   }
 
   getState(): HostState | null {
-    return vsCodeApi.getState();
+    return this._api.getState();
   }
 
   setState(state: HostState): void {
-    vsCodeApi.setState(state);
+    this._api.setState(state);
   }
 }
