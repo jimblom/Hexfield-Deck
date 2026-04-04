@@ -45,6 +45,12 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
     devDependencies:
+      '@codemirror/state':
+        specifier: 6.6.0
+        version: 6.6.0
+      '@codemirror/view':
+        specifier: 6.41.0
+        version: 6.41.0
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
@@ -56,7 +62,7 @@ importers:
         version: 0.24.2
       obsidian:
         specifier: 1.7.2
-        version: 1.7.2(@codemirror/state@6.6.0)(@codemirror/view@6.40.0)
+        version: 1.7.2(@codemirror/state@6.6.0)(@codemirror/view@6.41.0)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -186,8 +192,8 @@ packages:
   '@codemirror/state@6.6.0':
     resolution: {integrity: sha512-4nbvra5R5EtiCzr9BTHiTLc+MLXK2QGiAVYMyi8PkQd3SR+6ixar/Q/01Fa21TBIDOZXgeWV4WppsQolSreAPQ==}
 
-  '@codemirror/view@6.40.0':
-    resolution: {integrity: sha512-WA0zdU7xfF10+5I3HhUUq3kqOx3KjqmtQ9lqZjfK7jtYk4G72YW9rezcSywpaUMCWOMlq+6E0pO1IWg1TNIhtg==}
+  '@codemirror/view@6.41.0':
+    resolution: {integrity: sha512-6H/qadXsVuDY219Yljhohglve8xf4B8xJkVOEWfA5uiYKiTFppjqsvsfR5iPA0RbvRBoOyTZpbLIxe9+0UR8xA==}
 
   '@dnd-kit/accessibility@3.1.1':
     resolution: {integrity: sha512-2P+YgaXF+gRsIihwwY1gCsQSYnu9Zyj2py8kY5fFvUM1qm2WA2u639R6YNVfU4GWr+ZM5mqEsfHZZLoRONbemw==}
@@ -2426,7 +2432,7 @@ snapshots:
     dependencies:
       '@marijn/find-cluster-break': 1.0.2
 
-  '@codemirror/view@6.40.0':
+  '@codemirror/view@6.41.0':
     dependencies:
       '@codemirror/state': 6.6.0
       crelt: 1.0.6
@@ -3953,10 +3959,10 @@ snapshots:
 
   object-inspect@1.13.4: {}
 
-  obsidian@1.7.2(@codemirror/state@6.6.0)(@codemirror/view@6.40.0):
+  obsidian@1.7.2(@codemirror/state@6.6.0)(@codemirror/view@6.41.0):
     dependencies:
       '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.40.0
+      '@codemirror/view': 6.41.0
       '@types/codemirror': 5.60.8
       moment: 2.29.4
 
