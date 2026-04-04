@@ -23,8 +23,10 @@ const OBSIDIAN_OVERRIDES = `
   --vscode-font-size: var(--font-ui-medium, 13px);
   --vscode-foreground: var(--text-normal);
   --vscode-editor-background: var(--background-primary);
+  --vscode-sideBar-background: var(--background-secondary);
   --vscode-panel-border: var(--background-modifier-border);
   --vscode-descriptionForeground: var(--text-muted);
+  --vscode-badge-background: var(--background-secondary-alt, var(--background-secondary));
   --vscode-button-background: var(--interactive-accent);
   --vscode-button-foreground: var(--text-on-accent, #fff);
   --vscode-button-hoverBackground: var(--interactive-accent-hover, var(--interactive-accent));
@@ -54,6 +56,21 @@ const OBSIDIAN_OVERRIDES = `
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  /* Theme isolation — prevent community themes (Shimmering Focus, etc.)
+     from leaking line-height, text-align, or letter-spacing into the board */
+  text-align: left;
+  line-height: 1.4;
+  letter-spacing: normal;
+}
+
+/* Belt-and-suspenders: reset on descendants too so theme rules that
+   target intermediate selectors can't override the inherited values.
+   Exclude SVGs (icons) which have their own coordinate system. */
+.hexfield-deck-root *:not(svg):not(svg *) {
+  text-align: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
 }
 
 /* Fix .app height for pane context (webview-ui uses 100vh) */
@@ -69,6 +86,13 @@ const OBSIDIAN_OVERRIDES = `
 .hexfield-deck-root .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+/* Tinted badge backgrounds — each badge's inline color becomes the tint
+   source via currentColor, so priority/project/date badges all auto-tint */
+.hexfield-deck-root .badge {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 }
 
 /* Drag ghost: dnd-kit applies transform; add opacity fade */
