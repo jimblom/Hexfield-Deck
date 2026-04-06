@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { MarkdownTitle } from "./MarkdownTitle.js";
 import {
   DndContext,
@@ -17,6 +17,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { SortBar, sortCards } from "./SortBar.js";
 import type { SortKey } from "./SortBar.js";
 import type { BoardData, Card } from "@hexfield-deck/core";
+import { ProjectContext } from "./App.js";
 
 interface BacklogViewProps {
   boardData: BoardData;
@@ -112,8 +113,11 @@ function DraggableBacklogCard({
   card: Card;
   onStatusClick: (card: Card) => void;
 }) {
+  const projectsConfig = useContext(ProjectContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
+
+  const projectCfg = card.project ? projectsConfig[card.project] : undefined;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -141,7 +145,7 @@ function DraggableBacklogCard({
         <MarkdownTitle title={card.title} />
         <div className="card-badges">
           {card.project && (
-            <span className="badge" style={{ color: "var(--vscode-charts-blue)" }}>
+            <span className="badge" style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}>
               {card.project}
             </span>
           )}

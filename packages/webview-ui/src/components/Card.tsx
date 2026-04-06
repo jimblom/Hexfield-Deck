@@ -159,13 +159,13 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
               <a
                 className="badge"
                 href={projectCfg.url}
-                style={{ color: "var(--hx-project-tag, #569CD6)" }}
+                style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 {card.project}
               </a>
             ) : (
-              <Badge label={card.project} color="var(--hx-project-tag, #569CD6)" />
+              <Badge label={card.project} color={projectCfg?.color ?? "var(--hx-project-tag, #569CD6)"} />
             )
           )}
           {card.dueDate && (
