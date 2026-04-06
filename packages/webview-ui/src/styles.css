@@ -178,6 +178,8 @@ body {
   gap: 8px;
   flex: 1;
   overflow-y: auto;
+  justify-content: flex-start;
+  align-content: flex-start;
 }
 
 .card {
@@ -187,6 +189,7 @@ body {
   padding: 12px;
   cursor: grab;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .card:active {
