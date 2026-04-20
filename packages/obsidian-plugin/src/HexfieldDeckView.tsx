@@ -37,6 +37,8 @@ const OBSIDIAN_OVERRIDES = `
   --vscode-list-hoverBackground: var(--background-modifier-hover);
   --vscode-list-activeSelectionBackground: var(--background-modifier-active-hover);
   --vscode-editorWarning-foreground: var(--color-yellow, #e5c07b);
+  --vscode-editorWidget-background: var(--background-secondary);
+  --vscode-widget-border: var(--background-modifier-border);
   --vscode-scrollbarSlider-background: var(--scrollbar-thumb-bg, rgba(128,128,128,0.35));
   --vscode-scrollbarSlider-hoverBackground: rgba(128,128,128,0.6);
 

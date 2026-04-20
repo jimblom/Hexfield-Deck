@@ -304,7 +304,7 @@ export class ObsidianBridge implements HostBridge {
   }
 
   private async _addTask(sectionHeading?: string, boardHeading?: string): Promise<void> {
-    if (!sectionHeading) return;
+    if (sectionHeading == null) return;
     const title = await promptText(this.deps.obsApp, {
       title: "New task",
       label: "Task title",

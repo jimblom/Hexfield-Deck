@@ -140,6 +140,38 @@ describe("findSectionInsertionPoint", () => {
 });
 
 // ---------------------------------------------------------------------------
+// findSectionInsertionPoint — implicit row (sectionHeading === "")
+// ---------------------------------------------------------------------------
+
+describe("findSectionInsertionPoint with implicit row", () => {
+  it("finds insertion point between H1 and first H2", () => {
+    const lines = ["# Board", "- [ ] Existing", "", "## Row A", "- [ ] In Row"];
+    expect(findSectionInsertionPoint(lines, "", "Board")).toBe(2);
+  });
+
+  it("finds insertion point at end of board when no H2 exists", () => {
+    const lines = ["# Board", "- [ ] Task A", "- [ ] Task B"];
+    expect(findSectionInsertionPoint(lines, "", "Board")).toBe(3);
+  });
+
+  it("scopes to correct board across multiple boards", () => {
+    const lines = ["# A", "- [ ] In A", "# B", "- [ ] In B"];
+    expect(findSectionInsertionPoint(lines, "", "A")).toBe(2);
+    expect(findSectionInsertionPoint(lines, "", "B")).toBe(4);
+  });
+
+  it("returns null when board heading not found", () => {
+    const lines = ["# Board", "- [ ] Task"];
+    expect(findSectionInsertionPoint(lines, "", "Missing")).toBeNull();
+  });
+
+  it("skips trailing blank lines", () => {
+    const lines = ["# Board", "- [ ] Task", "", "", "## Row A"];
+    expect(findSectionInsertionPoint(lines, "", "Board")).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // rebuildTaskLine
 // ---------------------------------------------------------------------------
 

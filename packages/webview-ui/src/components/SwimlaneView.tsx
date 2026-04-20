@@ -138,6 +138,7 @@ export function SwimlaneView({
     const todayISO = new Date().toISOString().slice(0, 10);
     const initial: Record<string, boolean> = {};
     for (const row of rows) {
+      if (row.sectionHeading === "") continue; // implicit row stays expanded
       if (!row.dayName || (row.date && row.date !== todayISO)) {
         initial[row.key] = true;
       }
@@ -248,7 +249,7 @@ export function SwimlaneView({
                 >
                   {isCollapsed ? "▶" : "▼"}
                 </button>
-                <span className="swimlane-label">{displayLabel(row.label)}</span>
+                <span className="swimlane-label">{row.label ? displayLabel(row.label) : "General"}</span>
                 <span className="swimlane-count">{totalCards}</span>
               </div>
               {!isCollapsed && statusColumns.map((col) => (

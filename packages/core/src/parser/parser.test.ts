@@ -380,3 +380,79 @@ tags: []
     expect(cards[1].status).toBe("todo");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Implicit row — cards under H1 with no H2
+// ---------------------------------------------------------------------------
+
+describe("implicit row (cards under H1 with no H2)", () => {
+  it("creates an implicit row for cards directly under H1", () => {
+    const input = `# My Board\n\n- [ ] Task A\n- [x] Task B`;
+    const result = parseBoard(input);
+    expect(result.boards).toHaveLength(1);
+    expect(result.boards[0].rows).toHaveLength(1);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[0].rows[0].cards).toHaveLength(2);
+    expect(result.boards[0].rows[0].cards[0].title).toBe("Task A");
+    expect(result.boards[0].rows[0].cards[0].sectionHeading).toBe("");
+    expect(result.boards[0].rows[0].cards[0].boardHeading).toBe("My Board");
+  });
+
+  it("implicit row comes before explicit H2 rows", () => {
+    const input = `# Board\n\n- [ ] Orphan\n\n## Row A\n\n- [ ] Rowful`;
+    const result = parseBoard(input);
+    expect(result.boards[0].rows).toHaveLength(2);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[0].rows[0].cards[0].title).toBe("Orphan");
+    expect(result.boards[0].rows[1].heading).toBe("Row A");
+    expect(result.boards[0].rows[1].cards[0].title).toBe("Rowful");
+  });
+
+  it("creates implicit board + implicit row when no headings at all", () => {
+    const input = `- [ ] Bare task`;
+    const result = parseBoard(input);
+    expect(result.boards).toHaveLength(1);
+    expect(result.boards[0].heading).toBe("");
+    expect(result.boards[0].rows).toHaveLength(1);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[0].rows[0].cards).toHaveLength(1);
+  });
+
+  it("only boards with orphan cards get implicit rows", () => {
+    const input = [
+      "# Board A",
+      "- [ ] Orphan A",
+      "# Board B",
+      "## Row B",
+      "- [ ] Card B",
+    ].join("\n");
+    const result = parseBoard(input);
+    expect(result.boards[0].rows).toHaveLength(1);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[1].rows).toHaveLength(1);
+    expect(result.boards[1].rows[0].heading).toBe("Row B");
+  });
+
+  it("existing files with H2s produce no implicit rows", () => {
+    const result = parseBoard(FULL_PLANNER);
+    const cards = allCards(result);
+    expect(cards.length).toBeGreaterThan(0);
+    expect(cards.every((c) => c.sectionHeading !== "")).toBe(true);
+  });
+
+  it("preserves sub-tasks and body on cards in implicit row", () => {
+    const input = [
+      "# Board",
+      "- [ ] Parent task",
+      "  A body note",
+      "  - [x] Sub 1",
+      "  - [ ] Sub 2",
+    ].join("\n");
+    const result = parseBoard(input);
+    const card = result.boards[0].rows[0].cards[0];
+    expect(card.title).toBe("Parent task");
+    expect(card.body).toEqual(["A body note"]);
+    expect(card.subTasks).toHaveLength(2);
+    expect(card.subTasks[0].status).toBe("done");
+  });
+});

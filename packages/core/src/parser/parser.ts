@@ -80,6 +80,16 @@ export function parseBoard(input: string): BoardData {
     return currentBoard;
   }
 
+  /** Ensure an implicit row exists when a card appears with no preceding H2. */
+  function ensureRow(lineNumber: number): Row {
+    if (!currentRow) {
+      const board = ensureBoard(lineNumber);
+      currentRow = { heading: "", cards: [], lineNumber: board.lineNumber };
+      board.rows.unshift(currentRow);
+    }
+    return currentRow;
+  }
+
   for (let i = bodyStartLine; i < lines.length; i++) {
     const line = lines[i];
     const lineNumber = i + 1;
@@ -127,6 +137,7 @@ export function parseBoard(input: string): BoardData {
     const checkboxMatch = line.match(CHECKBOX_RE);
     if (checkboxMatch) {
       flushCard();
+      const row = ensureRow(lineNumber);
       const status = checkboxToStatus(checkboxMatch[1]);
       const rawText = checkboxMatch[2];
       const meta = parseAllMetadata(rawText);
@@ -139,14 +150,14 @@ export function parseBoard(input: string): BoardData {
         lineNumber,
         body: [],
         subTasks: [],
-        sectionHeading: currentRow?.heading ?? "",
+        sectionHeading: row.heading,
         boardHeading: currentBoard?.heading ?? "",
         ...(meta.comment !== undefined ? { comment: meta.comment } : {}),
         ...(meta.project !== undefined ? { project: meta.project } : {}),
         ...(meta.dueDate !== undefined ? { dueDate: meta.dueDate } : {}),
         ...(meta.priority !== undefined ? { priority: meta.priority } : {}),
         ...(meta.timeEstimate !== undefined ? { timeEstimate: meta.timeEstimate } : {}),
-        ...(currentRow?.dayName ? { day: currentRow.dayName } : {}),
+        ...(row.dayName ? { day: row.dayName } : {}),
       };
       continue;
     }

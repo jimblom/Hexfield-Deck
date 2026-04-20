@@ -79,6 +79,30 @@ H3+ headings have no structural significance and are ignored by the parser.
 
 **Files with no H1 heading** produce a single implicit Slate. Old-format files continue to parse correctly.
 
+**H2 headings are optional.** Tasks can appear directly under an H1 heading with no H2:
+
+```markdown
+# My Board
+
+- [ ] Task directly under the slate
+- [/] Another task — no H2 needed
+```
+
+In swimlane view, these tasks appear in a **"General"** row at the top of the lane grid. In standard view, they merge into the status columns as usual.
+
+When a Slate has both direct tasks and H2 rows, the direct tasks appear in the General row above the named rows:
+
+```markdown
+# Sprint 5
+
+- [ ] Unorganized task       ← General row
+- [ ] Another loose task     ← General row
+
+## In Progress               ← Named row
+
+- [/] Organized task
+```
+
 ### Display Aliases with `//`
 
 Add a `//` comment to an H2 heading to set a short display name for the swimlane label:
@@ -248,6 +272,7 @@ Each H2 row in the active Slate becomes a horizontal lane with its own To Do / I
 ▶ Wednesday (2 tasks)    ← collapsed
 ```
 
+- **General row** — tasks directly under H1 with no H2 — is always expanded
 - **Today's day row** is automatically expanded on load; all other day rows start collapsed
 - **Non-day rows** (e.g. `## Now`, `## Backlog`) are always collapsed by default
 - Click the triangle to toggle any row
@@ -466,7 +491,7 @@ First match wins for each field (e.g. first date found is used if two dates appe
 ### Cards not appearing?
 
 ✅ Frontmatter has `week`, `year`, `tags`
-✅ Tasks are under an H2 heading
+✅ Tasks are under an H1 or H2 heading (H2 is optional)
 ✅ Checkbox format is `- [ ]` with a space
 
 ### Won't Do / Blocked cards invisible?

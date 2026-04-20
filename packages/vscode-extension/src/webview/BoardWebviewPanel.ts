@@ -513,7 +513,7 @@ private async _handleMoveCardToSection(
       prompt: "New task title",
       placeHolder: "What needs doing?",
     });
-    if (!title || !sectionHeading) return;
+    if (!title || sectionHeading == null) return;
 
     const text = this._document.getText();
     const lines = text.split("\n");
