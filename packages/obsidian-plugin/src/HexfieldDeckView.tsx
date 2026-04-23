@@ -39,6 +39,8 @@ const OBSIDIAN_OVERRIDES = `
   --vscode-editorWarning-foreground: var(--color-yellow, #e5c07b);
   --vscode-editorWidget-background: var(--background-secondary);
   --vscode-widget-border: var(--background-modifier-border);
+  --vscode-dropdown-background: var(--background-modifier-form-field, var(--background-secondary));
+  --vscode-dropdown-border: var(--background-modifier-border);
   --vscode-scrollbarSlider-background: var(--scrollbar-thumb-bg, rgba(128,128,128,0.35));
   --vscode-scrollbarSlider-hoverBackground: rgba(128,128,128,0.6);
 
@@ -78,6 +80,15 @@ const OBSIDIAN_OVERRIDES = `
 /* Fix .app height for pane context (webview-ui uses 100vh) */
 .hexfield-deck-root .app {
   height: 100%;
+}
+
+/* Ensure native <select> is interactive — Chromium can lose click
+   responsiveness when background-color overrides the native appearance
+   without a concrete value (undefined CSS vars → transparent). */
+.hexfield-deck-root select.slate-selector {
+  -webkit-appearance: menulist;
+  appearance: menulist;
+  cursor: pointer;
 }
 
 /* Card lift animation — no CSP restriction in Obsidian */
