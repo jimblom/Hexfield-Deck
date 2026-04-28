@@ -9,7 +9,7 @@ import type { FilterState, DueDateBucket, EstimateBucket } from "./FilterDropdow
 import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
 import { ProjectPanel } from "./ProjectPanel.js";
 import { SearchBar } from "./SearchBar.js";
-import type { BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
+import type { Board as BoardType, BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
 import type { HostBridge, ProjectConfig } from "../HostBridge.js";
 
 // Re-export ProjectConfig so existing imports from "./App.js" keep working
@@ -249,7 +249,9 @@ export function App({ bridge }: { bridge: HostBridge }) {
 
   const handleQuickAdd = () => {
     if (!boardData) return;
-    const activeBoard = boardData.boards[activeSlateIndex] ?? boardData.boards[0];
+    const activeBoard = isAllSlates
+      ? boardData.boards[0]
+      : (boardData.boards[activeSlateIndex] ?? boardData.boards[0]);
     if (!activeBoard) return;
     const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
     const dayRows = activeBoard.rows.filter((r) => r.dayName);
@@ -272,8 +274,18 @@ export function App({ bridge }: { bridge: HostBridge }) {
     );
   }
 
-  const safeSlateIndex = Math.min(activeSlateIndex, filteredBoardData.boards.length - 1);
-  const activeSlate = filteredBoardData.boards[safeSlateIndex] ?? filteredBoardData.boards[0];
+  const isAllSlates = activeSlateIndex === -1;
+
+  // Build the active slate — either a single board or a merged "All Slates" view
+  const safeSlateIndex = isAllSlates ? -1 : Math.min(activeSlateIndex, filteredBoardData.boards.length - 1);
+
+  const activeSlate: BoardType | undefined = isAllSlates
+    ? {
+        heading: "All Slates",
+        rows: filteredBoardData.boards.flatMap((b) => b.rows),
+        lineNumber: 0,
+      }
+    : (filteredBoardData.boards[safeSlateIndex] ?? filteredBoardData.boards[0]);
 
   const matchesSearch = (c: { title: string }) =>
     !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -290,7 +302,13 @@ export function App({ bridge }: { bridge: HostBridge }) {
 
   const slateCards = searchFilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
 
-  const unfilteredSlate = boardData.boards[safeSlateIndex] ?? boardData.boards[0];
+  const unfilteredSlate: BoardType | undefined = isAllSlates
+    ? {
+        heading: "All Slates",
+        rows: boardData.boards.flatMap((b) => b.rows),
+        lineNumber: 0,
+      }
+    : (boardData.boards[safeSlateIndex] ?? boardData.boards[0]);
   const progressCards = unfilteredSlate?.rows.flatMap((r) => r.cards) ?? [];
   const progressTotal = progressCards.filter(
     (c) => c.status !== "wont-do" && c.status !== "blocked"
