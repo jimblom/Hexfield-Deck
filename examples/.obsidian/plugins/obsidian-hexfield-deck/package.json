@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node esbuild.config.mjs production",
-    "dev": "node esbuild.config.mjs",
-    "sync": "node esbuild.config.mjs production && node -e \"const fs=require('fs');const d='../../examples/.obsidian/plugins/obsidian-hexfield-deck/';['main.js','manifest.json','styles.css'].forEach(f=>fs.copyFileSync(f,d+f));console.log('Synced to dev vault');\""
+    "dev": "node esbuild.config.mjs"
   },
   "dependencies": {
     "@hexfield-deck/core": "workspace:*",

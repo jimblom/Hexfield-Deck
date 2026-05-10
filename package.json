@@ -7,6 +7,7 @@
   },
   "scripts": {
     "build": "pnpm -r run build",
+    "package:obsidian": "pnpm --filter @hexfield-deck/obsidian-plugin build && node -e \"const fs=require('fs'),path=require('path');fs.mkdirSync('obsidian-dist',{recursive:true});['main.js','manifest.json','styles.css'].forEach(f=>fs.copyFileSync(path.join('packages/obsidian-plugin',f),path.join('obsidian-dist',f)));console.log('Obsidian plugin ready in obsidian-dist/');\"",
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",

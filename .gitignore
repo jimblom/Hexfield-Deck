@@ -85,3 +85,6 @@ tsconfig.tsbuildinfo
 # Misc
 *.tgz
 .pnpm-debug.log
+
+# Obsidian plugin staging directory
+obsidian-dist/
