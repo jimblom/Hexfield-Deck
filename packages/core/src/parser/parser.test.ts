@@ -15,7 +15,7 @@ endDate: 2026-02-15
 
 ## Monday, February 9, 2026
 
-- [x] Morning standup #work
+- [x] Morning standup [work] #daily
 - [ ] Review PRs [2026-02-09] !!
   - [x] PR #123
   - [ ] PR #456
@@ -23,19 +23,19 @@ endDate: 2026-02-15
 
 ## Tuesday, February 10, 2026
 
-- [/] Write parser #hexfield est:4h
+- [/] Write parser [hexfield] #dev est:4h
 - [ ] Update docs
 
 # Backlog
 
 ## Now
 
-- [ ] Fix critical bug !!! #core
+- [ ] Fix critical bug !!! [core] #urgent
 - [ ] Deploy hotfix
 
 ## Next 2 Weeks
 
-- [ ] Refactor auth module #backend
+- [ ] Refactor auth module [backend]
 
 ## This Month
 
@@ -43,7 +43,7 @@ endDate: 2026-02-15
 
 ## This Quarter
 
-- [ ] Launch v1.0 #hexfield [2026-03-31]
+- [ ] Launch v1.0 [hexfield] [2026-03-31]
 
 ## This Year
 
@@ -232,8 +232,8 @@ tags: []
 
 ## Sprint 1
 
-- [ ] Build the thing #eng
-- [/] Review the thing #eng
+- [ ] Build the thing [eng]
+- [/] Review the thing [eng]
 
 ## Ideas
 
@@ -317,7 +317,7 @@ tags: [planner]
   it("preserves rawLine for roundtripping", () => {
     const board = parseBoard(FULL_PLANNER);
     const card = board.boards[0].rows[0].cards[0];
-    expect(card.rawLine).toBe("- [x] Morning standup #work");
+    expect(card.rawLine).toBe("- [x] Morning standup [work] #daily");
   });
 
   it("multiple H1 boards coexist independently", () => {

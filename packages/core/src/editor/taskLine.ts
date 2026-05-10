@@ -2,6 +2,7 @@
 export interface CardOverrides {
   title?: string;
   project?: string;
+  tags?: string[];
   dueDate?: string | null;
   priority?: string | null;
   timeEstimate?: string | null;
@@ -12,6 +13,7 @@ export interface RebuildCard {
   rawLine: string;
   title: string;
   project?: string;
+  tags?: string[];
   dueDate?: string;
   priority?: string;
   timeEstimate?: string;
@@ -19,7 +21,7 @@ export interface RebuildCard {
 
 /**
  * Reconstructs a task line from card fields + optional overrides.
- * Normalizes metadata order: `title #project [date] !!! est:Xh`
+ * Normalizes metadata order: `title [project] #tag1 #tag2 [date] !!! est:Xh`
  * The checkbox prefix is preserved from `card.rawLine`.
  */
 export function rebuildTaskLine(card: RebuildCard, overrides: CardOverrides): string {
@@ -28,6 +30,7 @@ export function rebuildTaskLine(card: RebuildCard, overrides: CardOverrides): st
 
   const title = overrides.title !== undefined ? overrides.title : card.title;
   const project = overrides.project !== undefined ? overrides.project : card.project;
+  const tags = overrides.tags !== undefined ? overrides.tags : (card.tags ?? []);
   const dueDate = overrides.dueDate !== undefined ? overrides.dueDate : card.dueDate;
   const priority = overrides.priority !== undefined ? overrides.priority : card.priority;
   const timeEstimate = overrides.timeEstimate !== undefined ? overrides.timeEstimate : card.timeEstimate;
@@ -35,7 +38,10 @@ export function rebuildTaskLine(card: RebuildCard, overrides: CardOverrides): st
   const priorityMap: Record<string, string> = { high: "!!!", medium: "!!", low: "!" };
 
   let line = prefix + title;
-  if (project) line += ` #${project}`;
+  if (project) line += ` [${project}]`;
+  for (const tag of tags) {
+    line += ` #${tag}`;
+  }
   if (dueDate) line += ` [${dueDate}]`;
   if (priority && priorityMap[priority]) line += ` ${priorityMap[priority]}`;
   if (timeEstimate) line += ` est:${timeEstimate}`;

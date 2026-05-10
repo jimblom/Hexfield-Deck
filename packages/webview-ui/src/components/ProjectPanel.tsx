@@ -168,7 +168,7 @@ export function ProjectPanel({ projects, config, onChange }: ProjectPanelProps) 
                                     </div>
 
                                     <span className="project-name-label" title={name}>
-                                        #{name}
+                                        {name}
                                     </span>
 
                                     <select

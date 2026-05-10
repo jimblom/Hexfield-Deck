@@ -1,5 +1,6 @@
 export interface HexfieldColors {
   projectTag: string;
+  tagColor: string;
   priorityHigh: string;
   priorityMed: string;
   priorityLow: string;
@@ -20,6 +21,7 @@ export interface HexfieldSettings {
 export const DEFAULT_SETTINGS: HexfieldSettings = {
   colors: {
     projectTag: "#569CD6",
+    tagColor: "#858585",
     priorityHigh: "#F44747",
     priorityMed: "#CCA700",
     priorityLow: "#89D185",

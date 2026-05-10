@@ -152,7 +152,7 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
       {card.comment && (
         <div className="card-comment">{card.comment}</div>
       )}
-      {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
+      {(card.project || (card.tags && card.tags.length > 0) || card.dueDate || card.priority || card.timeEstimate || card.day) && (
         <div className="card-badges">
           {card.project && (
             projectCfg?.url ? (
@@ -168,6 +168,9 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
               <Badge label={card.project} color={projectCfg?.color ?? "var(--hx-project-tag, #569CD6)"} />
             )
           )}
+          {card.tags?.map((tag) => (
+            <Badge key={tag} label={`#${tag}`} color="var(--hx-tag-color, #858585)" />
+          ))}
           {card.dueDate && (
             <Badge label={card.dueDate} color={getDueDateColor(card.dueDate)} />
           )}

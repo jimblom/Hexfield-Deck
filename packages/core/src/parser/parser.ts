@@ -150,6 +150,7 @@ export function parseBoard(input: string): BoardData {
         lineNumber,
         body: [],
         subTasks: [],
+        tags: meta.tags,
         sectionHeading: row.heading,
         boardHeading: currentBoard?.heading ?? "",
         ...(meta.comment !== undefined ? { comment: meta.comment } : {}),

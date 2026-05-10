@@ -57,8 +57,9 @@ function buildDecorationSet(text: string, plugin: HexfieldDeckPlugin): Decoratio
     }
   }
 
-  // Static tokens — same regexes as Hexfield-Text
-  collect(/(?<!\S)#[a-zA-Z][a-zA-Z0-9_-]*/g,  `color:${c.projectTag}`);
+  // Static tokens
+  collect(/\[([a-zA-Z][a-zA-Z0-9_-]+)\](?!\()/g, `color:${c.projectTag}`);
+  collect(/(?<!\S)#[a-zA-Z][a-zA-Z0-9_-]*/g,  `color:${c.tagColor}`);
   collect(/(?<!!)!!!(?!!)/g,                    `color:${c.priorityHigh}`);
   collect(/(?<!!)!!(?!!)/g,                     `color:${c.priorityMed}`);
   collect(/(?<!!)!(?!!)/g,                      `color:${c.priorityLow}`);

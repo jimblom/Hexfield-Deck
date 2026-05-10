@@ -31,6 +31,7 @@ export interface Card {
   body: string[];
   subTasks: SubTask[];
   project?: string;
+  tags: string[];
   dueDate?: string;
   priority?: Priority;
   timeEstimate?: string;

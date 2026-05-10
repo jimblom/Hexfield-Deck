@@ -4,20 +4,44 @@ export interface ExtractedMetadata {
   cleanTitle: string;
   comment?: string;
   project?: string;
+  tags: string[];
   dueDate?: string;
   priority?: Priority;
   timeEstimate?: string;
 }
 
-/** Extract the first #project tag from text. */
+/** Extract the first [project] tag from text. Requires 2+ letter-starting chars; skips dates, checkboxes, and markdown links. */
 export function extractProject(text: string): {
   project: string | undefined;
   cleanText: string;
 } {
-  const match = text.match(/(?:^|\s)#([a-zA-Z0-9_-]+)/);
+  const match = text.match(/\[([a-zA-Z][a-zA-Z0-9_-]+)\](?!\()/);
   if (!match) return { project: undefined, cleanText: text };
   const cleanText = text.replace(match[0], "").replace(/\s{2,}/g, " ").trim();
   return { project: match[1], cleanText };
+}
+
+/** Extract all #hashtags from text. Returns tags and cleaned text. */
+export function extractTags(text: string): {
+  tags: string[];
+  cleanText: string;
+} {
+  const tagRe = /(?:^|\s)#([a-zA-Z][a-zA-Z0-9_-]*)/g;
+  const tags: string[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = tagRe.exec(text)) !== null) {
+    tags.push(match[1]);
+  }
+
+  if (tags.length === 0) return { tags: [], cleanText: text };
+
+  const cleanText = text
+    .replace(/(?:^|\s)#[a-zA-Z][a-zA-Z0-9_-]*/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return { tags, cleanText };
 }
 
 /** Extract a due date: `[YYYY-MM-DD]` or `due:YYYY-MM-DD`. */
@@ -125,11 +149,13 @@ export function extractComment(text: string): {
 export function parseAllMetadata(text: string): ExtractedMetadata {
   const { comment, cleanText: t0 } = extractComment(text);
   const { project, cleanText: t1 } = extractProject(t0);
-  const { dueDate, cleanText: t2 } = extractDueDate(t1);
+  const { tags, cleanText: t1b } = extractTags(t1);
+  const { dueDate, cleanText: t2 } = extractDueDate(t1b);
   const { priority, cleanText: t3 } = extractPriority(t2);
   const { timeEstimate, cleanText: t4 } = extractTimeEstimate(t3);
   return {
     cleanTitle: t4,
+    tags,
     ...(comment !== undefined ? { comment } : {}),
     ...(project !== undefined ? { project } : {}),
     ...(dueDate !== undefined ? { dueDate } : {}),
