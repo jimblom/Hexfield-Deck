@@ -2,7 +2,7 @@
     "name": "hexfield-deck",
     "displayName": "Hexfield Deck",
     "description": "Markdown-powered kanban task board for VS Code",
-    "version": "0.8.0",
+    "version": "1.0.0",
     "publisher": "jimblom",
     "license": "MIT",
     "repository": {

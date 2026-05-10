@@ -1,6 +1,6 @@
 import type { App as ObsidianApp, TFile } from "obsidian";
 import type { HostBridge, HostState, OutboundMessage, UpdatePayload } from "@hexfield-deck/webview-ui";
-import type { Card } from "@hexfield-deck/core";
+import type { BoardData, Card } from "@hexfield-deck/core";
 import {
   getCardLineRange,
   findSectionInsertionPoint,
@@ -35,6 +35,8 @@ export class ObsidianBridge implements HostBridge {
   private _onReady: (() => void) | null = null;
   /** Cached from the most recent pushUpdate — used to resolve cardId → Card. */
   private _lastCards: Card[] = [];
+  /** Cached board data — used to build Move submenus in the native context menu. */
+  private _lastBoardData: BoardData | null = null;
 
   constructor(private readonly deps: ObsidianBridgeDeps) {}
 
@@ -64,7 +66,12 @@ export class ObsidianBridge implements HostBridge {
   /** Push a fresh board payload into the mounted React UI. */
   pushUpdate(payload: UpdatePayload): void {
     this._lastCards = payload.cards;
+    this._lastBoardData = payload.boardData;
     this._updateHandler?.(payload);
+  }
+
+  getBoardData(): BoardData | null {
+    return this._lastBoardData;
   }
 
   // ---------------------------------------------------------------------------

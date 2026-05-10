@@ -1,8 +1,9 @@
-import { ItemView, WorkspaceLeaf, TFile, ViewStateResult } from "obsidian";
+import { ItemView, Menu, WorkspaceLeaf, TFile, ViewStateResult } from "obsidian";
 import React from "react";
 import { createRoot, Root } from "react-dom/client";
 import { App } from "@hexfield-deck/webview-ui";
-import { parseBoard, allCards } from "@hexfield-deck/core";
+import { parseBoard, allCards, displayLabel } from "@hexfield-deck/core";
+import type { Card } from "@hexfield-deck/core";
 import { ObsidianBridge } from "./ObsidianBridge.js";
 import type HexfieldDeckPlugin from "./main.js";
 // @ts-expect-error — esbuild bundles CSS as a text string via --loader:.css=text
@@ -184,7 +185,12 @@ export class HexfieldDeckView extends ItemView {
     // Mount React
     const mountPoint = container.createDiv({ cls: "hexfield-deck-root" });
     this._root = createRoot(mountPoint);
-    this._root.render(<App bridge={this._bridge} />);
+    this._root.render(
+      <App
+        bridge={this._bridge}
+        onContextMenu={(card, pos) => this._handleContextMenu(card, pos)}
+      />
+    );
 
     // Trigger initial load when App signals ready
     this._bridge.setReadyCallback(() => this._load());
@@ -219,6 +225,144 @@ export class HexfieldDeckView extends ItemView {
     this._file = file;
     this.titleEl.setText(file.basename);
     if (this._root) await this._load();
+  }
+
+  private _buildContextMenu(card: Card): Menu {
+    const menu = new Menu();
+    const bd = this._bridge.getBoardData();
+
+    // Open in Markdown
+    menu.addItem((item) =>
+      item
+        .setTitle("Open in Markdown")
+        .setIcon("file-text")
+        .onClick(() => this._bridge.send({ type: "openInMarkdown", cardId: card.id }))
+    );
+
+    menu.addSeparator();
+
+    // Edit actions
+    menu.addItem((item) =>
+      item
+        .setTitle("Edit Title...")
+        .setIcon("pencil")
+        .onClick(() => this._bridge.send({ type: "editTitle", cardId: card.id }))
+    );
+    menu.addItem((item) =>
+      item
+        .setTitle("Edit Due Date...")
+        .setIcon("calendar")
+        .onClick(() => this._bridge.send({ type: "editDueDate", cardId: card.id }))
+    );
+    menu.addItem((item) =>
+      item
+        .setTitle("Edit Time Estimate...")
+        .setIcon("clock")
+        .onClick(() => this._bridge.send({ type: "editTimeEstimate", cardId: card.id }))
+    );
+
+    menu.addSeparator();
+
+    // Priority
+    const priorities: Array<[string, "high" | "medium" | "low" | "none"]> = [
+      ["High", "high"],
+      ["Medium", "medium"],
+      ["Low", "low"],
+      ["None", "none"],
+    ];
+    for (const [label, priority] of priorities) {
+      const isCurrent = priority === "none" ? !card.priority : card.priority === priority;
+      menu.addItem((item) =>
+        item
+          .setTitle(`Priority: ${label}`)
+          .setChecked(isCurrent)
+          .onClick(() => this._bridge.send({ type: "setPriority", cardId: card.id, priority }))
+      );
+    }
+
+    menu.addSeparator();
+
+    // Change State
+    const states: Array<[string, string]> = [
+      ["To Do", "todo"],
+      ["In Progress", "in-progress"],
+      ["Done", "done"],
+      ["Won't Do", "wont-do"],
+      ["Blocked", "blocked"],
+    ];
+    for (const [label, status] of states) {
+      menu.addItem((item) =>
+        item
+          .setTitle(`State: ${label}`)
+          .setChecked(card.status === status)
+          .onClick(() => this._bridge.send({ type: "moveCard", cardId: card.id, newStatus: status }))
+      );
+    }
+
+    // Move submenus (requires cached board data)
+    if (bd) {
+      menu.addSeparator();
+
+      // Rows within the card's own board
+      const homeBoard = bd.boards.find((b) => b.heading === card.boardHeading);
+      if (homeBoard) {
+        for (const row of homeBoard.rows) {
+          if (row.heading === card.sectionHeading) continue;
+          const rowLabel = row.heading ? displayLabel(row.heading) : "General";
+          menu.addItem((item) =>
+            item
+              .setTitle(`Move: ${rowLabel}`)
+              .setIcon("arrow-right")
+              .onClick(() =>
+                this._bridge.send({
+                  type: "moveCardToSection",
+                  cardId: card.id,
+                  sectionHeading: row.heading,
+                  boardHeading: homeBoard.heading,
+                })
+              )
+          );
+        }
+      }
+
+      // Other boards
+      for (const board of bd.boards) {
+        if (board.heading === card.boardHeading || board.rows.length === 0) continue;
+        const boardLabel = board.heading || "Board";
+        for (const row of board.rows) {
+          const rowLabel = row.heading ? displayLabel(row.heading) : "General";
+          menu.addItem((item) =>
+            item
+              .setTitle(`Move to ${boardLabel}: ${rowLabel}`)
+              .setIcon("arrow-right")
+              .onClick(() =>
+                this._bridge.send({
+                  type: "moveCardToSection",
+                  cardId: card.id,
+                  sectionHeading: row.heading,
+                  boardHeading: board.heading,
+                })
+              )
+          );
+        }
+      }
+    }
+
+    menu.addSeparator();
+
+    // Delete
+    menu.addItem((item) =>
+      item
+        .setTitle("Delete Task...")
+        .setIcon("trash")
+        .onClick(() => this._bridge.send({ type: "deleteTask", cardId: card.id }))
+    );
+
+    return menu;
+  }
+
+  private _handleContextMenu(card: Card, pos: { x: number; y: number }): void {
+    this._buildContextMenu(card).showAtPosition(pos);
   }
 
   async _load(): Promise<void> {

@@ -4,6 +4,24 @@ Complete reference for the markdown file format and features supported by Hexfie
 
 ---
 
+## Installation
+
+### VS Code
+
+1. Download the latest `.vsix` from the [Releases](https://github.com/jimblom/Hexfield-Deck/releases) page
+2. In VS Code: `Extensions → ⋯ → Install from VSIX...` → select the file
+3. Open a markdown file and run **"Hexfield Deck: Open Board"** from the command palette
+
+### Obsidian
+
+**Via BRAT (beta):** Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) → Add beta repo `jimblom/Hexfield-Deck` → Enable Hexfield Deck.
+
+**Manual:** Download `obsidian-hexfield-deck.zip` from Releases → Extract `main.js` + `manifest.json` + `styles.css` into `.obsidian/plugins/hexfield-deck/` → Enable in Settings → Community Plugins.
+
+Once installed, open a markdown file and click the **grid icon (⊞)** in the ribbon, or run **"Open as Hexfield Board"** from the command palette.
+
+---
+
 ## Quick Start
 
 Hexfield Deck turns structured markdown files into interactive kanban boards. Here's the minimal format:
@@ -20,12 +38,12 @@ tags: [planner, weekly]
 
 ## Monday, February 2, 2026
 
-- [ ] My first task #project-1
-- [/] Task in progress #project2
-- [x] Completed task #another-project
+- [ ] My first task [project-1]
+- [/] Task in progress [project-2] #research
+- [x] Completed task [another-project]
 ```
 
-Open this file in VS Code, run **Hexfield Deck: Open Board**, and see your tasks as cards.
+Open this file and run **Hexfield Deck: Open Board** (VS Code) or click the ribbon grid icon (Obsidian) to see your tasks as cards.
 
 ---
 
@@ -200,27 +218,38 @@ Enhance tasks with inline metadata. Metadata can appear in any order after the t
 
 **Display:** Badge showing the estimate (e.g. `2h`)
 
-#### Project Tags
+#### Projects
 
 ```markdown
-- [ ] Task belongs to Hexfield project #hexfield
-- [ ] Task belongs to Deep 13 lab #deep13
+- [ ] Task belongs to Hexfield project [hexfield]
+- [ ] Task belongs to Deep 13 lab [deep13]
 ```
 
-The `#` must be preceded by a space. A `#` inside a URL (`https://example.com/page#section`) is treated as a URL fragment, not a project tag.
+Project names use bracket syntax (`[name]`). A task can have one project. The project appears as a **rectangular badge** — configurable color and style via the Projects panel.
+
+#### Tags
+
+```markdown
+- [ ] Research task #research
+- [ ] Bug with high visibility #bugfix #urgent
+```
+
+Tags use hashtag syntax (`#tag`). A task can have multiple tags. Tags appear as **oval pill badges** (purple by default, on a separate row from other metadata). The `#` must be preceded by a space — `#tags` inside URLs or comments are not parsed.
 
 #### Combining Metadata
 
 All metadata can be combined in one line:
 
 ```markdown
-- [/] Ship **parser v1** #hexfield [2026-02-10] !!! est:4h // nearly there
+- [/] Ship **parser v1** [hexfield] [2026-02-10] !!! est:4h #release // nearly there
   - [/] Write frontmatter tests
   - [x] Wire up barrel exports
   - [ ] Final review
 ```
 
-**This task has:** project (hexfield), due date (Feb 10), high priority, 4h estimate, a comment, and three sub-tasks.
+**This task has:** project (hexfield), due date (Feb 10), high priority, 4h estimate, a release tag, a comment, and three sub-tasks.
+
+**Metadata write-back order** (after editing via context menu): `title [project] [date] !!! est:Xh #tag`
 
 ### Inline Markdown Formatting
 
@@ -513,10 +542,44 @@ First match wins for each field (e.g. first date found is used if two dates appe
 
 ---
 
+## Obsidian Plugin Notes
+
+Hexfield Deck is available as an Obsidian plugin with full feature parity. Most behavior is identical; the following differences apply:
+
+### Opening a board
+Click the **grid icon (⊞)** in the left ribbon, or run **"Open as Hexfield Board"** from the command palette. The board opens in a new Obsidian pane.
+
+### Context menus
+Right-click a card to open Obsidian's native context menu. Priority and State items show a **checkmark** next to the current value. Submenus (Priority, State, Move) are listed as flat items with prefixed labels (`Priority: High`, `State: Done`, `Move: Monday`, etc.) consistent with Obsidian's menu conventions.
+
+### Jump to source
+Clicking a card or selecting **"Open in Markdown"** from the context menu opens the file in a **new Obsidian tab** (not a split, as in VS Code) and positions the cursor at the task line.
+
+### Edit dialogs
+Title, due date, and time estimate edits appear as **Obsidian modal dialogs** rather than VS Code input boxes. The OK button or Enter key submits; clicking outside or pressing Escape cancels.
+
+### Wikilinks
+`[[Note Name]]` links in card titles are rendered as clickable links that open the referenced note in a new Obsidian tab.
+
+### Custom checkbox styles
+The plugin injects styles into the Obsidian markdown editor for the non-standard checkbox variants:
+- `[/]` — orange half-circle (in-progress)
+- `[-]` — gray circled dash with strikethrough text (won't-do)
+- `[!]` — red circled exclamation (blocked)
+
+### Project config storage
+Project colors and styles are stored in `.obsidian/plugins/hexfield-deck/data.json` (plugin data), not in the markdown file. Config is shared across the vault but is per-plugin-instance, not per-file.
+
+### Badge color overrides
+Use an Obsidian CSS snippet (`.obsidian/snippets/*.css`) to override `--hx-*` CSS variables. The `.hexfield-deck-root` selector scopes all Hexfield styles within the board pane.
+
+---
+
 ## Version History
 
 | Version | Highlights |
 |---------|-----------|
+| **v1.0.0** | Obsidian plugin (full parity); tag pill badges; `[project]` vs `#tag` syntax; "All Slates" view; wikilink rendering; optional H2 headings |
 | **v0.8.0** | Click card to jump to source; today row auto-expand in Swimlane; overdue card border; comment display on cards; search bar; Slate progress indicator; column card counts; status bar item; empty states |
 | **v0.7.0** | H1=Slate / H2=Row layout (ADR-0009); per-Slate navigation dropdown; Blocked status (`[!]`); `//` comment syntax for headings and tasks |
 | **v0.6.0** | Project color selector panel; Hexfield Text compatibility for badge colors |

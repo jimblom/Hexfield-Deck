@@ -115,7 +115,13 @@ function filterBoardData(boardData: BoardData, f: FilterState): BoardData {
 
 // ---------------------------------------------------------------------------
 
-export function App({ bridge }: { bridge: HostBridge }) {
+export function App({
+  bridge,
+  onContextMenu,
+}: {
+  bridge: HostBridge;
+  onContextMenu?: (card: Card, pos: { x: number; y: number }) => void;
+}) {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
   const [isDirty, setIsDirty] = useState<boolean>(false);
@@ -210,8 +216,12 @@ export function App({ bridge }: { bridge: HostBridge }) {
   };
 
   const openContextMenu: ContextMenuHandler = useCallback((card, pos) => {
+    if (onContextMenu) {
+      onContextMenu(card, pos);
+      return;
+    }
     setContextMenu({ card, x: pos.x, y: pos.y });
-  }, []);
+  }, [onContextMenu]);
 
   const handleJumpToSource: JumpToSourceHandler = useCallback((cardId: string) => {
     bridge.send({ type: "openInMarkdown", cardId });

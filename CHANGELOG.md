@@ -4,6 +4,30 @@ All notable changes to Hexfield Deck are documented here.
 
 ---
 
+## [1.0.0] — 2026-05-09
+
+### Added
+
+- **Obsidian plugin** — Full feature parity with the VS Code extension. Open any markdown board file from Obsidian's ribbon or command palette. Drag-and-drop, context menus, filters, search, quick add, jump-to-source, sub-task checkboxes, and project color configuration all work identically. Context menus use Obsidian's native `Menu` API with checkmarks for current priority and state.
+
+- **Tag pill badges** — `#tags` are now rendered as oval pill badges on a separate row below project/date/priority badges, making them visually distinct from project badges. Tags no longer show a `#` prefix on the card.
+
+- **`[project]` vs `#tag` syntax** — Projects now use `[project-name]` bracket syntax; `#hashtags` are reserved for multi-value categorization tags. Both can appear on the same card. Project badges are rectangular; tag badges are oval pills (purple by default).
+
+- **"All Slates" selector** — A new option in the Slate dropdown shows cards from all H1 Slates combined in a single board view.
+
+- **Wikilink rendering in Obsidian** — `[[Note Name]]` links in card titles are rendered as clickable links that navigate to the referenced note.
+
+- **Optional H2 headings** — Tasks can appear directly under an H1 Slate with no preceding H2. They are collected into an implicit default row and appear in the "General" column.
+
+### Fixed
+
+- **Obsidian CSS variable mappings** — Corrected mappings for dropdown and input background variables in Obsidian's design system.
+
+- **Obsidian slate selector** — The slate selector dropdown now renders correctly in all Obsidian themes.
+
+---
+
 ## [0.8.0] — 2026-03-24
 
 ### Added
