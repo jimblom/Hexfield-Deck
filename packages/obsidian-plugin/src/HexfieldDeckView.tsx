@@ -54,6 +54,7 @@ const OBSIDIAN_OVERRIDES = `
   --hx-due-today: var(--color-orange, #CE9178);
   --hx-due-soon: var(--color-yellow, #CCA700);
   --hx-due-future: var(--text-faint, #858585);
+  --hx-tag-color: var(--color-purple, #BB9AF7);
 
   /* Pane layout: height is constrained by the leaf, not the viewport */
   height: 100%;
@@ -106,6 +107,11 @@ const OBSIDIAN_OVERRIDES = `
 .hexfield-deck-root .badge {
   background: color-mix(in srgb, currentColor 10%, transparent);
   border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+/* Tag pills: tinted background using the tag color */
+.hexfield-deck-root .tag-pill {
+  background: color-mix(in srgb, var(--hx-tag-color, #BB9AF7) 12%, transparent);
 }
 
 /* Drag ghost: dnd-kit applies transform; add opacity fade */

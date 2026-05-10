@@ -152,38 +152,46 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
       {card.comment && (
         <div className="card-comment">{card.comment}</div>
       )}
-      {(card.project || (card.tags && card.tags.length > 0) || card.dueDate || card.priority || card.timeEstimate || card.day) && (
-        <div className="card-badges">
-          {card.project && (
-            projectCfg?.url ? (
-              <a
-                className="badge"
-                href={projectCfg.url}
-                style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                {card.project}
-              </a>
-            ) : (
-              <Badge label={card.project} color={projectCfg?.color ?? "var(--hx-project-tag, #569CD6)"} />
-            )
+      {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day || (card.tags && card.tags.length > 0)) && (
+        <div className="card-meta">
+          {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
+            <div className="card-badges">
+              {card.project && (
+                projectCfg?.url ? (
+                  <a
+                    className="badge"
+                    href={projectCfg.url}
+                    style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    {card.project}
+                  </a>
+                ) : (
+                  <Badge label={card.project} color={projectCfg?.color ?? "var(--hx-project-tag, #569CD6)"} />
+                )
+              )}
+              {card.dueDate && (
+                <Badge label={card.dueDate} color={getDueDateColor(card.dueDate)} />
+              )}
+              {card.priority && (
+                <Badge
+                  label={card.priority.toUpperCase()}
+                  color={getPriorityColor(card.priority)}
+                />
+              )}
+              {card.timeEstimate && (
+                <Badge label={card.timeEstimate} color="var(--hx-time-estimate, #4EC9B0)" />
+              )}
+              {card.day && <Badge label={card.day} />}
+            </div>
           )}
-          {card.tags?.map((tag) => (
-            <Badge key={tag} label={`#${tag}`} color="var(--hx-tag-color, #858585)" />
-          ))}
-          {card.dueDate && (
-            <Badge label={card.dueDate} color={getDueDateColor(card.dueDate)} />
+          {card.tags && card.tags.length > 0 && (
+            <div className="card-tags">
+              {card.tags.map((tag) => (
+                <span key={tag} className="tag-pill">{tag}</span>
+              ))}
+            </div>
           )}
-          {card.priority && (
-            <Badge
-              label={card.priority.toUpperCase()}
-              color={getPriorityColor(card.priority)}
-            />
-          )}
-          {card.timeEstimate && (
-            <Badge label={card.timeEstimate} color="var(--hx-time-estimate, #4EC9B0)" />
-          )}
-          {card.day && <Badge label={card.day} />}
         </div>
       )}
       <SubTaskProgress subTasks={card.subTasks} onToggle={onToggleSubTask} />

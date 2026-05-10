@@ -22,8 +22,9 @@ coverage/
 .env.production.local
 .env.*.local
 
-# Claude Code local settings (machine-specific)
+# Claude Code local settings and agent worktrees (machine-specific)
 .claude/settings.local.json
+.claude/worktrees/
 
 # Editor directories and files
 .vscode/*

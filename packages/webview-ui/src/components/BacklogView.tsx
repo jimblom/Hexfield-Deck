@@ -143,19 +143,32 @@ function DraggableBacklogCard({
       </button>
       <div className="backlog-card-content">
         <MarkdownTitle title={card.title} />
-        <div className="card-badges">
-          {card.project && (
-            <span className="badge" style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}>
-              {card.project}
-            </span>
-          )}
-          {card.priority && (
-            <span className="badge" style={{ color: getPriorityColor(card.priority) }}>
-              {card.priority.toUpperCase()}
-            </span>
-          )}
-          {card.timeEstimate && <span className="badge">{card.timeEstimate}</span>}
-        </div>
+        {(card.project || card.priority || card.timeEstimate || (card.tags && card.tags.length > 0)) && (
+          <div className="card-meta">
+            {(card.project || card.priority || card.timeEstimate) && (
+              <div className="card-badges">
+                {card.project && (
+                  <span className="badge" style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}>
+                    {card.project}
+                  </span>
+                )}
+                {card.priority && (
+                  <span className="badge" style={{ color: getPriorityColor(card.priority) }}>
+                    {card.priority.toUpperCase()}
+                  </span>
+                )}
+                {card.timeEstimate && <span className="badge">{card.timeEstimate}</span>}
+              </div>
+            )}
+            {card.tags && card.tags.length > 0 && (
+              <div className="card-tags">
+                {card.tags.map((tag) => (
+                  <span key={tag} className="tag-pill">{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {card.subTasks.length > 0 && (
           <div className="backlog-subtask-summary">
             {card.subTasks.filter((st) => st.status === "done").length}/{card.subTasks.length} subtasks

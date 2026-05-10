@@ -241,11 +241,34 @@ body {
   text-decoration: underline;
 }
 
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
 .card-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 8px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-pill {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--hx-tag-color, #BB9AF7);
+  color: var(--hx-tag-color, #BB9AF7);
+  font-family: var(--vscode-font-family);
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .badge {
@@ -477,7 +500,7 @@ body {
   margin-bottom: 4px;
 }
 
-.backlog-card-content .card-badges {
+.backlog-card-content .card-meta {
   margin-bottom: 0;
 }
 
@@ -590,8 +613,13 @@ body {
   font-size: 12px;
 }
 
-.swimlane-cell .card-badges {
+.swimlane-cell .card-meta {
   margin-bottom: 4px;
+}
+
+.swimlane-cell .tag-pill {
+  font-size: 10px;
+  padding: 0px 5px;
 }
 
 .swimlane-cell .badge {
