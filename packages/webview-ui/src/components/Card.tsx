@@ -102,6 +102,7 @@ function SubTaskProgress({
               className="subtask-item subtask-clickable"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
+                e.stopPropagation();
                 if ((e.target as HTMLElement).closest("a")) return;
                 onToggle(st.lineNumber);
               }}
