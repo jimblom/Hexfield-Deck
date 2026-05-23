@@ -30,7 +30,6 @@ export interface Card {
   lineNumber: number;
   body: string[];
   subTasks: SubTask[];
-  project?: string;
   tags: string[];
   dueDate?: string;
   priority?: Priority;

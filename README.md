@@ -149,8 +149,7 @@ tags: [planner, weekly]
 
 **Metadata syntax:**
 
-- `[project-name]` → Project — displayed as a rectangular badge; supports per-project colors
-- `#tag-name` → Tag — displayed as an oval pill badge; multiple tags supported
+- `#tag-name` → Tag — displayed as an oval pill badge; multiple tags supported; supports per-tag colors
 - `[2026-02-15]` → Due date (color-coded by proximity)
 - `!!!` / `!!` / `!` → Priority (high / medium / low)
 - `est:2h` → Time estimate
@@ -168,7 +167,7 @@ Card and sub-task titles support inline markdown formatting:
 | `` `code` `` | `code` |
 | `[link text](https://example.com)` | clickable link (opens in browser) |
 
-> **Note:** URL fragments like `https://example.com#section` are handled correctly — the `#section` part is not treated as a project tag.
+> **Note:** URL fragments like `https://example.com#section` are handled correctly — the `#section` part is not treated as a tag.
 
 See [examples/weekly-planner.md](examples/weekly-planner.md) for a complete example.
 

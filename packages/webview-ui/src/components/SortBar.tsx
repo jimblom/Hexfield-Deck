@@ -1,13 +1,13 @@
 import React from "react";
 import type { Card, Priority } from "@hexfield-deck/core";
 
-export type SortKey = "default" | "priority" | "status" | "project" | "estimate";
+export type SortKey = "default" | "priority" | "status" | "tag" | "estimate";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "default", label: "File order" },
   { key: "priority", label: "Priority" },
   { key: "status", label: "Status" },
-  { key: "project", label: "Project" },
+  { key: "tag", label: "Tag" },
   { key: "estimate", label: "Estimate" },
 ];
 
@@ -39,10 +39,10 @@ export function sortCards(cards: Card[], sortKey: SortKey): Card[] {
         const bs = STATUS_ORDER[b.status] ?? 3;
         return as_ - bs;
       }
-      case "project": {
-        const ap = a.project || "\uffff";
-        const bp = b.project || "\uffff";
-        return ap.localeCompare(bp);
+      case "tag": {
+        const at = (a.tags && a.tags.length > 0) ? a.tags[0] : "\uffff";
+        const bt = (b.tags && b.tags.length > 0) ? b.tags[0] : "\uffff";
+        return at.localeCompare(bt);
       }
       case "estimate": {
         return parseEstimateMinutes(a.timeEstimate) - parseEstimateMinutes(b.timeEstimate);

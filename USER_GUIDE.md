@@ -156,7 +156,7 @@ All five states are recognized:
 Add details by indenting content below a task:
 
 ```markdown
-- [ ] Main task #project
+- [ ] Main task #mytag
   Freeform note line — displayed as body text on the card
   - [ ] Sub-task 1
   - [x] Sub-task 2 (completed)
@@ -176,7 +176,7 @@ Add a `//` comment to any task line to annotate it without affecting the title d
 - [!] Restock supplies // waiting on shuttle from Gizmonic
 ```
 
-The comment text (after ` // `) is stripped from the displayed card title and shown as a small italic note beneath the title on the card. Tags, dates, and other metadata inside a comment are **not** parsed — `// #tag` inside a comment does not create a project tag.
+The comment text (after ` // `) is stripped from the displayed card title and shown as a small italic note beneath the title on the card. Tags, dates, and other metadata inside a comment are **not** parsed — `// #tag` inside a comment does not create a tag.
 
 **URL safety:** The separator requires a leading space (` // `), so `https://example.com` is never accidentally treated as a comment.
 
@@ -218,15 +218,6 @@ Enhance tasks with inline metadata. Metadata can appear in any order after the t
 
 **Display:** Badge showing the estimate (e.g. `2h`)
 
-#### Projects
-
-```markdown
-- [ ] Task belongs to Hexfield project [hexfield]
-- [ ] Task belongs to Deep 13 lab [deep13]
-```
-
-Project names use bracket syntax (`[name]`). A task can have one project. The project appears as a **rectangular badge** — configurable color and style via the Projects panel.
-
 #### Tags
 
 ```markdown
@@ -234,22 +225,22 @@ Project names use bracket syntax (`[name]`). A task can have one project. The pr
 - [ ] Bug with high visibility #bugfix #urgent
 ```
 
-Tags use hashtag syntax (`#tag`). A task can have multiple tags. Tags appear as **oval pill badges** (purple by default, on a separate row from other metadata). The `#` must be preceded by a space — `#tags` inside URLs or comments are not parsed.
+Tags use hashtag syntax (`#tag`). A task can have multiple tags. Tags appear as **oval pill badges** and support per-tag color configuration via the Tags panel. Card accent color (left border or fill) is driven by the first tag in your configured priority list. The `#` must be preceded by a space — `#tags` inside URLs or comments are not parsed.
 
 #### Combining Metadata
 
 All metadata can be combined in one line:
 
 ```markdown
-- [/] Ship **parser v1** [hexfield] [2026-02-10] !!! est:4h #release // nearly there
+- [/] Ship **parser v1** [2026-02-10] !!! est:4h #release // nearly there
   - [/] Write frontmatter tests
   - [x] Wire up barrel exports
   - [ ] Final review
 ```
 
-**This task has:** project (hexfield), due date (Feb 10), high priority, 4h estimate, a release tag, a comment, and three sub-tasks.
+**This task has:** due date (Feb 10), high priority, 4h estimate, a release tag, a comment, and three sub-tasks.
 
-**Metadata write-back order** (after editing via context menu): `title [project] [date] !!! est:Xh #tag`
+**Metadata write-back order** (after editing via context menu): `title #tag [date] !!! est:Xh`
 
 ### Inline Markdown Formatting
 
@@ -381,7 +372,7 @@ Click the **Filter** button in the toolbar. Conditions are AND'd between dimensi
 
 | Dimension | Options |
 |-----------|---------|
-| **Project** | Any project tag present in the file (multi-select) |
+| **Tags** | Any tag present in the file (multi-select, OR logic) |
 | **Status** | To Do, In Progress, Done, Won't Do, Blocked |
 | **Priority** | High, Medium, Low |
 | **Due Date** | Overdue, Due Today, Due This Week, No Due Date |
@@ -396,7 +387,7 @@ Available in all views via the sort bar:
 - **File order** — Default; preserves markdown file order
 - **Priority** — High → Medium → Low → None
 - **Status** — In Progress → To Do → Done
-- **Project** — Alphabetical
+- **Tag** — Alphabetical by first tag
 - **Estimate** — Longest first
 
 ---
@@ -579,7 +570,7 @@ Use an Obsidian CSS snippet (`.obsidian/snippets/*.css`) to override `--hx-*` CS
 
 | Version | Highlights |
 |---------|-----------|
-| **v1.0.0** | Obsidian plugin (full parity); tag pill badges; `[project]` vs `#tag` syntax; "All Slates" view; wikilink rendering; optional H2 headings |
+| **v1.0.0** | Obsidian plugin (full parity); tag pill badges with per-tag colors; "All Slates" view; wikilink rendering; optional H2 headings |
 | **v0.8.0** | Click card to jump to source; today row auto-expand in Swimlane; overdue card border; comment display on cards; search bar; Slate progress indicator; column card counts; status bar item; empty states |
 | **v0.7.0** | H1=Slate / H2=Row layout (ADR-0009); per-Slate navigation dropdown; Blocked status (`[!]`); `//` comment syntax for headings and tasks |
 | **v0.6.0** | Project color selector panel; Hexfield Text compatibility for badge colors |

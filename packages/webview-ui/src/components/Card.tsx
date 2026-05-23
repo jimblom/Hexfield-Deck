@@ -3,20 +3,13 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { marked } from "marked";
 import type { Card, SubTask } from "@hexfield-deck/core";
-import { ContextMenuContext, ProjectContext, JumpToSourceContext } from "./App.js";
-import type { ProjectConfig } from "./App.js";
+import { ContextMenuContext, TagContext, TagPriorityContext, JumpToSourceContext } from "./App.js";
+import { hexToRgba, getPrimaryTagColor } from "../utils/tagColors.js";
 import { MarkdownTitle } from "./MarkdownTitle.js";
 
 interface CardProps {
   card: Card;
   onToggleSubTask: (lineNumber: number) => void;
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function getDueDateColor(dueDate: string): string {
@@ -118,14 +111,14 @@ function SubTaskProgress({
 export function CardComponent({ card, onToggleSubTask }: CardProps) {
   const openContextMenu = useContext(ContextMenuContext);
   const jumpToSource = useContext(JumpToSourceContext);
-  const projectsConfig = useContext(ProjectContext);
+  const tagConfig = useContext(TagContext);
+  const priorityList = useContext(TagPriorityContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
-  const projectCfg: ProjectConfig | undefined = card.project ? projectsConfig[card.project] : undefined;
-
-  const color = projectCfg?.color;
-  const colorStyle = projectCfg?.style ?? "border";
+  const primaryTag = getPrimaryTagColor(card.tags ?? [], tagConfig, priorityList);
+  const color = primaryTag?.color;
+  const colorStyle = primaryTag?.style ?? "border";
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -153,24 +146,10 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
       {card.comment && (
         <div className="card-comment">{card.comment}</div>
       )}
-      {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day || (card.tags && card.tags.length > 0)) && (
+      {(card.dueDate || card.priority || card.timeEstimate || card.day || (card.tags && card.tags.length > 0)) && (
         <div className="card-meta">
-          {(card.project || card.dueDate || card.priority || card.timeEstimate || card.day) && (
+          {(card.dueDate || card.priority || card.timeEstimate || card.day) && (
             <div className="card-badges">
-              {card.project && (
-                projectCfg?.url ? (
-                  <a
-                    className="badge"
-                    href={projectCfg.url}
-                    style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    {card.project}
-                  </a>
-                ) : (
-                  <Badge label={card.project} color={projectCfg?.color ?? "var(--hx-project-tag, #569CD6)"} />
-                )
-              )}
               {card.dueDate && (
                 <Badge label={card.dueDate} color={getDueDateColor(card.dueDate)} />
               )}
@@ -189,7 +168,16 @@ export function CardComponent({ card, onToggleSubTask }: CardProps) {
           {card.tags && card.tags.length > 0 && (
             <div className="card-tags">
               {card.tags.map((tag) => (
-                <span key={tag} className="tag-pill">{tag}</span>
+                <span
+                  key={tag}
+                  className="tag-pill"
+                  style={tagConfig[tag]?.color ? {
+                    borderColor: tagConfig[tag].color,
+                    color: tagConfig[tag].color,
+                  } : undefined}
+                >
+                  {tag}
+                </span>
               ))}
             </div>
           )}

@@ -2,7 +2,6 @@
 
 export { parseBoard, parseFrontmatter } from "./parser/index.js";
 export {
-  extractProject,
   extractTags,
   extractDueDate,
   extractPriority,

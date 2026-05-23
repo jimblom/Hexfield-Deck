@@ -1,5 +1,4 @@
 export interface HexfieldColors {
-  projectTag: string;
   tagColor: string;
   priorityHigh: string;
   priorityMed: string;
@@ -14,13 +13,18 @@ export interface HexfieldColors {
   lineComment: string;
 }
 
+export interface HexfieldTagSettings {
+  tagConfig: Record<string, { color?: string; style?: "border" | "fill" | "both" }>;
+  tagPriorityList: string[];
+}
+
 export interface HexfieldSettings {
   colors: HexfieldColors;
+  tags: HexfieldTagSettings;
 }
 
 export const DEFAULT_SETTINGS: HexfieldSettings = {
   colors: {
-    projectTag: "#569CD6",
     tagColor: "#858585",
     priorityHigh: "#F44747",
     priorityMed: "#CCA700",
@@ -33,5 +37,9 @@ export const DEFAULT_SETTINGS: HexfieldSettings = {
     dueDateFuture: "#858585",
     doneTask: "#6B737C",
     lineComment: "#6A9955",
+  },
+  tags: {
+    tagConfig: {},
+    tagPriorityList: [],
   },
 };

@@ -7,13 +7,12 @@ import type { ContextMenuAction } from "./ContextMenu.js";
 import { FilterDropdown } from "./FilterDropdown.js";
 import type { FilterState, DueDateBucket, EstimateBucket } from "./FilterDropdown.js";
 import { EMPTY_FILTER, isFilterActive } from "./FilterDropdown.js";
-import { ProjectPanel } from "./ProjectPanel.js";
+import { TagPanel } from "./TagPanel.js";
 import { SearchBar } from "./SearchBar.js";
 import type { Board as BoardType, BoardData, Card, Priority, TaskStatus } from "@hexfield-deck/core";
-import type { HostBridge, ProjectConfig } from "../HostBridge.js";
+import type { HostBridge, TagConfig } from "../HostBridge.js";
 
-// Re-export ProjectConfig so existing imports from "./App.js" keep working
-export type { ProjectConfig } from "../HostBridge.js";
+export type { TagConfig } from "../HostBridge.js";
 
 type ViewMode = "standard" | "swimlane";
 type ColorConfig = Record<string, string>;
@@ -26,12 +25,14 @@ export const ContextMenuContext = createContext<ContextMenuHandler>(() => {});
 export type JumpToSourceHandler = (cardId: string) => void;
 export const JumpToSourceContext = createContext<JumpToSourceHandler>(() => {});
 
-// Context for per-project config (color, url)
-export const ProjectContext = createContext<Record<string, ProjectConfig>>({});
+// Context for per-tag config (color, style)
+export const TagContext = createContext<Record<string, TagConfig>>({});
+
+// Context for the tag priority list (drives card accent color resolution)
+export const TagPriorityContext = createContext<string[]>([]);
 
 function applyColorVars(colors: ColorConfig): void {
   const root = document.documentElement;
-  root.style.setProperty("--hx-project-tag", colors.projectTag);
   root.style.setProperty("--hx-priority-high", colors.priorityHigh);
   root.style.setProperty("--hx-priority-med", colors.priorityMed);
   root.style.setProperty("--hx-priority-low", colors.priorityLow);
@@ -86,8 +87,6 @@ function filterCards(cards: Card[], f: FilterState): Card[] {
     if (card.status === "wont-do" && !wontDoVisible) return false;
     if (card.status === "blocked" && !blockedVisible) return false;
     if (!isFilterActive(f)) return true;
-    if (f.projects.length > 0 && (!card.project || !f.projects.includes(card.project)))
-      return false;
     if (f.tags.length > 0 && !f.tags.some((t) => (card.tags ?? []).includes(t)))
       return false;
     if (!f.statuses.includes(card.status as TaskStatus))
@@ -139,7 +138,8 @@ export function App({
   });
   const [contextMenu, setContextMenu] = useState<{ card: Card; x: number; y: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterState>(EMPTY_FILTER);
-  const [projects, setProjects] = useState<Record<string, ProjectConfig>>({});
+  const [tagConfig, setTagConfig] = useState<Record<string, TagConfig>>({});
+  const [tagPriorityList, setTagPriorityList] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -148,7 +148,8 @@ export function App({
       setCards(payload.cards);
       setIsDirty(payload.isDirty ?? false);
       if (payload.colors) applyColorVars(payload.colors);
-      if (payload.projects) setProjects(payload.projects);
+      if (payload.tagConfig) setTagConfig(payload.tagConfig);
+      if (payload.tagPriorityList) setTagPriorityList(payload.tagPriorityList);
     });
 
     // Intercept link clicks from rendered markdown — event delegation avoids
@@ -177,14 +178,15 @@ export function App({
     [boardData, activeFilter]
   );
 
-  const discoveredProjects = useMemo(
-    () => [...new Set(cards.map((c) => c.project).filter((p): p is string => !!p))].sort(),
+  const discoveredTags = useMemo(
+    () => [...new Set(cards.flatMap((c) => c.tags ?? []))].sort(),
     [cards]
   );
 
-  const handleProjectConfigChange = useCallback((newConfig: Record<string, ProjectConfig>) => {
-    setProjects(newConfig);
-    bridge.send({ type: "updateProjectConfig", projects: newConfig });
+  const handleTagConfigChange = useCallback((newConfig: Record<string, TagConfig>, newPriorityList: string[]) => {
+    setTagConfig(newConfig);
+    setTagPriorityList(newPriorityList);
+    bridge.send({ type: "updateTagConfig", tagConfig: newConfig, tagPriorityList: newPriorityList });
   }, [bridge]);
 
   const handleViewChange = (mode: ViewMode) => {
@@ -383,7 +385,8 @@ export function App({
   };
 
   return (
-    <ProjectContext.Provider value={projects}>
+    <TagContext.Provider value={tagConfig}>
+    <TagPriorityContext.Provider value={tagPriorityList}>
     <JumpToSourceContext.Provider value={handleJumpToSource}>
     <ContextMenuContext.Provider value={openContextMenu}>
       <div className="app">
@@ -409,10 +412,11 @@ export function App({
             </div>
             <div className="toolbar-right">
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
-              <ProjectPanel
-                projects={discoveredProjects}
-                config={projects}
-                onChange={handleProjectConfigChange}
+              <TagPanel
+                tags={discoveredTags}
+                config={tagConfig}
+                priorityList={tagPriorityList}
+                onChange={handleTagConfigChange}
               />
               <FilterDropdown
                 cards={cards}
@@ -459,6 +463,7 @@ export function App({
       </div>
     </ContextMenuContext.Provider>
     </JumpToSourceContext.Provider>
-    </ProjectContext.Provider>
+    </TagPriorityContext.Provider>
+    </TagContext.Provider>
   );
 }

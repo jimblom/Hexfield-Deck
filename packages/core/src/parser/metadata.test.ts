@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  extractProject,
   extractDueDate,
   extractPriority,
   extractTimeEstimate,
@@ -8,53 +7,6 @@ import {
   extractTags,
   parseAllMetadata,
 } from "./metadata.js";
-
-describe("extractProject", () => {
-  it("extracts a bracketed project tag", () => {
-    const { project, cleanText } = extractProject("Fix login [auth]");
-    expect(project).toBe("auth");
-    expect(cleanText).toBe("Fix login");
-  });
-
-  it("returns first project when multiple present", () => {
-    const { project, cleanText } = extractProject("Task [alpha] see [beta]");
-    expect(project).toBe("alpha");
-    expect(cleanText).toBe("Task see [beta]");
-  });
-
-  it("returns undefined when no project tag", () => {
-    const { project, cleanText } = extractProject("Plain task");
-    expect(project).toBeUndefined();
-    expect(cleanText).toBe("Plain task");
-  });
-
-  it("handles projects with hyphens and underscores", () => {
-    const { project } = extractProject("Work on [my-project_v2]");
-    expect(project).toBe("my-project_v2");
-  });
-
-  it("does not confuse hashtags with projects", () => {
-    const { project, cleanText } = extractProject("Fix #auth login");
-    expect(project).toBeUndefined();
-    expect(cleanText).toBe("Fix #auth login");
-  });
-
-  it("does not extract dates as projects", () => {
-    const { project } = extractProject("Ship feature [2026-03-15]");
-    expect(project).toBeUndefined();
-  });
-
-  it("does not extract markdown link text as a project", () => {
-    const { project, cleanText } = extractProject("[Jump to section](#overview)");
-    expect(project).toBeUndefined();
-    expect(cleanText).toBe("[Jump to section](#overview)");
-  });
-
-  it("does not extract single-char checkbox markers", () => {
-    const { project } = extractProject("- [x] Done task");
-    expect(project).toBeUndefined();
-  });
-});
 
 describe("extractTags", () => {
   it("extracts a single tag", () => {
@@ -177,11 +129,10 @@ describe("extractTimeEstimate", () => {
 describe("parseAllMetadata", () => {
   it("extracts all metadata from a fully-tagged task", () => {
     const result = parseAllMetadata(
-      "Deploy API [backend] #urgent #deploy [2026-03-01] !!! est:4h",
+      "Deploy API #urgent #deploy [2026-03-01] !!! est:4h",
     );
     expect(result).toEqual({
       cleanTitle: "Deploy API",
-      project: "backend",
       tags: ["urgent", "deploy"],
       dueDate: "2026-03-01",
       priority: "high",
@@ -197,28 +148,31 @@ describe("parseAllMetadata", () => {
   it("handles partial metadata with tags only", () => {
     const result = parseAllMetadata("Fix bug #core #urgent !!");
     expect(result.cleanTitle).toBe("Fix bug");
-    expect(result.project).toBeUndefined();
     expect(result.tags).toEqual(["core", "urgent"]);
     expect(result.priority).toBe("medium");
     expect(result.dueDate).toBeUndefined();
     expect(result.timeEstimate).toBeUndefined();
   });
 
-  it("handles project with no tags", () => {
+  it("strips legacy [bracket] tokens from display title", () => {
     const result = parseAllMetadata("Fix bug [hexfield] !!");
     expect(result.cleanTitle).toBe("Fix bug");
-    expect(result.project).toBe("hexfield");
     expect(result.tags).toEqual([]);
     expect(result.priority).toBe("medium");
   });
 
   it("strips comment before parsing other metadata", () => {
-    const result = parseAllMetadata("Fix bug [hexfield] #urgent [2026-02-10] // waiting on upstream #ignore");
+    const result = parseAllMetadata("Fix bug #urgent [2026-02-10] // waiting on upstream #ignore");
     expect(result.cleanTitle).toBe("Fix bug");
     expect(result.comment).toBe("waiting on upstream #ignore");
-    expect(result.project).toBe("hexfield");
     expect(result.tags).toEqual(["urgent"]);
     expect(result.dueDate).toBe("2026-02-10");
+  });
+
+  it("strips legacy [bracket] tokens while preserving markdown links", () => {
+    const result = parseAllMetadata("Fix [old-project] see [details](#overview)");
+    expect(result.cleanTitle).toBe("Fix see [details](#overview)");
+    expect(result.tags).toEqual([]);
   });
 });
 

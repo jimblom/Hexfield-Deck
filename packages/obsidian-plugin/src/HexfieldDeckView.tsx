@@ -45,8 +45,7 @@ const OBSIDIAN_OVERRIDES = `
   --vscode-scrollbarSlider-background: var(--scrollbar-thumb-bg, rgba(128,128,128,0.35));
   --vscode-scrollbarSlider-hoverBackground: rgba(128,128,128,0.6);
 
-  /* Default --hx-* tokens; overridden per-project via Project Panel */
-  --hx-project-tag: var(--color-blue, #569CD6);
+  /* Default --hx-* tokens */
   --hx-priority-high: var(--color-red, #F44747);
   --hx-priority-med: var(--color-yellow, #CCA700);
   --hx-priority-low: var(--color-green, #89D185);
@@ -371,7 +370,9 @@ export class HexfieldDeckView extends ItemView {
     const boardData = parseBoard(content);
     const cards = allCards(boardData);
     const storedData = (await this.plugin.loadData()) ?? {};
-    const projects = (storedData.projects as Record<string, unknown>) ?? {};
-    this._bridge.pushUpdate({ boardData, cards, projects });
+    const tagSettings = (storedData.tags as { tagConfig?: Record<string, unknown>; tagPriorityList?: string[] }) ?? {};
+    const tagConfig = (tagSettings.tagConfig ?? {}) as Record<string, { color?: string; style?: "border" | "fill" | "both" }>;
+    const tagPriorityList = tagSettings.tagPriorityList ?? [];
+    this._bridge.pushUpdate({ boardData, cards, tagConfig, tagPriorityList });
   }
 }

@@ -177,9 +177,8 @@ describe("findSectionInsertionPoint with implicit row", () => {
 
 describe("rebuildTaskLine", () => {
   const base = {
-    rawLine: "- [ ] Fix the hatch [sol] #urgent [2026-03-01] !! est:2h",
+    rawLine: "- [ ] Fix the hatch #urgent [2026-03-01] !! est:2h",
     title: "Fix the hatch",
-    project: "sol",
     tags: ["urgent"],
     dueDate: "2026-03-01",
     priority: "medium",
@@ -188,50 +187,50 @@ describe("rebuildTaskLine", () => {
 
   it("rebuilds line with no overrides (preserves all fields)", () => {
     expect(rebuildTaskLine(base, {})).toBe(
-      "- [ ] Fix the hatch [sol] #urgent [2026-03-01] !! est:2h"
+      "- [ ] Fix the hatch #urgent [2026-03-01] !! est:2h"
     );
   });
 
   it("overrides the title", () => {
     expect(rebuildTaskLine(base, { title: "Fix the escape pod" })).toBe(
-      "- [ ] Fix the escape pod [sol] #urgent [2026-03-01] !! est:2h"
+      "- [ ] Fix the escape pod #urgent [2026-03-01] !! est:2h"
     );
   });
 
   it("clears dueDate with null", () => {
     expect(rebuildTaskLine(base, { dueDate: null })).toBe(
-      "- [ ] Fix the hatch [sol] #urgent !! est:2h"
+      "- [ ] Fix the hatch #urgent !! est:2h"
     );
   });
 
   it("clears priority with null", () => {
     expect(rebuildTaskLine(base, { priority: null })).toBe(
-      "- [ ] Fix the hatch [sol] #urgent [2026-03-01] est:2h"
+      "- [ ] Fix the hatch #urgent [2026-03-01] est:2h"
     );
   });
 
   it("clears timeEstimate with null", () => {
     expect(rebuildTaskLine(base, { timeEstimate: null })).toBe(
-      "- [ ] Fix the hatch [sol] #urgent [2026-03-01] !!"
+      "- [ ] Fix the hatch #urgent [2026-03-01] !!"
     );
   });
 
   it("maps priority high to !!!", () => {
     expect(rebuildTaskLine({ ...base, priority: "high" }, {})).toBe(
-      "- [ ] Fix the hatch [sol] #urgent [2026-03-01] !!! est:2h"
+      "- [ ] Fix the hatch #urgent [2026-03-01] !!! est:2h"
     );
   });
 
   it("maps priority low to !", () => {
     expect(rebuildTaskLine({ ...base, priority: "low" }, {})).toBe(
-      "- [ ] Fix the hatch [sol] #urgent [2026-03-01] ! est:2h"
+      "- [ ] Fix the hatch #urgent [2026-03-01] ! est:2h"
     );
   });
 
   it("preserves the checkbox prefix from rawLine", () => {
-    const done = { ...base, rawLine: "- [x] Fix the hatch [sol]" };
+    const done = { ...base, rawLine: "- [x] Fix the hatch" };
     expect(rebuildTaskLine(done, { title: "Fixed" })).toBe(
-      "- [x] Fixed [sol] #urgent [2026-03-01] !! est:2h"
+      "- [x] Fixed #urgent [2026-03-01] !! est:2h"
     );
   });
 
@@ -242,16 +241,15 @@ describe("rebuildTaskLine", () => {
 
   it("normalizes metadata order regardless of original order", () => {
     const shuffled = {
-      rawLine: "- [ ] Task !!! [sol] #ai #backend est:1h [2026-01-01]",
+      rawLine: "- [ ] Task !!! #ai #backend est:1h [2026-01-01]",
       title: "Task",
-      project: "sol",
       tags: ["ai", "backend"],
       dueDate: "2026-01-01",
       priority: "high",
       timeEstimate: "1h",
     };
     expect(rebuildTaskLine(shuffled, {})).toBe(
-      "- [ ] Task [sol] #ai #backend [2026-01-01] !!! est:1h"
+      "- [ ] Task #ai #backend [2026-01-01] !!! est:1h"
     );
   });
 
@@ -268,7 +266,7 @@ describe("rebuildTaskLine", () => {
 
   it("overrides tags", () => {
     expect(rebuildTaskLine(base, { tags: ["deploy", "ci"] })).toBe(
-      "- [ ] Fix the hatch [sol] #deploy #ci [2026-03-01] !! est:2h"
+      "- [ ] Fix the hatch #deploy #ci [2026-03-01] !! est:2h"
     );
   });
 });

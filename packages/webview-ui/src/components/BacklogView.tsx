@@ -17,7 +17,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { SortBar, sortCards } from "./SortBar.js";
 import type { SortKey } from "./SortBar.js";
 import type { BoardData, Card } from "@hexfield-deck/core";
-import { ProjectContext } from "./App.js";
+import { TagContext, TagPriorityContext } from "./App.js";
+import { hexToRgba, getPrimaryTagColor } from "../utils/tagColors.js";
 
 interface BacklogViewProps {
   boardData: BoardData;
@@ -113,16 +114,23 @@ function DraggableBacklogCard({
   card: Card;
   onStatusClick: (card: Card) => void;
 }) {
-  const projectsConfig = useContext(ProjectContext);
+  const tagConfig = useContext(TagContext);
+  const priorityList = useContext(TagPriorityContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
-  const projectCfg = card.project ? projectsConfig[card.project] : undefined;
+  const primaryTag = getPrimaryTagColor(card.tags ?? [], tagConfig, priorityList);
+  const accentColor = primaryTag?.color;
+  const colorStyle = primaryTag?.style ?? "border";
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    ...(accentColor && (colorStyle === "border" || colorStyle === "both")
+      ? { borderLeft: `3px solid ${accentColor}` } : {}),
+    ...(accentColor && (colorStyle === "fill" || colorStyle === "both")
+      ? { backgroundColor: hexToRgba(accentColor, 0.1) } : {}),
   };
 
   return (
@@ -143,15 +151,10 @@ function DraggableBacklogCard({
       </button>
       <div className="backlog-card-content">
         <MarkdownTitle title={card.title} />
-        {(card.project || card.priority || card.timeEstimate || (card.tags && card.tags.length > 0)) && (
+        {(card.priority || card.timeEstimate || (card.tags && card.tags.length > 0)) && (
           <div className="card-meta">
-            {(card.project || card.priority || card.timeEstimate) && (
+            {(card.priority || card.timeEstimate) && (
               <div className="card-badges">
-                {card.project && (
-                  <span className="badge" style={{ color: projectCfg?.color ?? "var(--hx-project-tag, #569CD6)" }}>
-                    {card.project}
-                  </span>
-                )}
                 {card.priority && (
                   <span className="badge" style={{ color: getPriorityColor(card.priority) }}>
                     {card.priority.toUpperCase()}
@@ -163,7 +166,16 @@ function DraggableBacklogCard({
             {card.tags && card.tags.length > 0 && (
               <div className="card-tags">
                 {card.tags.map((tag) => (
-                  <span key={tag} className="tag-pill">{tag}</span>
+                  <span
+                    key={tag}
+                    className="tag-pill"
+                    style={tagConfig[tag]?.color ? {
+                      borderColor: tagConfig[tag].color,
+                      color: tagConfig[tag].color,
+                    } : undefined}
+                  >
+                    {tag}
+                  </span>
                 ))}
               </div>
             )}

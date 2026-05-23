@@ -2,9 +2,8 @@ import type { BoardData, Card } from "@hexfield-deck/core";
 
 export type ColorConfig = Record<string, string>;
 
-export interface ProjectConfig {
+export interface TagConfig {
   color?: string;
-  url?: string;
   style?: "border" | "fill" | "both";
 }
 
@@ -14,7 +13,8 @@ export interface UpdatePayload {
   cards: Card[];
   isDirty?: boolean;
   colors?: ColorConfig;
-  projects?: Record<string, ProjectConfig>;
+  tagConfig?: Record<string, TagConfig>;
+  tagPriorityList?: string[];
 }
 
 export type HostState = Record<string, unknown>;
@@ -33,7 +33,7 @@ export type OutboundMessage =
   | { type: "deleteTask"; cardId: string }
   | { type: "addTask"; sectionHeading: string; boardHeading?: string }
   | { type: "openLink"; url: string }
-  | { type: "updateProjectConfig"; projects: Record<string, ProjectConfig> };
+  | { type: "updateTagConfig"; tagConfig: Record<string, TagConfig>; tagPriorityList: string[] };
 
 /**
  * Platform abstraction for the board UI. Implementations exist for VS Code

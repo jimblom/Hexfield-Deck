@@ -40,20 +40,16 @@
         "configuration": {
             "title": "Hexfield Deck",
             "properties": {
-                "hexfield-deck.projects": {
+                "hexfield-deck.tagConfig": {
                     "type": "object",
                     "default": {},
-                    "description": "Per-project configuration. Keys are project names (without #). Each value may have 'color' (hex string for card left border) and/or 'url' (makes project badge a clickable link).",
+                    "description": "Per-tag color configuration. Keys are tag names (without #). Each value may have 'color' (hex string) and 'style' (how the color is applied to cards).",
                     "additionalProperties": {
                         "type": "object",
                         "properties": {
                             "color": {
                                 "type": "string",
-                                "description": "Hex color for the card left border"
-                            },
-                            "url": {
-                                "type": "string",
-                                "description": "URL to open when the project badge is clicked"
+                                "description": "Hex color for tag pill and card accent"
                             },
                             "style": {
                                 "type": "string",
@@ -62,6 +58,12 @@
                             }
                         }
                     }
+                },
+                "hexfield-deck.tagPriorityList": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": [],
+                    "description": "Ordered list of tag names. When a card has multiple colored tags, the first tag in this list determines the card's accent color."
                 }
             }
         },

@@ -15,7 +15,7 @@ export default class HexfieldDeckPlugin extends Plugin {
 
     this.registerView(VIEW_TYPE, (leaf) => new HexfieldDeckView(leaf, this));
 
-    // Editor text decorations (project tags, priorities, due dates, etc.)
+    // Editor text decorations (tags, priorities, due dates, etc.)
     this.registerEditorExtension(
       this._decoratorCompartment.of(hexfieldDecorationExtension(this)),
     );
@@ -51,8 +51,9 @@ export default class HexfieldDeckPlugin extends Plugin {
 
   async loadSettings(): Promise<void> {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    // Deep-merge colors so new color keys get defaults even on upgrade
+    // Deep-merge colors and tags so new keys get defaults even on upgrade
     this.settings.colors = Object.assign({}, DEFAULT_SETTINGS.colors, this.settings.colors);
+    this.settings.tags = Object.assign({}, DEFAULT_SETTINGS.tags, this.settings.tags);
   }
 
   async saveSettings(): Promise<void> {

@@ -35,7 +35,8 @@ export class BoardWebviewPanel {
       (e) => {
         if (
           e.affectsConfiguration("hexfield.colors") ||
-          e.affectsConfiguration("hexfield-deck.projects")
+          e.affectsConfiguration("hexfield-deck.tagConfig") ||
+          e.affectsConfiguration("hexfield-deck.tagPriorityList")
         ) {
           this._update();
         }
@@ -102,11 +103,11 @@ export class BoardWebviewPanel {
               vscode.env.openExternal(vscode.Uri.parse(message.url));
             }
             break;
-          case "updateProjectConfig":
-            if (message.projects && typeof message.projects === "object") {
-              vscode.workspace
-                .getConfiguration("hexfield-deck")
-                .update("projects", message.projects, vscode.ConfigurationTarget.Global);
+          case "updateTagConfig":
+            if (message.tagConfig && typeof message.tagConfig === "object") {
+              const cfg = vscode.workspace.getConfiguration("hexfield-deck");
+              cfg.update("tagConfig", message.tagConfig, vscode.ConfigurationTarget.Global);
+              cfg.update("tagPriorityList", message.tagPriorityList ?? [], vscode.ConfigurationTarget.Global);
             }
             break;
         }
@@ -208,7 +209,6 @@ export class BoardWebviewPanel {
   private _getColors(): Record<string, string> {
     const cfg = vscode.workspace.getConfiguration("hexfield.colors");
     return {
-      projectTag: cfg.get<string>("projectTag", "#569CD6"),
       priorityHigh: cfg.get<string>("priorityHigh", "#F44747"),
       priorityMed: cfg.get<string>("priorityMed", "#CCA700"),
       priorityLow: cfg.get<string>("priorityLow", "#89D185"),
@@ -221,16 +221,19 @@ export class BoardWebviewPanel {
     };
   }
 
-  private _getProjectConfig(): Record<string, { color?: string; url?: string }> {
-    return vscode.workspace
-      .getConfiguration("hexfield-deck")
-      .get<Record<string, { color?: string; url?: string }>>("projects", {});
+  private _getTagConfig(): { tagConfig: Record<string, { color?: string; style?: string }>; tagPriorityList: string[] } {
+    const cfg = vscode.workspace.getConfiguration("hexfield-deck");
+    return {
+      tagConfig: cfg.get<Record<string, { color?: string; style?: string }>>("tagConfig", {}),
+      tagPriorityList: cfg.get<string[]>("tagPriorityList", []),
+    };
   }
 
   private _update(): void {
     const text = this._document.getText();
     const board = parseBoard(text);
     const cards = allCards(board);
+    const { tagConfig, tagPriorityList } = this._getTagConfig();
 
     this._panel.webview.postMessage({
       type: "update",
@@ -238,7 +241,8 @@ export class BoardWebviewPanel {
       cards: cards,
       isDirty: this._document.isDirty,
       colors: this._getColors(),
-      projects: this._getProjectConfig(),
+      tagConfig,
+      tagPriorityList,
     });
   }
 

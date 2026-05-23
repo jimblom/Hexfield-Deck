@@ -118,38 +118,36 @@ color: var(--hx-due-future, #858585);
 
 ---
 
-## Per-Project Configuration: `hexfield-deck.projects`
+## Per-Tag Configuration: `hexfield-deck.tagConfig` / `hexfield-deck.tagPriorityList`
 
 **Owner: Hexfield Deck.** Registered in Hexfield Deck's `package.json`.
 
-A user-editable map of project names (without `#`) to per-project settings.
-Any Hexfield extension that surfaces project-aware UI — color indicators,
-clickable project badges, etc. — should read from and write to this namespace.
+A user-editable map of tag names (without `#`) to per-tag settings, plus an
+ordered priority list that governs card accent colors when multiple colored tags
+are present. See ADR-0015 for the rationale (replaces the former `hexfield-deck.projects` namespace).
 
 **Schema:**
 
 ```json
 {
-  "hexfield-deck.projects": {
+  "hexfield-deck.tagConfig": {
     "type": "object",
     "additionalProperties": {
       "type": "object",
       "properties": {
-        "color": {
-          "type": "string",
-          "description": "Hex color string"
-        },
+        "color": { "type": "string", "description": "Hex color string" },
         "style": {
           "type": "string",
           "enum": ["border", "fill", "both"],
           "description": "How to apply the color (default: border)"
-        },
-        "url": {
-          "type": "string",
-          "description": "URL opened when the project badge is clicked"
         }
       }
     }
+  },
+  "hexfield-deck.tagPriorityList": {
+    "type": "array",
+    "items": { "type": "string" },
+    "description": "Ordered tag names; first match wins for card accent color"
   }
 }
 ```
@@ -165,29 +163,32 @@ clickable project badges, etc. — should read from and write to this namespace.
 **Reading the config:**
 
 ```typescript
-const projects = vscode.workspace
+const tagConfig = vscode.workspace
   .getConfiguration("hexfield-deck")
-  .get<Record<string, { color?: string; style?: string; url?: string }>>("projects", {});
+  .get<Record<string, { color?: string; style?: string }>>("tagConfig", {});
+const tagPriorityList = vscode.workspace
+  .getConfiguration("hexfield-deck")
+  .get<string[]>("tagPriorityList", []);
 ```
 
 **Writing the config** (always `Global` target — these are user preferences,
 not workspace settings):
 
 ```typescript
-vscode.workspace
-  .getConfiguration("hexfield-deck")
-  .update("projects", newProjects, vscode.ConfigurationTarget.Global);
+const cfg = vscode.workspace.getConfiguration("hexfield-deck");
+cfg.update("tagConfig", newTagConfig, vscode.ConfigurationTarget.Global);
+cfg.update("tagPriorityList", newPriorityList, vscode.ConfigurationTarget.Global);
 ```
 
-After writing, listen on `onDidChangeConfiguration` for `"hexfield-deck.projects"`
-to refresh any UI that depends on it.
+After writing, listen on `onDidChangeConfiguration` for `"hexfield-deck.tagConfig"`
+and `"hexfield-deck.tagPriorityList"` to refresh any UI that depends on them.
 
 ---
 
 ## Shared Color Palette
 
 The following 12 colors are used as the curated swatch set in Hexfield Deck's
-project color picker. They are drawn from the same palette as the token colors
+tag color picker. They are drawn from the same palette as the token colors
 above. Hexfield Text surfaces that offer color selection should use the same
 swatches for visual consistency.
 

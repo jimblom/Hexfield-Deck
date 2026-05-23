@@ -41,14 +41,14 @@ This is a clean-room reimagining of a VS Code extension the author built interna
 | 4 | Swimlane + Backlog views | ✅ Complete |
 | 5 | Right-click context menu, CRUD ops, Quick Add | ✅ Complete |
 | 6 | Inline markdown rendering, link interception | ✅ Complete |
-| 7 | Metadata filtering (project/status/priority/date/estimate) | ✅ Complete |
+| 7 | Metadata filtering (status/priority/date/estimate/tags) | ✅ Complete |
 | 8 | Generic section model (H1 board / H2 row), wont-do status | ✅ Complete |
 | 9 | Polish & VS Code Marketplace submission (v1.0.0) | ✅ Complete |
 | 10 | Obsidian plugin — full feature parity | ✅ Complete |
 
 Current release: **v1.0.0** on `main` (targeting). Branch: `feature/phase-10-obsidian`.
 
-ADRs 0001–0014 in `docs/decisions/`.
+ADRs 0001–0015 in `docs/decisions/`.
 
 ## Technical Decisions
 
@@ -63,7 +63,7 @@ ADRs 0001–0014 in `docs/decisions/`.
 - **Section model:** Convention-based — heading text determines type (day/bucket/board); no explicit markers (ADR-0008, ADR-0009)
 - **In-progress status:** `[/]` checkbox variant (ADR-0005)
 - **Webview ↔ extension:** Message-passing with ready handshake (webview sends `"ready"`, extension waits before sending board data)
-- **Metadata order on write-back:** `title [project] [date] !!! est:Xh #tag` — normalized by `rebuildTaskLine()`
+- **Metadata order on write-back:** `title #tag1 #tag2 [date] !!! est:Xh` — normalized by `rebuildTaskLine()`
 
 ## Conventions
 

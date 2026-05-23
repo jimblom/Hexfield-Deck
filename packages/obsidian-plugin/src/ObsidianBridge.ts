@@ -131,8 +131,8 @@ export class ObsidianBridge implements HostBridge {
         window.open(message.url, "_blank");
         break;
 
-      case "updateProjectConfig":
-        await this._updateProjectConfig(message.projects);
+      case "updateTagConfig":
+        await this._updateTagConfig(message.tagConfig, message.tagPriorityList);
         break;
     }
   }
@@ -326,11 +326,12 @@ export class ObsidianBridge implements HostBridge {
     });
   }
 
-  private async _updateProjectConfig(
-    projects: Record<string, { color?: string; url?: string; style?: string }>,
+  private async _updateTagConfig(
+    tagConfig: Record<string, { color?: string; style?: string }>,
+    tagPriorityList: string[],
   ): Promise<void> {
     const existing = (await this.deps.plugin.loadData()) ?? {};
-    await this.deps.plugin.saveData({ ...existing, projects });
+    await this.deps.plugin.saveData({ ...existing, tags: { tagConfig, tagPriorityList } });
     await this.deps.reload();
   }
 }

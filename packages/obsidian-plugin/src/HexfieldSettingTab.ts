@@ -9,7 +9,6 @@ interface ColorSetting {
 }
 
 const COLOR_SETTINGS: ColorSetting[] = [
-  { key: "projectTag",          label: "Project",               desc: "Color for [project] tags" },
   { key: "tagColor",            label: "Tag",                   desc: "Color for #tag hashtags" },
   { key: "priorityHigh",        label: "Priority — high",       desc: "Color for !!! markers" },
   { key: "priorityMed",         label: "Priority — medium",     desc: "Color for !! markers" },

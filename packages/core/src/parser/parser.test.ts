@@ -114,7 +114,6 @@ describe("parseBoard", () => {
 
     const standup = monday.cards[0];
     expect(standup.status).toBe("done");
-    expect(standup.project).toBe("work");
     expect(standup.day).toBe("Monday");
     expect(standup.sectionHeading).toBe("Monday, February 9, 2026");
     expect(standup.boardHeading).toBe("Week 7, 2026");
@@ -141,7 +140,6 @@ describe("parseBoard", () => {
     const parser = board.boards[0].rows[1].cards[0];
 
     expect(parser.status).toBe("in-progress");
-    expect(parser.project).toBe("hexfield");
     expect(parser.timeEstimate).toBe("4h");
   });
 
@@ -152,12 +150,10 @@ describe("parseBoard", () => {
     const nowRow = backlog.rows[0];
     expect(nowRow.cards).toHaveLength(2);
     expect(nowRow.cards[0].priority).toBe("high");
-    expect(nowRow.cards[0].project).toBe("core");
     expect(nowRow.cards[0].sectionHeading).toBe("Now");
     expect(nowRow.cards[0].boardHeading).toBe("Backlog");
 
     const next2Row = backlog.rows[1];
-    expect(next2Row.cards[0].project).toBe("backend");
     expect(next2Row.cards[0].sectionHeading).toBe("Next 2 Weeks");
     expect(next2Row.cards[0].boardHeading).toBe("Backlog");
 
