@@ -15,7 +15,7 @@ endDate: 2026-02-15
 
 ## Monday, February 9, 2026
 
-- [x] Morning standup #work
+- [x] Morning standup [work] #daily
 - [ ] Review PRs [2026-02-09] !!
   - [x] PR #123
   - [ ] PR #456
@@ -23,19 +23,19 @@ endDate: 2026-02-15
 
 ## Tuesday, February 10, 2026
 
-- [/] Write parser #hexfield est:4h
+- [/] Write parser [hexfield] #dev est:4h
 - [ ] Update docs
 
 # Backlog
 
 ## Now
 
-- [ ] Fix critical bug !!! #core
+- [ ] Fix critical bug !!! [core] #urgent
 - [ ] Deploy hotfix
 
 ## Next 2 Weeks
 
-- [ ] Refactor auth module #backend
+- [ ] Refactor auth module [backend]
 
 ## This Month
 
@@ -43,7 +43,7 @@ endDate: 2026-02-15
 
 ## This Quarter
 
-- [ ] Launch v1.0 #hexfield [2026-03-31]
+- [ ] Launch v1.0 [hexfield] [2026-03-31]
 
 ## This Year
 
@@ -114,7 +114,6 @@ describe("parseBoard", () => {
 
     const standup = monday.cards[0];
     expect(standup.status).toBe("done");
-    expect(standup.project).toBe("work");
     expect(standup.day).toBe("Monday");
     expect(standup.sectionHeading).toBe("Monday, February 9, 2026");
     expect(standup.boardHeading).toBe("Week 7, 2026");
@@ -141,7 +140,6 @@ describe("parseBoard", () => {
     const parser = board.boards[0].rows[1].cards[0];
 
     expect(parser.status).toBe("in-progress");
-    expect(parser.project).toBe("hexfield");
     expect(parser.timeEstimate).toBe("4h");
   });
 
@@ -152,12 +150,10 @@ describe("parseBoard", () => {
     const nowRow = backlog.rows[0];
     expect(nowRow.cards).toHaveLength(2);
     expect(nowRow.cards[0].priority).toBe("high");
-    expect(nowRow.cards[0].project).toBe("core");
     expect(nowRow.cards[0].sectionHeading).toBe("Now");
     expect(nowRow.cards[0].boardHeading).toBe("Backlog");
 
     const next2Row = backlog.rows[1];
-    expect(next2Row.cards[0].project).toBe("backend");
     expect(next2Row.cards[0].sectionHeading).toBe("Next 2 Weeks");
     expect(next2Row.cards[0].boardHeading).toBe("Backlog");
 
@@ -232,8 +228,8 @@ tags: []
 
 ## Sprint 1
 
-- [ ] Build the thing #eng
-- [/] Review the thing #eng
+- [ ] Build the thing [eng]
+- [/] Review the thing [eng]
 
 ## Ideas
 
@@ -317,7 +313,7 @@ tags: [planner]
   it("preserves rawLine for roundtripping", () => {
     const board = parseBoard(FULL_PLANNER);
     const card = board.boards[0].rows[0].cards[0];
-    expect(card.rawLine).toBe("- [x] Morning standup #work");
+    expect(card.rawLine).toBe("- [x] Morning standup [work] #daily");
   });
 
   it("multiple H1 boards coexist independently", () => {
@@ -378,5 +374,81 @@ tags: []
     expect(cards[0].status).toBe("blocked");
     expect(cards[0].title).toBe("Blocked on external dependency");
     expect(cards[1].status).toBe("todo");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Implicit row — cards under H1 with no H2
+// ---------------------------------------------------------------------------
+
+describe("implicit row (cards under H1 with no H2)", () => {
+  it("creates an implicit row for cards directly under H1", () => {
+    const input = `# My Board\n\n- [ ] Task A\n- [x] Task B`;
+    const result = parseBoard(input);
+    expect(result.boards).toHaveLength(1);
+    expect(result.boards[0].rows).toHaveLength(1);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[0].rows[0].cards).toHaveLength(2);
+    expect(result.boards[0].rows[0].cards[0].title).toBe("Task A");
+    expect(result.boards[0].rows[0].cards[0].sectionHeading).toBe("");
+    expect(result.boards[0].rows[0].cards[0].boardHeading).toBe("My Board");
+  });
+
+  it("implicit row comes before explicit H2 rows", () => {
+    const input = `# Board\n\n- [ ] Orphan\n\n## Row A\n\n- [ ] Rowful`;
+    const result = parseBoard(input);
+    expect(result.boards[0].rows).toHaveLength(2);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[0].rows[0].cards[0].title).toBe("Orphan");
+    expect(result.boards[0].rows[1].heading).toBe("Row A");
+    expect(result.boards[0].rows[1].cards[0].title).toBe("Rowful");
+  });
+
+  it("creates implicit board + implicit row when no headings at all", () => {
+    const input = `- [ ] Bare task`;
+    const result = parseBoard(input);
+    expect(result.boards).toHaveLength(1);
+    expect(result.boards[0].heading).toBe("");
+    expect(result.boards[0].rows).toHaveLength(1);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[0].rows[0].cards).toHaveLength(1);
+  });
+
+  it("only boards with orphan cards get implicit rows", () => {
+    const input = [
+      "# Board A",
+      "- [ ] Orphan A",
+      "# Board B",
+      "## Row B",
+      "- [ ] Card B",
+    ].join("\n");
+    const result = parseBoard(input);
+    expect(result.boards[0].rows).toHaveLength(1);
+    expect(result.boards[0].rows[0].heading).toBe("");
+    expect(result.boards[1].rows).toHaveLength(1);
+    expect(result.boards[1].rows[0].heading).toBe("Row B");
+  });
+
+  it("existing files with H2s produce no implicit rows", () => {
+    const result = parseBoard(FULL_PLANNER);
+    const cards = allCards(result);
+    expect(cards.length).toBeGreaterThan(0);
+    expect(cards.every((c) => c.sectionHeading !== "")).toBe(true);
+  });
+
+  it("preserves sub-tasks and body on cards in implicit row", () => {
+    const input = [
+      "# Board",
+      "- [ ] Parent task",
+      "  A body note",
+      "  - [x] Sub 1",
+      "  - [ ] Sub 2",
+    ].join("\n");
+    const result = parseBoard(input);
+    const card = result.boards[0].rows[0].cards[0];
+    expect(card.title).toBe("Parent task");
+    expect(card.body).toEqual(["A body note"]);
+    expect(card.subTasks).toHaveLength(2);
+    expect(card.subTasks[0].status).toBe("done");
   });
 });

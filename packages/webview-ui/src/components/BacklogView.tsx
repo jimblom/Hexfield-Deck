@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { MarkdownTitle } from "./MarkdownTitle.js";
 import {
   DndContext,
@@ -17,6 +17,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { SortBar, sortCards } from "./SortBar.js";
 import type { SortKey } from "./SortBar.js";
 import type { BoardData, Card } from "@hexfield-deck/core";
+import { TagContext, TagPriorityContext } from "./App.js";
+import { hexToRgba, getPrimaryTagColor } from "../utils/tagColors.js";
 
 interface BacklogViewProps {
   boardData: BoardData;
@@ -112,13 +114,23 @@ function DraggableBacklogCard({
   card: Card;
   onStatusClick: (card: Card) => void;
 }) {
+  const tagConfig = useContext(TagContext);
+  const priorityList = useContext(TagPriorityContext);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
-  const style = {
+  const primaryTag = getPrimaryTagColor(card.tags ?? [], tagConfig, priorityList);
+  const accentColor = primaryTag?.color;
+  const colorStyle = primaryTag?.style ?? "border";
+
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    ...(accentColor && (colorStyle === "border" || colorStyle === "both")
+      ? { borderLeft: `3px solid ${accentColor}` } : {}),
+    ...(accentColor && (colorStyle === "fill" || colorStyle === "both")
+      ? { backgroundColor: hexToRgba(accentColor, 0.1) } : {}),
   };
 
   return (
@@ -139,19 +151,36 @@ function DraggableBacklogCard({
       </button>
       <div className="backlog-card-content">
         <MarkdownTitle title={card.title} />
-        <div className="card-badges">
-          {card.project && (
-            <span className="badge" style={{ color: "var(--vscode-charts-blue)" }}>
-              {card.project}
-            </span>
-          )}
-          {card.priority && (
-            <span className="badge" style={{ color: getPriorityColor(card.priority) }}>
-              {card.priority.toUpperCase()}
-            </span>
-          )}
-          {card.timeEstimate && <span className="badge">{card.timeEstimate}</span>}
-        </div>
+        {(card.priority || card.timeEstimate || (card.tags && card.tags.length > 0)) && (
+          <div className="card-meta">
+            {(card.priority || card.timeEstimate) && (
+              <div className="card-badges">
+                {card.priority && (
+                  <span className="badge" style={{ color: getPriorityColor(card.priority) }}>
+                    {card.priority.toUpperCase()}
+                  </span>
+                )}
+                {card.timeEstimate && <span className="badge">{card.timeEstimate}</span>}
+              </div>
+            )}
+            {card.tags && card.tags.length > 0 && (
+              <div className="card-tags">
+                {card.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="tag-pill"
+                    style={tagConfig[tag]?.color ? {
+                      borderColor: tagConfig[tag].color,
+                      color: tagConfig[tag].color,
+                    } : undefined}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {card.subTasks.length > 0 && (
           <div className="backlog-subtask-summary">
             {card.subTasks.filter((st) => st.status === "done").length}/{card.subTasks.length} subtasks

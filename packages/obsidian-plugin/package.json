@@ -1,0 +1,25 @@
+{
+  "name": "@hexfield-deck/obsidian-plugin",
+  "version": "0.8.0",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "sync": "node esbuild.config.mjs production && node -e \"const fs=require('fs');const d='../../examples/.obsidian/plugins/obsidian-hexfield-deck/';['main.js','manifest.json','styles.css'].forEach(f=>fs.copyFileSync(f,d+f));console.log('Synced to dev vault');\""
+  },
+  "dependencies": {
+    "@hexfield-deck/core": "workspace:*",
+    "@hexfield-deck/webview-ui": "workspace:*",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@codemirror/state": "6.6.0",
+    "@codemirror/view": "6.41.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.24.2",
+    "obsidian": "1.7.2",
+    "typescript": "5.7.3"
+  }
+}

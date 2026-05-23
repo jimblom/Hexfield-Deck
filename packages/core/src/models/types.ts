@@ -30,13 +30,13 @@ export interface Card {
   lineNumber: number;
   body: string[];
   subTasks: SubTask[];
-  project?: string;
+  tags: string[];
   dueDate?: string;
   priority?: Priority;
   timeEstimate?: string;
   /** Text after ` // ` on the task line — stripped from `title`, stored for future display. */
   comment?: string;
-  /** The H2 heading of the row this card belongs to. Always set. */
+  /** The H2 heading of the row this card belongs to. Empty string if in the implicit (no-H2) row. */
   sectionHeading: string;
   /** The H1 heading of the board this card belongs to. Empty string if no H1 in file. */
   boardHeading: string;
@@ -45,7 +45,8 @@ export interface Card {
 }
 
 /**
- * An H2 row within a board. Every H2 heading is a row — the swimlane unit.
+ * An H2 row within a board, or the implicit default row for cards under an H1
+ * with no preceding H2. When `heading` is `""` this is the implicit row.
  * Day rows (heading starts with a day name) additionally carry `dayName` and `date`.
  */
 export interface Row {

@@ -3,8 +3,17 @@ import { marked } from "marked";
 
 marked.setOptions({ gfm: true });
 
+/** Convert Obsidian-style wikilinks to standard markdown links. */
+function expandWikilinks(text: string): string {
+  // [[target|label]] → [label](target)
+  // [[target]]       → [target](target)
+  return text.replace(/\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g, (_m, target, label) =>
+    `[${label || target}](${target})`,
+  );
+}
+
 export function MarkdownTitle({ title }: { title: string }) {
-  const html = useMemo(() => marked.parseInline(title) as string, [title]);
+  const html = useMemo(() => marked.parseInline(expandWikilinks(title)) as string, [title]);
 
   return (
     <div

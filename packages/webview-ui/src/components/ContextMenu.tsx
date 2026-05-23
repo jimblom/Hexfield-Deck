@@ -65,7 +65,7 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     items.push({
       label: "Move",
       submenu: homeBoard.rows.map((r) => ({
-        label: displayLabel(r.heading),
+        label: r.heading ? displayLabel(r.heading) : "General",
         action: {
           type: "moveToSection" as const,
           sectionHeading: r.heading,
@@ -81,7 +81,7 @@ function getMenuItems(card: Card, boardData: BoardData): MenuItem[] {
     items.push({
       label: `Move to ${board.heading || "Board"}`,
       submenu: board.rows.map((r) => ({
-        label: displayLabel(r.heading),
+        label: r.heading ? displayLabel(r.heading) : "General",
         action: {
           type: "moveToSection" as const,
           sectionHeading: r.heading,

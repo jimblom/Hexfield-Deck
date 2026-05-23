@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-hexfield-deck",
+  "name": "Hexfield Deck",
+  "version": "0.8.0",
+  "minAppVersion": "1.0.0",
+  "description": "Markdown-powered kanban board for Obsidian",
+  "author": "Jim Lindblom",
+  "authorUrl": "https://github.com/jimblom/Hexfield-Deck",
+  "isDesktopOnly": false
+}

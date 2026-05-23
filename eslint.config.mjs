@@ -11,7 +11,12 @@ export default tseslint.config(
       "**/node_modules/",
       "coverage/",
       "*.config.ts",
+      "**/*.config.mjs",
       "example-extension.ts",
+      // Obsidian plugin build artifact (gitignored but present locally after build)
+      "packages/obsidian-plugin/main.js",
+      // Claude Code session files
+      ".claude/",
     ],
   },
   {

@@ -5,7 +5,7 @@ export type DueDateBucket = "overdue" | "today" | "this-week" | "none";
 export type EstimateBucket = "none" | "short" | "medium" | "long";
 
 export interface FilterState {
-  projects: string[];
+  tags: string[];
   priorities: Priority[];
   dueDates: DueDateBucket[];
   statuses: TaskStatus[];
@@ -15,7 +15,7 @@ export interface FilterState {
 const DEFAULT_STATUSES: TaskStatus[] = ["todo", "in-progress", "done"];
 
 export const EMPTY_FILTER: FilterState = {
-  projects: [],
+  tags: [],
   priorities: [],
   dueDates: [],
   statuses: DEFAULT_STATUSES,
@@ -31,7 +31,7 @@ function statusesMatchDefault(statuses: TaskStatus[]): boolean {
 
 export function isFilterActive(f: FilterState): boolean {
   return (
-    f.projects.length > 0 ||
+    f.tags.length > 0 ||
     f.priorities.length > 0 ||
     f.dueDates.length > 0 ||
     !statusesMatchDefault(f.statuses) ||
@@ -81,10 +81,10 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const projects = [...new Set(cards.map((c) => c.project).filter((p): p is string => !!p))].sort();
+  const tags = [...new Set(cards.flatMap((c) => c.tags ?? []))].sort();
   const statusDeviations = statusesMatchDefault(filter.statuses) ? 0 : 1;
   const activeCount = (
-    filter.projects.length +
+    filter.tags.length +
     filter.priorities.length +
     filter.dueDates.length +
     statusDeviations +
@@ -129,17 +129,17 @@ export function FilterDropdown({ cards, filter, onChange }: FilterDropdownProps)
             )}
           </div>
 
-          {projects.length > 0 && (
+          {tags.length > 0 && (
             <div className="filter-section">
-              <div className="filter-section-label">Project</div>
-              {projects.map((p) => (
-                <label key={p} className="filter-option">
+              <div className="filter-section-label">Tags</div>
+              {tags.map((t) => (
+                <label key={t} className="filter-option">
                   <input
                     type="checkbox"
-                    checked={filter.projects.includes(p)}
-                    onChange={() => set("projects", toggle(filter.projects, p))}
+                    checked={filter.tags.includes(t)}
+                    onChange={() => set("tags", toggle(filter.tags, t))}
                   />
-                  #{p}
+                  #{t}
                 </label>
               ))}
             </div>

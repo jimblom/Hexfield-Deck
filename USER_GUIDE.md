@@ -4,6 +4,24 @@ Complete reference for the markdown file format and features supported by Hexfie
 
 ---
 
+## Installation
+
+### VS Code
+
+1. Download the latest `.vsix` from the [Releases](https://github.com/jimblom/Hexfield-Deck/releases) page
+2. In VS Code: `Extensions → ⋯ → Install from VSIX...` → select the file
+3. Open a markdown file and run **"Hexfield Deck: Open Board"** from the command palette
+
+### Obsidian
+
+**Via BRAT (beta):** Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) → Add beta repo `jimblom/Hexfield-Deck` → Enable Hexfield Deck.
+
+**Manual:** Download `obsidian-hexfield-deck.zip` from Releases → Extract `main.js` + `manifest.json` + `styles.css` into `.obsidian/plugins/hexfield-deck/` → Enable in Settings → Community Plugins.
+
+Once installed, open a markdown file and click the **grid icon (⊞)** in the ribbon, or run **"Open as Hexfield Board"** from the command palette.
+
+---
+
 ## Quick Start
 
 Hexfield Deck turns structured markdown files into interactive kanban boards. Here's the minimal format:
@@ -20,12 +38,12 @@ tags: [planner, weekly]
 
 ## Monday, February 2, 2026
 
-- [ ] My first task #project-1
-- [/] Task in progress #project2
-- [x] Completed task #another-project
+- [ ] My first task [project-1]
+- [/] Task in progress [project-2] #research
+- [x] Completed task [another-project]
 ```
 
-Open this file in VS Code, run **Hexfield Deck: Open Board**, and see your tasks as cards.
+Open this file and run **Hexfield Deck: Open Board** (VS Code) or click the ribbon grid icon (Obsidian) to see your tasks as cards.
 
 ---
 
@@ -79,6 +97,30 @@ H3+ headings have no structural significance and are ignored by the parser.
 
 **Files with no H1 heading** produce a single implicit Slate. Old-format files continue to parse correctly.
 
+**H2 headings are optional.** Tasks can appear directly under an H1 heading with no H2:
+
+```markdown
+# My Board
+
+- [ ] Task directly under the slate
+- [/] Another task — no H2 needed
+```
+
+In swimlane view, these tasks appear in a **"General"** row at the top of the lane grid. In standard view, they merge into the status columns as usual.
+
+When a Slate has both direct tasks and H2 rows, the direct tasks appear in the General row above the named rows:
+
+```markdown
+# Sprint 5
+
+- [ ] Unorganized task       ← General row
+- [ ] Another loose task     ← General row
+
+## In Progress               ← Named row
+
+- [/] Organized task
+```
+
 ### Display Aliases with `//`
 
 Add a `//` comment to an H2 heading to set a short display name for the swimlane label:
@@ -114,7 +156,7 @@ All five states are recognized:
 Add details by indenting content below a task:
 
 ```markdown
-- [ ] Main task #project
+- [ ] Main task #mytag
   Freeform note line — displayed as body text on the card
   - [ ] Sub-task 1
   - [x] Sub-task 2 (completed)
@@ -134,7 +176,7 @@ Add a `//` comment to any task line to annotate it without affecting the title d
 - [!] Restock supplies // waiting on shuttle from Gizmonic
 ```
 
-The comment text (after ` // `) is stripped from the displayed card title and shown as a small italic note beneath the title on the card. Tags, dates, and other metadata inside a comment are **not** parsed — `// #tag` inside a comment does not create a project tag.
+The comment text (after ` // `) is stripped from the displayed card title and shown as a small italic note beneath the title on the card. Tags, dates, and other metadata inside a comment are **not** parsed — `// #tag` inside a comment does not create a tag.
 
 **URL safety:** The separator requires a leading space (` // `), so `https://example.com` is never accidentally treated as a comment.
 
@@ -176,27 +218,29 @@ Enhance tasks with inline metadata. Metadata can appear in any order after the t
 
 **Display:** Badge showing the estimate (e.g. `2h`)
 
-#### Project Tags
+#### Tags
 
 ```markdown
-- [ ] Task belongs to Hexfield project #hexfield
-- [ ] Task belongs to Deep 13 lab #deep13
+- [ ] Research task #research
+- [ ] Bug with high visibility #bugfix #urgent
 ```
 
-The `#` must be preceded by a space. A `#` inside a URL (`https://example.com/page#section`) is treated as a URL fragment, not a project tag.
+Tags use hashtag syntax (`#tag`). A task can have multiple tags. Tags appear as **oval pill badges** and support per-tag color configuration via the Tags panel. Card accent color (left border or fill) is driven by the first tag in your configured priority list. The `#` must be preceded by a space — `#tags` inside URLs or comments are not parsed.
 
 #### Combining Metadata
 
 All metadata can be combined in one line:
 
 ```markdown
-- [/] Ship **parser v1** #hexfield [2026-02-10] !!! est:4h // nearly there
+- [/] Ship **parser v1** [2026-02-10] !!! est:4h #release // nearly there
   - [/] Write frontmatter tests
   - [x] Wire up barrel exports
   - [ ] Final review
 ```
 
-**This task has:** project (hexfield), due date (Feb 10), high priority, 4h estimate, a comment, and three sub-tasks.
+**This task has:** due date (Feb 10), high priority, 4h estimate, a release tag, a comment, and three sub-tasks.
+
+**Metadata write-back order** (after editing via context menu): `title #tag [date] !!! est:Xh`
 
 ### Inline Markdown Formatting
 
@@ -248,6 +292,7 @@ Each H2 row in the active Slate becomes a horizontal lane with its own To Do / I
 ▶ Wednesday (2 tasks)    ← collapsed
 ```
 
+- **General row** — tasks directly under H1 with no H2 — is always expanded
 - **Today's day row** is automatically expanded on load; all other day rows start collapsed
 - **Non-day rows** (e.g. `## Now`, `## Backlog`) are always collapsed by default
 - Click the triangle to toggle any row
@@ -327,7 +372,7 @@ Click the **Filter** button in the toolbar. Conditions are AND'd between dimensi
 
 | Dimension | Options |
 |-----------|---------|
-| **Project** | Any project tag present in the file (multi-select) |
+| **Tags** | Any tag present in the file (multi-select, OR logic) |
 | **Status** | To Do, In Progress, Done, Won't Do, Blocked |
 | **Priority** | High, Medium, Low |
 | **Due Date** | Overdue, Due Today, Due This Week, No Due Date |
@@ -342,7 +387,7 @@ Available in all views via the sort bar:
 - **File order** — Default; preserves markdown file order
 - **Priority** — High → Medium → Low → None
 - **Status** — In Progress → To Do → Done
-- **Project** — Alphabetical
+- **Tag** — Alphabetical by first tag
 - **Estimate** — Longest first
 
 ---
@@ -466,7 +511,7 @@ First match wins for each field (e.g. first date found is used if two dates appe
 ### Cards not appearing?
 
 ✅ Frontmatter has `week`, `year`, `tags`
-✅ Tasks are under an H2 heading
+✅ Tasks are under an H1 or H2 heading (H2 is optional)
 ✅ Checkbox format is `- [ ]` with a space
 
 ### Won't Do / Blocked cards invisible?
@@ -488,10 +533,44 @@ First match wins for each field (e.g. first date found is used if two dates appe
 
 ---
 
+## Obsidian Plugin Notes
+
+Hexfield Deck is available as an Obsidian plugin with full feature parity. Most behavior is identical; the following differences apply:
+
+### Opening a board
+Click the **grid icon (⊞)** in the left ribbon, or run **"Open as Hexfield Board"** from the command palette. The board opens in a new Obsidian pane.
+
+### Context menus
+Right-click a card to open Obsidian's native context menu. Priority and State items show a **checkmark** next to the current value. Submenus (Priority, State, Move) are listed as flat items with prefixed labels (`Priority: High`, `State: Done`, `Move: Monday`, etc.) consistent with Obsidian's menu conventions.
+
+### Jump to source
+Clicking a card or selecting **"Open in Markdown"** from the context menu opens the file in a **new Obsidian tab** (not a split, as in VS Code) and positions the cursor at the task line.
+
+### Edit dialogs
+Title, due date, and time estimate edits appear as **Obsidian modal dialogs** rather than VS Code input boxes. The OK button or Enter key submits; clicking outside or pressing Escape cancels.
+
+### Wikilinks
+`[[Note Name]]` links in card titles are rendered as clickable links that open the referenced note in a new Obsidian tab.
+
+### Custom checkbox styles
+The plugin injects styles into the Obsidian markdown editor for the non-standard checkbox variants:
+- `[/]` — orange half-circle (in-progress)
+- `[-]` — gray circled dash with strikethrough text (won't-do)
+- `[!]` — red circled exclamation (blocked)
+
+### Project config storage
+Project colors and styles are stored in `.obsidian/plugins/hexfield-deck/data.json` (plugin data), not in the markdown file. Config is shared across the vault but is per-plugin-instance, not per-file.
+
+### Badge color overrides
+Use an Obsidian CSS snippet (`.obsidian/snippets/*.css`) to override `--hx-*` CSS variables. The `.hexfield-deck-root` selector scopes all Hexfield styles within the board pane.
+
+---
+
 ## Version History
 
 | Version | Highlights |
 |---------|-----------|
+| **v1.0.0** | Obsidian plugin (full parity); tag pill badges with per-tag colors; "All Slates" view; wikilink rendering; optional H2 headings |
 | **v0.8.0** | Click card to jump to source; today row auto-expand in Swimlane; overdue card border; comment display on cards; search bar; Slate progress indicator; column card counts; status bar item; empty states |
 | **v0.7.0** | H1=Slate / H2=Row layout (ADR-0009); per-Slate navigation dropdown; Blocked status (`[!]`); `//` comment syntax for headings and tasks |
 | **v0.6.0** | Project color selector panel; Hexfield Text compatibility for badge colors |

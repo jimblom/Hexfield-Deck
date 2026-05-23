@@ -2,7 +2,7 @@
 
 export { parseBoard, parseFrontmatter } from "./parser/index.js";
 export {
-  extractProject,
+  extractTags,
   extractDueDate,
   extractPriority,
   extractTimeEstimate,
@@ -10,6 +10,13 @@ export {
   parseAllMetadata,
 } from "./parser/index.js";
 export { allCards, displayLabel } from "./models/types.js";
+export {
+  getCardLineRange,
+  findEndOfBlock,
+  findSectionInsertionPoint,
+  rebuildTaskLine,
+} from "./editor/index.js";
+export type { CardOverrides, RebuildCard } from "./editor/index.js";
 export type {
   Frontmatter,
   TaskStatus,

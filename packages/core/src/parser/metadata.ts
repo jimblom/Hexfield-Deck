@@ -3,21 +3,33 @@ import type { Priority } from "../models/types.js";
 export interface ExtractedMetadata {
   cleanTitle: string;
   comment?: string;
-  project?: string;
+  tags: string[];
   dueDate?: string;
   priority?: Priority;
   timeEstimate?: string;
 }
 
-/** Extract the first #project tag from text. */
-export function extractProject(text: string): {
-  project: string | undefined;
+/** Extract all #hashtags from text. Returns tags and cleaned text. */
+export function extractTags(text: string): {
+  tags: string[];
   cleanText: string;
 } {
-  const match = text.match(/(?:^|\s)#([a-zA-Z0-9_-]+)/);
-  if (!match) return { project: undefined, cleanText: text };
-  const cleanText = text.replace(match[0], "").replace(/\s{2,}/g, " ").trim();
-  return { project: match[1], cleanText };
+  const tagRe = /(?:^|\s)#([a-zA-Z][a-zA-Z0-9_-]*)/g;
+  const tags: string[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = tagRe.exec(text)) !== null) {
+    tags.push(match[1]);
+  }
+
+  if (tags.length === 0) return { tags: [], cleanText: text };
+
+  const cleanText = text
+    .replace(/(?:^|\s)#[a-zA-Z][a-zA-Z0-9_-]*/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return { tags, cleanText };
 }
 
 /** Extract a due date: `[YYYY-MM-DD]` or `due:YYYY-MM-DD`. */
@@ -124,14 +136,16 @@ export function extractComment(text: string): {
 /** Run all metadata extractors in sequence. Comment is stripped first. */
 export function parseAllMetadata(text: string): ExtractedMetadata {
   const { comment, cleanText: t0 } = extractComment(text);
-  const { project, cleanText: t1 } = extractProject(t0);
+  const { tags, cleanText: t1 } = extractTags(t0);
   const { dueDate, cleanText: t2 } = extractDueDate(t1);
   const { priority, cleanText: t3 } = extractPriority(t2);
   const { timeEstimate, cleanText: t4 } = extractTimeEstimate(t3);
+  // Strip legacy [project] bracket tokens (silently cleaned from display; file is not rewritten)
+  const cleanTitle = t4.replace(/\[([a-zA-Z][a-zA-Z0-9_-]+)\](?!\()/g, "").replace(/\s{2,}/g, " ").trim();
   return {
-    cleanTitle: t4,
+    cleanTitle,
+    tags,
     ...(comment !== undefined ? { comment } : {}),
-    ...(project !== undefined ? { project } : {}),
     ...(dueDate !== undefined ? { dueDate } : {}),
     ...(priority !== undefined ? { priority } : {}),
     ...(timeEstimate !== undefined ? { timeEstimate } : {}),

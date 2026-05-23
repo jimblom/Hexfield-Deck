@@ -12,53 +12,53 @@ endDate: 2026-02-15
 
 ## Monday // February 9, 2026
 
-- [x] Morning standup — discuss experiment results #deep13
-- [x] Fix Hexfield Viewscreen rendering glitch #hexfield [2026-02-09] !! // reproduced on the bridge, viewport calc was off
-  - [x] Reproduce on the bridge
-  - [x] Check viewport calculations
-  - The viewscreen keeps showing reruns of *Manos: The Hands of Fate*
-- [x] Rewire the Satellite of Love's nacelle couplings #deep13 est:3h
+- [x] Morning standup — discuss experiment results #deep13 #meeting
+- [x] Fix Hexfield Viewscreen rendering glitch #hexfield #bugfix [2026-02-09] !! // reproduced on the bridge, viewport calc was off
+    - [x] Reproduce on the bridge
+    - [x] Check viewport calculations
+    - The viewscreen keeps showing reruns of _Manos: The Hands of Fate_
+- [x] Rewire the Satellite of Love's nacelle couplings #sol #maintenance est:3h
 - [x] Review Joel's Invention Exchange submission !!!
 
 ## Tuesday // February 10, 2026
 
 - [/] Ship **parser v1** #hexfield [2026-02-10] !!! est:4h
-  - [/] Write frontmatter tests
-  - [x] Wire up barrel exports
-  - [x] Delete placeholder test
-  - [ ] Review [parser ADR](https://github.com/jimblom/Hexfield-Deck/tree/main/docs/decisions)
-- [x] Calibrate Cambot's *focus module* #sol
-- [x] File expense report for RAM chips due:2026-02-10
+    - [/] Write frontmatter tests
+    - [x] Wire up barrel exports
+    - [x] Delete placeholder test
+    - [ ] Review [parser ADR](https://github.com/jimblom/Hexfield-Deck/tree/main/docs/decisions)
+- [x] Calibrate Cambot's _focus module_ #sol #maintenance
+- [x] File expense report for RAM chips [2026-02-10]
 
 ## Wednesday // February 11, 2026
 
-- [x] Pair with Crow on the snack bar refactor #sol est:2h
-  Tom Servo insists we use a monorepo for the snack dispensers
-- [ ] Draft ADR for Gizmonic communication protocol #deep13 !!
-- [/] Update Time Chasers pace algorithm #time-chasers
+- [x] Pair with Crow on the snack bar refactor #sol #collab est:2h
+      Tom Servo insists we use a monorepo for the snack dispensers
+- [ ] Draft ADR for Gizmonic communication protocol #deep13 #docs !!
+- [/] Update Time Chasers pace algorithm #time-chasers #research
 
 ## Thursday // February 12, 2026
 
-- [ ] Run full regression on Hexfield parser #hexfield est:1h
-- [/] Movie sign prep — queue up *Space Mutiny* ⏱️ 2h
-  - [/] Cue [Big McLargehuge](https://en.wikipedia.org/wiki/Space_Mutiny) name list
-  - [ ] Prep riff notes
-  - [x] ~~Book the theater~~ (Crow already did it)
-  - [ ] Test theater seat actuators
+- [ ] Run full regression on Hexfield parser #hexfield #testing est:1h
+- [/] Movie sign prep — queue up _Space Mutiny_ #sol est:2h
+    - [/] Cue [Big McLargehuge](https://en.wikipedia.org/wiki/Space_Mutiny) name list
+    - [ ] Prep riff notes
+    - [x] ~~Book the theater~~ (Crow already did it)
+    - [ ] Test theater seat actuators
 - [!] Restock Deep Ape supplies // waiting on supply shuttle from Gizmonic
 
 ## Friday // February 13, 2026
 
-- [ ] Sprint retro #hexfield
-- [ ] Deploy Hexfield Deck beta to the SOL bridge #hexfield [2026-02-13] !!! est:2h
+- [ ] Sprint retro #hexfield #meeting
+- [ ] Deploy Hexfield Deck beta to the SOL bridge #hexfield #deploy [2026-02-13] !!! est:2h
 - [/] Write quarterly OKR draft
-  - [/] Key Result 1: Launch Hexfield Deck
-  - [ ] Key Result 2: Survive another movie
+    - [/] Key Result 1: Launch Hexfield Deck
+    - [ ] Key Result 2: Survive another movie
 
 ## Saturday // February 14, 2026
 
 - [ ] Date night on the Satellite of Love 💕
-  Dinner reservations at the Tubular Boobular Joy cafe
+      Dinner reservations at the Tubular Boobular Joy cafe
 
 ## Sunday // February 15, 2026
 
@@ -69,24 +69,24 @@ endDate: 2026-02-15
 
 ## Now
 
-- [ ] Fix Joel's escape pod hatch — keeps jamming #sol !! est:1h // hatch has been jamming since the Pumaman screening
+- [ ] Fix Joel's escape pod hatch — keeps jamming #sol #maintenance !! est:1h // hatch has been jamming since the Pumaman screening
 - [ ] Add Obsidian plugin scaffold #hexfield
-- [ ] Write **release notes** for [Hexfield Deck v0.4.0](https://github.com/jimblom/Hexfield-Deck/releases) #hexfield
-  - [ ] Document `marked` inline rendering support
-  - [x] ~~Draft changelog entry~~ (moved to PR description)
-  - [ ] Add *before/after* screenshots
+- [ ] Write **release notes** for [Hexfield Deck v0.4.0](https://github.com/jimblom/Hexfield-Deck/releases) #hexfield #docs
+    - [ ] Document `marked` inline rendering support
+    - [x] ~~Draft changelog entry~~ (moved to PR description)
+    - [ ] Add _before/after_ screenshots
 
 ## Next 2 Weeks
 
-- [ ] Investigate Tom Servo's hoverskirt power drain #sol est:4h
-- [ ] Set up CI pipeline for Hexfield Deck #hexfield !!
+- [ ] Investigate Tom Servo's hoverskirt power drain #sol #research est:4h
+- [ ] Set up CI pipeline for Hexfield Deck #hexfield #devops !!
 - [ ] Catalog all MST3K movie inventory #sol
 
 ## This Month
 
-- [ ] Design card detail panel UI #hexfield est:8h
-- [ ] Annual Satellite of Love safety inspection #sol
-- [ ] Migrate Deep 13 experiments to new container host #deep13
+- [ ] Design card detail panel UI #hexfield #design est:8h
+- [ ] Annual Satellite of Love safety inspection #sol #maintenance
+- [ ] Migrate Deep 13 experiments to new container host #deep13 #devops
 
 ## This Quarter
 
@@ -97,7 +97,7 @@ endDate: 2026-02-15
 ## This Year
 
 - [ ] Obsidian plugin general availability #hexfield
-- [ ] Present at VS Code Conf — "Markdown-Powered Kanban" #hexfield
+- [ ] Present at VS Code Conf — "Markdown-Powered Kanban" #hexfield #speaking
 - [ ] Build Code Name: Diamond Head secrets manager
 
 ## Parking Lot

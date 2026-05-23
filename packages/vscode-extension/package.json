@@ -2,7 +2,7 @@
     "name": "hexfield-deck",
     "displayName": "Hexfield Deck",
     "description": "Markdown-powered kanban task board for VS Code",
-    "version": "0.8.0",
+    "version": "1.0.0",
     "publisher": "jimblom",
     "license": "MIT",
     "repository": {
@@ -40,20 +40,16 @@
         "configuration": {
             "title": "Hexfield Deck",
             "properties": {
-                "hexfield-deck.projects": {
+                "hexfield-deck.tagConfig": {
                     "type": "object",
                     "default": {},
-                    "description": "Per-project configuration. Keys are project names (without #). Each value may have 'color' (hex string for card left border) and/or 'url' (makes project badge a clickable link).",
+                    "description": "Per-tag color configuration. Keys are tag names (without #). Each value may have 'color' (hex string) and 'style' (how the color is applied to cards).",
                     "additionalProperties": {
                         "type": "object",
                         "properties": {
                             "color": {
                                 "type": "string",
-                                "description": "Hex color for the card left border"
-                            },
-                            "url": {
-                                "type": "string",
-                                "description": "URL to open when the project badge is clicked"
+                                "description": "Hex color for tag pill and card accent"
                             },
                             "style": {
                                 "type": "string",
@@ -62,6 +58,12 @@
                             }
                         }
                     }
+                },
+                "hexfield-deck.tagPriorityList": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": [],
+                    "description": "Ordered list of tag names. When a card has multiple colored tags, the first tag in this list determines the card's accent color."
                 }
             }
         },
@@ -90,13 +92,8 @@
         "package": "vsce package --no-dependencies"
     },
     "dependencies": {
-        "@dnd-kit/core": "6.3.1",
-        "@dnd-kit/sortable": "10.0.0",
-        "@dnd-kit/utilities": "3.2.2",
         "@hexfield-deck/core": "workspace:*",
-        "marked": "17.0.3",
-        "react": "19.2.4",
-        "react-dom": "19.2.4"
+        "@hexfield-deck/webview-ui": "workspace:*"
     },
     "devDependencies": {
         "@types/react": "19.2.14",

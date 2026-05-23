@@ -7,8 +7,8 @@
 ## Context
 
 Hexfield Deck reads a set of shared color values from VS Code configuration
-(`hexfield.colors.*`) to colorize board badges — project tags, priority levels,
-time estimates, and due-date proximity indicators. These same color tokens are
+(`hexfield.colors.*`) to colorize board badges — priority levels,
+time estimates, and due-date proximity indicators. (Project tag coloring was removed in ADR-0015.) These same color tokens are
 also the exact values that Hexfield Text (the companion syntax-highlighting
 extension) colorizes in the markdown editor.
 
@@ -42,13 +42,7 @@ register them was an artifact of it being built first, before Hexfield Text
 existed.
 
 The `_getColors()` method in `BoardWebviewPanel.ts` already uses sensible
-hardcoded defaults for every property:
-
-```typescript
-cfg.get<string>("projectTag", "#569CD6")
-```
-
-So standalone Hexfield Deck users (no Hexfield Text installed) continue to get
+hardcoded defaults for every property. So standalone Hexfield Deck users (no Hexfield Text installed) continue to get
 correct colors from defaults. The only thing lost is VS Code Settings UI
 discoverability for those properties — which Hexfield Text's own registration
 will restore for users who have both extensions installed.
@@ -68,8 +62,8 @@ will restore for users who have both extensions installed.
 
 ### Neutral
 - ⚖️ Hexfield Deck's `contributes.configuration` title updated from "Hexfield"
-  to "Hexfield Deck" — only the board-specific `hexfield-deck.projects` setting
-  remains in Hexfield Deck's manifest
+  to "Hexfield Deck" — board-specific settings (`hexfield-deck.tagConfig`, `hexfield-deck.tagPriorityList`)
+  remain in Hexfield Deck's manifest
 
 ## Related
 
